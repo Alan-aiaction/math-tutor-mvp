@@ -24,6 +24,9 @@ venv/
 *.pem
 *.key
 
+# --- Throwaway local demos (contain hardcoded API keys, never commit) ---
+frontend/myscript-demo/
+
 # --- OS / editor ---
 .DS_Store
 Thumbs.db
