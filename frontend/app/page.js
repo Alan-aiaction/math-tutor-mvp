@@ -1,8 +1,8 @@
 export default function Home() {
   return (
-    <main style={{ fontFamily: "sans-serif", padding: "4rem", textAlign: "center" }}>
-      <h1>Math Tutor MVP</h1>
-      <p>Placeholder deployment — real UI coming in Phase 9.</p>
+    <main className="flex min-h-screen flex-col items-center justify-center gap-2 p-16 text-center font-sans">
+      <h1 className="text-3xl font-semibold">Math Tutor MVP</h1>
+      <p className="text-gray-600">Placeholder deployment — real UI coming in Phase 9.</p>
     </main>
   );
 }

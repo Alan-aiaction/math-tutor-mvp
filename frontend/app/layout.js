@@ -1,3 +1,5 @@
+import "./globals.css";
+
 export const metadata = {
   title: "Math Tutor MVP",
   description: "AI adaptive math tutor — placeholder deployment",
