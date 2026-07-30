@@ -8,6 +8,8 @@ Follow these rules for every change, without needing to be asked each time.
 - **Never push directly to `main`.** Always create a branch first.
 - Branch naming: `feature/short-description` or `fix/short-description`.
 - Open a Pull Request for every change, however small.
+- After opening a PR, give a short summary (a few sentences, ready to paste as-is into
+  team chat) covering what changed and why — don't assume the team will read the full diff.
 - Do not merge your own PR — wait for at least one teammate to review, or explicitly ask
   the user to confirm merge if working solo in a session.
 - If asked to "fix X" or "add Y" directly on `main`, create a branch and PR instead, and
@@ -23,12 +25,30 @@ A task is not complete until:
 - [ ] Deploys successfully (Vercel preview for frontend, Railway for backend)
 - [ ] Merged to `main`
 
+## Git identity & Vercel deploys
+
+- Set `git config user.email` per-clone to the email verified on the GitHub account that
+  owns this repo/Vercel project (currently `alan@aiaction.ai`). Commit *authorship* (the
+  email baked into each commit) is separate from *push credentials* — you can push
+  successfully while still authoring commits under the wrong account, and GitHub/Vercel
+  key off authorship, not who authenticated.
+- This repo is intentionally **public**, not private. Reason: Vercel's Hobby plan blocks
+  deployments (previews and production alike) whenever a commit or merge's author isn't
+  the account that owns the Vercel project — on a private repo this hits *every*
+  teammate's commits and merges, not just direct pushes from non-owners. Going public
+  removed that restriction.
+  - If the repo ever goes private again (e.g. once it holds anything sensitive), expect
+    this deployment block to come back for Jeff's and Richard's commits/merges unless the
+    team is also on Vercel Pro ($20/seat/mo) by then.
+
 ## Secrets
 
 - Never commit `.env` or `.env.local` — both are already in `.gitignore`.
 - Never print, log, or paste real values from `backend/.env` (Supabase service_role key,
   MyScript keys) into chat, commit messages, or PR descriptions.
 - Use `.env.example` as the template for required variable names only.
+- **The repo is public** — treat that as the real enforced boundary, not `.gitignore`
+  alone. Nothing committed here can ever be assumed private, even briefly.
 
 ## Project structure
 
