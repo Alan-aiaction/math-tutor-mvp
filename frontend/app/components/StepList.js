@@ -8,6 +8,7 @@ export default function StepList({ steps, onDelete }) {
           key={index}
           index={index}
           status={step.status}
+          recognizedLatex={step.recognizedLatex}
           onDelete={onDelete ? () => onDelete(index) : undefined}
         />
       ))}

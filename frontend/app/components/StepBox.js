@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+
 const STATUS_STYLES = {
   unanswered: {
     border: "border-gray-300",
@@ -19,8 +23,21 @@ const STATUS_STYLES = {
   },
 };
 
-export default function StepBox({ index, status = "unanswered", onDelete }) {
+export default function StepBox({ index, status = "unanswered", recognizedLatex = "", onDelete }) {
   const style = STATUS_STYLES[status] ?? STATUS_STYLES.unanswered;
+  const [value, setValue] = useState(recognizedLatex);
+  const [draft, setDraft] = useState(recognizedLatex);
+  const [editing, setEditing] = useState(false);
+
+  const startEdit = () => {
+    setDraft(value);
+    setEditing(true);
+  };
+
+  const confirmEdit = () => {
+    setValue(draft);
+    setEditing(false);
+  };
 
   return (
     <div className={`rounded-lg border-2 p-4 ${style.border}`}>
@@ -42,6 +59,40 @@ export default function StepBox({ index, status = "unanswered", onDelete }) {
             </button>
           )}
         </div>
+      </div>
+
+      <div className="mt-3 border-t border-gray-100 pt-3 text-left">
+        {editing ? (
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              aria-label={`Edit recognised value for step ${index + 1}`}
+              className="flex-1 rounded border border-gray-300 px-2 py-1 text-sm"
+            />
+            <button
+              type="button"
+              onClick={confirmEdit}
+              className="rounded bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-700"
+            >
+              Confirm
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-sm text-gray-600">
+              Recognised as: <span className="font-mono">{value || "—"}</span>
+            </span>
+            <button
+              type="button"
+              onClick={startEdit}
+              className="text-xs font-medium text-blue-600 hover:underline"
+            >
+              Edit
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

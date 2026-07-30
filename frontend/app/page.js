@@ -4,16 +4,16 @@ import { useState } from "react";
 import StepList from "./components/StepList";
 
 const INITIAL_STEPS = [
-  { status: "correct" },
-  { status: "incorrect" },
-  { status: "unanswered" },
+  { status: "correct", recognizedLatex: "1/3 + 1/4 = 7/12" },
+  { status: "incorrect", recognizedLatex: "1/3 + 1/4 = 2/7" },
+  { status: "unanswered", recognizedLatex: "" },
 ];
 
 export default function Home() {
   const [steps, setSteps] = useState(INITIAL_STEPS);
 
   const addStep = () => {
-    setSteps((prev) => [...prev, { status: "unanswered" }]);
+    setSteps((prev) => [...prev, { status: "unanswered", recognizedLatex: "" }]);
   };
 
   const deleteStep = (index) => {
