@@ -23,8 +23,9 @@ const STATUS_STYLES = {
   },
 };
 
-export default function StepBox({ index, status = "unanswered", recognizedLatex = "", onDelete }) {
-  const style = STATUS_STYLES[status] ?? STATUS_STYLES.unanswered;
+export default function StepBox({ index, status = "unanswered", recognizedLatex = "", result = null, onDelete }) {
+  const effectiveStatus = result ? (result.valid ? "correct" : "incorrect") : status;
+  const style = STATUS_STYLES[effectiveStatus] ?? STATUS_STYLES.unanswered;
   const [value, setValue] = useState(recognizedLatex);
   const [draft, setDraft] = useState(recognizedLatex);
   const [editing, setEditing] = useState(false);
@@ -94,6 +95,12 @@ export default function StepBox({ index, status = "unanswered", recognizedLatex 
           </div>
         )}
       </div>
+
+      {result && !result.valid && result.hint_text && (
+        <div className="mt-3 rounded-md bg-amber-50 p-3 text-left text-sm text-amber-800">
+          <span className="font-medium">Hint:</span> {result.hint_text}
+        </div>
+      )}
     </div>
   );
 }
