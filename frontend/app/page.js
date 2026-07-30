@@ -1,9 +1,9 @@
 import StepList from "./components/StepList";
 
 const MOCK_STEPS = [
-  { status: "correct" },
-  { status: "incorrect" },
-  { status: "unanswered" },
+  { status: "correct", recognizedLatex: "1/3 + 1/4 = 7/12" },
+  { status: "incorrect", recognizedLatex: "1/3 + 1/4 = 2/7" },
+  { status: "unanswered", recognizedLatex: "" },
 ];
 
 export default function Home() {
