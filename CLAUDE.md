@@ -8,6 +8,8 @@ Follow these rules for every change, without needing to be asked each time.
 - **Never push directly to `main`.** Always create a branch first.
 - Branch naming: `feature/short-description` or `fix/short-description`.
 - Open a Pull Request for every change, however small.
+- After opening a PR, give a short summary (a few sentences, ready to paste as-is into
+  team chat) covering what changed and why — don't assume the team will read the full diff.
 - Do not merge your own PR — wait for at least one teammate to review, or explicitly ask
   the user to confirm merge if working solo in a session.
 - If asked to "fix X" or "add Y" directly on `main`, create a branch and PR instead, and
