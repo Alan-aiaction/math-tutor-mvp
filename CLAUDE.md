@@ -14,6 +14,14 @@ Follow these rules for every change, without needing to be asked each time.
   the user to confirm merge if working solo in a session.
 - If asked to "fix X" or "add Y" directly on `main`, create a branch and PR instead, and
   tell the user you did so.
+- **Stacked PRs (a branch based on another open PR's branch, not `main`) are a merge-order
+  trap.** If PR B is based on PR A's branch, merging B into A's branch *after* A has already
+  been merged into `main` does **not** bring B's changes into `main` — they land on a branch
+  that's now disconnected from `main`'s history, even though GitHub shows B as "Merged."
+  Always retarget a stacked PR's base to `main` once the PR(s) underneath it have merged,
+  *before* merging it — don't merge it into its original (now-merged) base branch. After any
+  stacked-PR chain merges, diff the final branch against `main` to confirm the code actually
+  landed, not just that GitHub says "Merged."
 
 ## Definition of Done (applies to every task)
 
