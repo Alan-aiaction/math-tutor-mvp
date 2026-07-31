@@ -35,6 +35,11 @@ export default function Home() {
     setResults(mockCheckWork(steps));
   };
 
+  const clearSteps = () => {
+    setSteps([]);
+    setResults(null);
+  };
+
   return (
     <main className="flex min-h-screen flex-col items-center gap-8 p-16 text-center font-sans">
       <div>
@@ -66,6 +71,13 @@ export default function Home() {
           className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800"
         >
           Check my working
+        </button>
+        <button
+          type="button"
+          onClick={clearSteps}
+          className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
+        >
+          Clear
         </button>
       </div>
     </main>
