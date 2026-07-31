@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Math Tutor MVP — Task Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1c2b27; --paper:#eef1ee; --card:#ffffff; --line:#d7ddd8;
+    --chalk:#1f4d43; --chalk-soft:#e4efec; --amber:#b8792f; --amber-soft:#f6ead9; --muted:#5c6d67;
+    --jeff:#2c5f8a; --jeff-soft:#dde8f0; --richard:#7a4a8a; --richard-soft:#ecdff0; --all-soft:#ececeb;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans', sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1080px;margin:0 auto;padding:56px 28px 100px;}
+  header{margin-bottom:32px;}
+  .eyebrow{font-family:'IBM Plex Mono', monospace;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--chalk);margin-bottom:10px;}
+  h1{font-family:'Fraunces', serif;font-weight:600;font-size:clamp(28px,4vw,40px);line-height:1.08;margin:0 0 10px;letter-spacing:-0.01em;}
+  header p{color:var(--muted);font-size:15.5px;max-width:620px;margin:0;line-height:1.5;}
+
+  .dod-band{background:var(--chalk);color:#eef4f1;border-radius:14px;padding:24px 26px;margin-bottom:36px;position:relative;overflow:hidden;}
+  .dod-band::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(180deg, transparent 0 27px, rgba(255,255,255,.045) 27px 28px);pointer-events:none;}
+  .dod-title{font-family:'Fraunces', serif;font-weight:600;font-size:18px;margin:0 0 4px;}
+  .dod-sub{font-size:13px;color:#b9d3ca;margin:0 0 16px;}
+  .dod-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:9px 20px;list-style:none;margin:0;padding:0;position:relative;}
+  .dod-list li{font-size:13.5px;display:flex;gap:9px;align-items:flex-start;line-height:1.4;}
+  .dod-list li::before{content:"";width:14px;height:14px;margin-top:2px;flex:0 0 auto;border:1.5px solid #9fc3b8;border-radius:4px;}
+
+  .owner-legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:24px;font-size:12.5px;color:var(--muted);align-items:center;}
+  .owner-legend .owner{margin:0;}
+
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin-bottom:28px;}
+  .tab-btn{font-family:'IBM Plex Mono', monospace;font-size:12.5px;letter-spacing:.04em;background:none;border:none;padding:11px 16px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .12s ease, border-color .12s ease;white-space:nowrap;}
+  .tab-btn:hover{color:var(--chalk);}
+  .tab-btn.active{color:var(--chalk);border-bottom-color:var(--chalk);font-weight:500;}
+
+  .stage-panel{display:none;}
+  .stage-panel.active{display:block;animation:fade .15s ease;}
+  @keyframes fade{from{opacity:0;}to{opacity:1;}}
+  .stage-intro{font-size:14px;color:var(--muted);margin:0 0 22px;max-width:660px;line-height:1.5;}
+
+  .tree-box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:24px;margin-bottom:32px;overflow-x:auto;}
+  .tree-caption{font-size:12px;color:var(--muted);margin:8px 0 0;}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px 22px 20px;display:flex;flex-direction:column;transition:box-shadow .15s ease, transform .15s ease;}
+  .card:hover{box-shadow:0 6px 20px rgba(31,77,67,.08);transform:translateY(-1px);}
+  .card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:14px;}
+  .card-top-left{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+  .ticket-id{font-family:'IBM Plex Mono', monospace;font-size:12px;color:var(--chalk);background:var(--chalk-soft);padding:3px 8px;border-radius:6px;font-weight:500;white-space:nowrap;}
+  .status{font-family:'IBM Plex Mono', monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:20px;background:var(--amber-soft);color:var(--amber);white-space:nowrap;}
+  .owner{font-family:'IBM Plex Mono', monospace;font-size:10px;letter-spacing:.03em;padding:3px 8px;border-radius:20px;font-weight:500;white-space:nowrap;}
+  .owner-alan{background:var(--chalk-soft);color:var(--chalk);}
+  .owner-jeff{background:var(--jeff-soft);color:var(--jeff);}
+  .owner-richard{background:var(--richard-soft);color:var(--richard);}
+  .owner-all{background:var(--all-soft);color:var(--muted);}
+  .card h3{font-family:'Fraunces', serif;font-weight:600;font-size:17px;margin:0 0 10px;line-height:1.3;}
+  .story{font-size:13.5px;color:var(--muted);line-height:1.5;margin:0 0 16px;padding-left:12px;border-left:2px solid var(--line);}
+  .story b{color:var(--ink);font-weight:600;}
+  .ac-label{font-family:'IBM Plex Mono', monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;}
+  .ac-list{list-style:none;margin:0 0 16px;padding:0;display:flex;flex-direction:column;gap:8px;}
+  .ac-list li{font-size:13.5px;line-height:1.45;display:flex;gap:9px;align-items:flex-start;}
+  .ac-list li input[type="checkbox"]{appearance:none;-webkit-appearance:none;width:14px;height:14px;margin:2px 0 0;flex:0 0 auto;border:1.5px solid var(--chalk);border-radius:4px;cursor:pointer;position:relative;}
+  .ac-list li input[type="checkbox"]:checked{background:var(--chalk);}
+  .ac-list li input[type="checkbox"]:checked::after{content:"";position:absolute;left:3.5px;top:0.5px;width:4px;height:8px;border:solid #fff;border-width:0 1.5px 1.5px 0;transform:rotate(45deg);}
+  .card-footer{margin-top:auto;padding-top:14px;border-top:1px dashed var(--line);font-size:12px;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+  .card-footer b{color:var(--ink);}
+  code{font-family:'IBM Plex Mono',monospace;background:var(--chalk-soft);padding:1px 5px;border-radius:4px;font-size:.92em;}
+  footer.note{margin-top:48px;font-size:12.5px;color:var(--muted);text-align:center;}
+  @media (max-width:520px){ .wrap{padding:36px 18px 70px;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Sprint Board · Whole Team</div>
+    <h1>Math Tutor MVP — Task Board</h1>
+    <p>Every task after team-sync, across all three of you. Click a tab to switch — order matches real dependency, not the original spreadsheet order.</p>
+  </header>
+
+  <div class="dod-band">
+    <p class="dod-title">Definition of Done — applies to every ticket, every stage</p>
+    <p class="dod-sub">One shared checklist, not repeated per ticket.</p>
+    <ul class="dod-list">
+      <li>Code pushed to a branch, PR opened</li>
+      <li>At least one teammate reviewed the PR</li>
+      <li>No console errors / unhandled exceptions</li>
+      <li>Deploys successfully (Vercel preview or Railway)</li>
+      <li>Merged to <code style="background:rgba(255,255,255,.12);color:#eef4f1;">main</code></li>
+    </ul>
+  </div>
+
+  <div class="owner-legend">
+    <span>Owner key:</span>
+    <span class="owner owner-alan">Alan</span>
+    <span class="owner owner-jeff">Jeff</span>
+    <span class="owner owner-richard">Richard</span>
+    <span class="owner owner-all">All</span>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+  <div id="panels"></div>
+
+  <footer class="note">Build against mock data shaped like the draft API contract (<code>api_contract_draft_20260728.md</code>) — swapping in real pieces later should be a small change, not a rewrite.</footer>
+
+</div>
+
+<script>
+const STAGES = [
+  {
+    id: "map",
+    label: "Dependency Map",
+    intro: "How all 6 stages connect, and who owns each one. Stage-level view — see each stage's own tab for individual task dependencies.",
+    tree: `
+      <svg viewBox="0 0 900 560" xmlns="http://www.w3.org/2000/svg" style="width:100%;min-width:620px;height:auto;font-family:'IBM Plex Mono',monospace;">
+        <g stroke="#c3ccc6" stroke-width="1.5" fill="none">
+          <path d="M 450 58 L 450 90"/>
+          <path d="M 450 90 L 220 90 L 220 118"/>
+          <path d="M 450 90 L 680 90 L 680 118"/>
+          <path d="M 220 176 L 220 200 L 220 228"/>
+          <path d="M 220 286 L 220 310 L 400 310 L 400 338"/>
+          <path d="M 680 176 L 680 310 L 470 310 L 470 338"/>
+          <path d="M 435 396 L 435 420 L 435 448"/>
+        </g>
+        <g>
+          <rect x="365" y="14" width="170" height="44" rx="9" fill="#1f4d43"/>
+          <text x="450" y="33" text-anchor="middle" fill="#eef4f1" font-size="11.5" font-weight="500">Team Sync</text>
+          <text x="450" y="47" text-anchor="middle" fill="#cfe3dc" font-size="9.5">#5 · #11 API contract</text>
+        </g>
+        <g>
+          <rect x="135" y="118" width="170" height="58" rx="9" fill="#ffffff" stroke="#1f4d43" stroke-width="1.5"/>
+          <text x="220" y="136" text-anchor="middle" fill="#1f4d43" font-size="11.5" font-weight="600">Stage 1 · Schema</text>
+          <text x="220" y="150" text-anchor="middle" fill="#5c6d67" font-size="9">All + Richard #8 + Jeff #9</text>
+          <text x="220" y="164" text-anchor="middle" fill="#5c6d67" font-size="9">Supabase tables + seed content</text>
+        </g>
+        <g>
+          <rect x="135" y="228" width="170" height="58" rx="9" fill="#ffffff" stroke="#1f4d43" stroke-width="1.5"/>
+          <text x="220" y="246" text-anchor="middle" fill="#1f4d43" font-size="11.5" font-weight="600">Stage 2 · Backend</text>
+          <text x="220" y="260" text-anchor="middle" fill="#5c6d67" font-size="9">All + Richard endpoints</text>
+          <text x="220" y="274" text-anchor="middle" fill="#5c6d67" font-size="9">FastAPI skeleton</text>
+        </g>
+        <g>
+          <rect x="120" y="338" width="200" height="58" rx="9" fill="#ffffff" stroke="#1f4d43" stroke-width="1.5"/>
+          <text x="220" y="356" text-anchor="middle" fill="#1f4d43" font-size="11.5" font-weight="600">Stage 3 · Math Engine</text>
+          <text x="220" y="370" text-anchor="middle" fill="#5c6d67" font-size="9">Alan (Recognition/Parser)</text>
+          <text x="220" y="384" text-anchor="middle" fill="#5c6d67" font-size="9">+ Jeff (Evaluator/Hints)</text>
+        </g>
+        <g>
+          <rect x="595" y="118" width="170" height="58" rx="9" fill="#ffffff" stroke="#b8792f" stroke-width="1.5"/>
+          <text x="680" y="136" text-anchor="middle" fill="#b8792f" font-size="11.5" font-weight="600">Stage 4 · Frontend</text>
+          <text x="680" y="150" text-anchor="middle" fill="#5c6d67" font-size="9">Alan — #1b #39-44</text>
+          <text x="680" y="164" text-anchor="middle" fill="#5c6d67" font-size="9">Runs in parallel — mocked</text>
+        </g>
+        <g>
+          <rect x="350" y="338" width="200" height="58" rx="9" fill="#ffffff" stroke="#1f4d43" stroke-width="1.5"/>
+          <text x="450" y="356" text-anchor="middle" fill="#1f4d43" font-size="11.5" font-weight="600">Stage 5 · Integration</text>
+          <text x="450" y="370" text-anchor="middle" fill="#5c6d67" font-size="9">Alan + Jeff — #45 #46 #46b</text>
+          <text x="450" y="384" text-anchor="middle" fill="#5c6d67" font-size="9">Real backend meets real frontend</text>
+        </g>
+        <g>
+          <rect x="325" y="448" width="250" height="66" rx="9" fill="#1f4d43"/>
+          <text x="450" y="466" text-anchor="middle" fill="#eef4f1" font-size="11.5" font-weight="600">Stage 6 · Testing, Security &amp; Deploy</text>
+          <text x="450" y="480" text-anchor="middle" fill="#cfe3dc" font-size="9">All + Richard (curriculum) + Jeff (unit tests)</text>
+          <text x="450" y="494" text-anchor="middle" fill="#cfe3dc" font-size="9">Final pass before pilot</text>
+        </g>
+      </svg>
+      <p class="tree-caption">Stage 4 (frontend, Alan) runs independently and in parallel — it doesn't wait on Stages 1–3. Stage 5 is the convergence point: it needs Stage 3's real backend <i>and</i> Stage 4's real frontend before it can start. A separate Post-MVP tab holds the Blocked, not-yet-relevant items.</p>
+    `,
+    tasks: []
+  },
+  {
+    id: "s1", label: "Stage 1 · Schema",
+    intro: "Database schema and first content seed — blocks backend DB work and content-dependent testing.",
+    tree: null,
+    tasks: [
+      { id:"#6", owner:"all", title:"Design Supabase schema", status:"Not started",
+        story:"As the team, we need agreed table shapes, so seeding and queries don't have to be redone later.",
+        ac:["Tables defined: problems, attempts, attempt_steps, misconception_rules, hints",
+            "Foreign keys in place: attempts → problems, attempt_steps → attempts",
+            "Column names/types match the agreed Pydantic models from task #11"],
+        deps:"Depends on: #11 · Blocks: #7, #8, #9" },
+      { id:"#7", owner:"all", title:"Write SQL migrations", status:"Not started",
+        story:"As the team, we need the schema turned into real tables, so the app has somewhere to read/write data.",
+        ac:["SQL migration files created for all 5 tables",
+            "Migration runs against the Supabase project with no errors",
+            "Foreign key constraints verified with a manual test insert"],
+        deps:"Depends on: #6" },
+      { id:"#8", owner:"richard", title:"Seed problems table (~20-30 problems)", status:"Not started",
+        story:"As the content owner, I want a real starter set of problems sourced from school context, so the pilot has authentic material instead of placeholder text.",
+        ac:["At least 20-30 problems seeded into the problems table",
+            "Each problem tagged with topic and difficulty, matching the agreed schema",
+            "At least one batch reviewed against real school curriculum materials"],
+        deps:"Depends on: #6 · Leverages Richard's school access" },
+      { id:"#9", owner:"jeff", title:"Seed misconception_rules and hints (first batch)", status:"Not started",
+        story:"As the backend team, we need real misconception/hint content to test the detector against, not just placeholder rules.",
+        ac:["At least 5-10 misconception rules seeded, each tied to a topic",
+            "Each misconception has one first-level hint and one escalation hint",
+            "Wording/format coordinated with Dev C before seeding"],
+        deps:"Depends on: #6 · Blocks: #30, #33" },
+      { id:"#10", owner:"all", title:"Enable Supabase RLS policies", status:"Not started",
+        story:"As the team, we want baseline security on, so we're not fully exposed even before auth exists.",
+        ac:["RLS enabled on all 5 tables",
+            "Policies are permissive for MVP (documented as temporary)",
+            "Noted for tightening later once access code (#50) exists"],
+        deps:"Depends on: #7" }
+    ]
+  },
+  {
+    id: "s2", label: "Stage 2 · Backend Skeleton",
+    intro: "Shared FastAPI foundation plus Richard's first two live endpoints.",
+    tree: null,
+    tasks: [
+      { id:"#12", owner:"all", title:"Scaffold FastAPI + Pydantic models", status:"Not started",
+        story:"As the backend team, we need the agreed contract turned into real code, so every endpoint returns consistently-shaped data.",
+        ac:["FastAPI project scaffolded in /backend",
+            "Pydantic classes from task #11 committed as backend/models.py",
+            "App starts locally with uvicorn, no import errors"],
+        deps:"Depends on: #11" },
+      { id:"#13", owner:"all", title:"Supabase Python client / DB layer", status:"Not started",
+        story:"As the backend, we need a working DB connection, so endpoints can actually read and write real data.",
+        ac:["supabase-py client initialized using .env credentials",
+            "A test query against one seeded table succeeds",
+            "Connection errors are caught and logged, not silent"],
+        deps:"Depends on: #6, #7" },
+      { id:"#14", owner:"richard", title:"Implement GET /problems/{id}", status:"Not started",
+        story:"As the frontend, I need to fetch a specific problem by ID, so the app can load real content instead of mocks.",
+        ac:["Endpoint returns a Problem object matching the agreed Pydantic model",
+            "Returns a clean 404 for a nonexistent ID",
+            "Manually tested against at least 3 seeded problems"],
+        deps:"Depends on: #12, #13, #8" },
+      { id:"#15", owner:"richard", title:"Implement POST /attempts", status:"Not started",
+        story:"As the frontend, I need to save a student's attempt, so progress isn't lost after a session ends.",
+        ac:["Endpoint accepts an Attempt object (with nested Steps) and persists it",
+            "Returns the saved attempt with its generated ID",
+            "Malformed requests are rejected with a clear validation error"],
+        deps:"Depends on: #12, #13" },
+      { id:"#16", owner:"all", title:"Error handling, validation, logging", status:"Not started",
+        story:"As the team, we want failures to be visible, so a bad request doesn't fail silently in production.",
+        ac:["All endpoints validate input via Pydantic",
+            "Unhandled exceptions are caught and logged, not left to crash",
+            "Basic structured logging in place (timestamp, endpoint, status)"],
+        deps:"Depends on: #12, #13" }
+    ]
+  },
+  {
+    id: "s3", label: "Stage 3 · Math Engine",
+    intro: "The core pipeline: Alan builds Recognition + Parser, Jeff builds Evaluator, Misconception Detector, Hint Service, and Orchestration on top of it.",
+    tree: `
+      <svg viewBox="0 0 820 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;min-width:640px;height:auto;font-family:'IBM Plex Mono',monospace;">
+        <g stroke="#c3ccc6" stroke-width="1.5" fill="none">
+          <path d="M 90 50 L 90 90"/>
+          <path d="M 90 128 L 90 168"/>
+          <path d="M 90 206 L 250 206 L 250 168"/>
+          <path d="M 250 206 L 250 246"/>
+          <path d="M 90 244 L 90 280 L 250 280 L 250 284"/>
+          <path d="M 410 90 L 410 128"/>
+          <path d="M 410 166 L 410 206"/>
+          <path d="M 410 244 L 410 280 L 600 280 L 600 244"/>
+          <path d="M 600 206 L 600 168"/>
+        </g>
+        <g><rect x="25" y="14" width="130" height="36" rx="9" fill="#1f4d43"/>
+          <text x="90" y="36" text-anchor="middle" fill="#eef4f1" font-size="10.5" font-weight="500">#18-19 Recognition</text></g>
+        <g><rect x="25" y="90" width="130" height="38" rx="9" fill="#ffffff" stroke="#1f4d43" stroke-width="1.5"/>
+          <text x="90" y="113" text-anchor="middle" fill="#1f4d43" font-size="10.5" font-weight="500">#22-24 Parser</text></g>
+        <g><rect x="345" y="90" width="130" height="38" rx="9" fill="#ffffff" stroke="#2c5f8a" stroke-width="1.5"/>
+          <text x="410" y="113" text-anchor="middle" fill="#2c5f8a" font-size="10.5" font-weight="500">#25-28 Evaluator</text></g>
+        <g><rect x="345" y="168" width="130" height="38" rx="9" fill="#ffffff" stroke="#2c5f8a" stroke-width="1.5"/>
+          <text x="410" y="191" text-anchor="middle" fill="#2c5f8a" font-size="10.5" font-weight="500">#29-31 Misconception</text></g>
+        <g><rect x="535" y="90" width="130" height="38" rx="9" fill="#ffffff" stroke="#2c5f8a" stroke-width="1.5"/>
+          <text x="600" y="113" text-anchor="middle" fill="#2c5f8a" font-size="10.5" font-weight="500">#33-35 Hint Service</text></g>
+        <g><rect x="345" y="246" width="320" height="38" rx="9" fill="#2c5f8a"/>
+          <text x="505" y="269" text-anchor="middle" fill="#ffffff" font-size="10.5" font-weight="500">#36-38 Orchestration (Jeff)</text></g>
+      </svg>
+      <p class="tree-caption">Alan's Recognition + Parser feed Jeff's Evaluator → Misconception Detector → Hint Service. Orchestration (Jeff) wires the whole pipeline together.</p>
+    `,
+    tasks: [
+      { id:"#18", owner:"alan", title:"Recognition Service wrapper (MyScript)", status:"Not started",
+        story:"As the backend, I need to call MyScript reliably, so ink strokes become usable LaTeX.",
+        ac:["Function calls MyScript's cloud API using app/hmac keys",
+            "Returns LaTeX string + confidence score",
+            "API errors (timeout, auth failure) are caught, not left to crash the request"],
+        deps:"Depends on: MyScript keys (done) · Blocks: #19" },
+      { id:"#19", owner:"alan", title:"POST /recognize endpoint", status:"Not started",
+        story:"As the frontend, I need an endpoint to send ink to, so recognition isn't done client-side.",
+        ac:["Endpoint accepts ink stroke payload, returns { latex, confidence }",
+            "Input validated via Pydantic",
+            "Manually tested with at least one real request end-to-end"],
+        deps:"Depends on: #18" },
+      { id:"#21", owner:"alan", title:"Handle low-confidence recognition", status:"Not started",
+        story:"As a student, if my handwriting is unclear, I want to be asked to confirm it, so I'm not marked wrong by a bad scan.",
+        ac:["A confidence threshold is defined (documented, even if a rough first guess)",
+            "Below threshold, response flags low_confidence: true",
+            "Frontend can use this flag to force the Confirm/Edit step (#41)"],
+        deps:"Depends on: #19" },
+      { id:"#22", owner:"alan", title:"LaTeX → SymPy parsing", status:"Not started",
+        story:"As the evaluator, I need a real math expression object, not just text, so I can check correctness.",
+        ac:["Recognized LaTeX converts into a SymPy expression",
+            "Handles fractions, mixed numbers, decimals, negative numbers",
+            "Malformed/unparseable LaTeX returns a clear error, not a crash"],
+        deps:"Depends on: #19 · Blocks: #25" },
+      { id:"#23", owner:"alan", title:"Canonical-form normalizer", status:"Not started",
+        story:"As the evaluator, I need equivalent answers recognized as equal, so a student isn't marked wrong for a valid alternate form.",
+        ac:["1/3 + 1/4 and 1/4 + 1/3 normalize to the same internal form",
+            "0.75 and 3/4 recognized as equivalent where relevant",
+            "Covered by at least 5 test cases"],
+        deps:"Depends on: #22" },
+      { id:"#24", owner:"alan", title:"Unit tests: parser edge cases", status:"Not started",
+        story:"As the team, we want confidence the parser won't silently misfire, since this is the highest-bug-risk area.",
+        ac:["Tests cover fractions, mixed numbers, decimals, negatives, implicit multiplication",
+            "Dutch comma decimal notation (0,75) explicitly tested",
+            "All tests passing before merge"],
+        deps:"Depends on: #22, #23" },
+      { id:"#25", owner:"jeff", title:"Implement expression validity check", status:"Not started",
+        story:"As the evaluator, I need to know if a submitted step is well-formed, before checking correctness.",
+        ac:["Given a parsed SymPy expression, returns valid/invalid",
+            "Malformed expressions are flagged invalid, not left to crash",
+            "Covered by at least 3 test cases"],
+        deps:"Depends on: #22 (Alan's parser)" },
+      { id:"#26", owner:"jeff", title:"Implement internal math correctness check", status:"Not started",
+        story:"As the evaluator, I need to confirm a step's math actually holds true, not just that it's well-formed.",
+        ac:["Given a valid expression, checks whether it's mathematically true (e.g. 2/7 = 4/28)",
+            "No false positives across at least 5 test cases"],
+        deps:"Depends on: #25" },
+      { id:"#27", owner:"jeff", title:"Implement transition validity check", status:"Not started",
+        story:"As the evaluator, I need to know if a step logically follows from the previous one, so an unrelated correct answer isn't accepted.",
+        ac:["Given two consecutive steps, determines whether the second is a legal derivation from the first",
+            "Explicitly tested against one 'correct but unusual method' case, per the product spec's edge case",
+            "Cases it can't yet judge default to 'needs review', not silently wrong"],
+        deps:"Depends on: #26" },
+      { id:"#28", owner:"jeff", title:"Return structured EvaluationResult per step", status:"Not started",
+        story:"As downstream services, we need one consistent result object, so nothing has to guess the shape.",
+        ac:["Returns EvaluationResult matching the agreed Pydantic model",
+            "Covers all 3 outcomes: correct, incorrect-with-misconception, incorrect-no-match"],
+        deps:"Depends on: #25, #26, #27 · Blocks: #36" },
+      { id:"#29", owner:"jeff", title:"Define rule format for misconception_rules", status:"Not started",
+        story:"As the backend, I need an agreed rule structure, so content (Dev C/Richard) and matching logic speak the same format.",
+        ac:["Rule format documented (pattern type, matching fields)",
+            "Reviewed and agreed with Dev C before content seeding begins"],
+        deps:"Coordinate with: #6, #9" },
+      { id:"#30", owner:"jeff", title:"Implement rule-matching engine", status:"Not started",
+        story:"As the evaluator, given a wrong answer, I want to find which known misconception it matches, so the student gets a targeted hint.",
+        ac:["Given a wrong step and expected step, returns a matching misconception_id if found",
+            "Returns null when no rule matches",
+            "Tested against the seeded rules from #9"],
+        deps:"Depends on: #29, #9" },
+      { id:"#31", owner:"jeff", title:"Return misconception_id or null fallback", status:"Not started",
+        story:"As downstream services, we need a consistent value even when nothing matches.",
+        ac:["Explicit null (not empty string, not exception) returned on no match",
+            "Covered by an explicit no-match test case"],
+        deps:"Depends on: #30 · Blocks: #33" },
+      { id:"#33", owner:"jeff", title:"Map misconception_id to approved hint message", status:"Not started",
+        story:"As a student, I want a hint tied to my specific mistake, not a generic message.",
+        ac:["Given a misconception_id, returns the matching hint from the hints table",
+            "Falls back to #34 when no id or no matching hint exists"],
+        deps:"Depends on: #9, #31" },
+      { id:"#34", owner:"jeff", title:"Implement fallback generic hint", status:"Not started",
+        story:"As a student, even if my mistake isn't recognized, I still want some guidance rather than silence.",
+        ac:["A generic, non-answer-revealing hint returns when no specific hint matches",
+            "Flagged for later: spec calls for this to eventually be LLM-generated, not static — revisit before pilot if time allows"],
+        deps:"Depends on: #33" },
+      { id:"#35", owner:"jeff", title:"Decide hint tone/language (Dutch, age-appropriate)", status:"Not started",
+        story:"As a student (10-12yo, Dutch-speaking), I want hints that sound like they're talking to me, not a textbook.",
+        ac:["Hint wording reviewed for age-appropriate Dutch phrasing",
+            "At least one review round with Dev C (school context) before finalizing"],
+        deps:"Depends on: #9 · Validated by Dev C" },
+      { id:"#36", owner:"jeff", title:"Implement pipeline: receive → recognize → parse → validate → detect → return", status:"Not started",
+        story:"As the backend, I need all pieces wired together in order, so a single request produces a full result.",
+        ac:["Pipeline calls recognition, parser, evaluator, misconception detector, and hint service in sequence",
+            "Returns a complete EvaluationResult at the end",
+            "Failure at any stage is caught and returns a clear error, not a silent crash"],
+        deps:"Depends on: #19, #28, #31, #33" },
+      { id:"#37", owner:"jeff", title:"Wire POST /attempts/check to full pipeline", status:"Not started",
+        story:"As the frontend, I need one endpoint that does the whole check, not five separate calls.",
+        ac:["Endpoint accepts steps, runs the full orchestration pipeline, returns the result",
+            "Manually tested end-to-end with at least 2 real examples"],
+        deps:"Depends on: #36 · Blocks: #45" },
+      { id:"#38", owner:"jeff", title:"Add timing/logging at each pipeline stage", status:"Not started",
+        story:"As the team, we want to see where time is spent, so we can debug slow responses before they affect real students.",
+        ac:["Each pipeline stage logs its duration",
+            "Total pipeline time is visible in logs for at least one test request"],
+        deps:"Depends on: #36" }
+    ]
+  },
+  {
+    id: "s4", label: "Stage 4 · Frontend",
+    intro: "Entirely Alan's, buildable against mock data — no real backend, MyScript, or database required yet.",
+    tree: `
+      <svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;min-width:640px;height:auto;font-family:'IBM Plex Mono',monospace;">
+        <g stroke="#c3ccc6" stroke-width="1.5" fill="none">
+          <path d="M 120 50 L 120 90"/>
+          <path d="M 120 90 L 220 90 L 220 118"/>
+          <path d="M 120 90 L 400 90 L 400 118"/>
+          <path d="M 120 90 L 600 90 L 600 118"/>
+          <path d="M 400 156 L 400 190 L 320 190 L 320 216"/>
+          <path d="M 400 156 L 400 190 L 480 190 L 480 216"/>
+          <path d="M 320 256 L 320 270 L 400 270 L 400 296"/>
+          <path d="M 480 256 L 480 270 L 400 270 L 400 296"/>
+        </g>
+        <g><rect x="55" y="14" width="130" height="40" rx="9" fill="#1f4d43"/>
+          <text x="120" y="30" text-anchor="middle" fill="#eef4f1" font-size="11" font-weight="500">#1b</text>
+          <text x="120" y="44" text-anchor="middle" fill="#cfe3dc" font-size="9.5">Next.js scaffold</text></g>
+        <g><rect x="155" y="118" width="130" height="40" rx="9" fill="#ffffff" stroke="#1f4d43" stroke-width="1.5"/>
+          <text x="220" y="134" text-anchor="middle" fill="#1f4d43" font-size="11" font-weight="500">#39</text>
+          <text x="220" y="148" text-anchor="middle" fill="#5c6d67" font-size="9.5">Problem display</text></g>
+        <g><rect x="335" y="118" width="130" height="40" rx="9" fill="#ffffff" stroke="#1f4d43" stroke-width="1.5"/>
+          <text x="400" y="134" text-anchor="middle" fill="#1f4d43" font-size="11" font-weight="500">#40</text>
+          <text x="400" y="148" text-anchor="middle" fill="#5c6d67" font-size="9.5">Step-entry UI</text></g>
+        <g><rect x="535" y="118" width="130" height="40" rx="9" fill="#ffffff" stroke="#1f4d43" stroke-width="1.5"/>
+          <text x="600" y="134" text-anchor="middle" fill="#1f4d43" font-size="11" font-weight="500">#44</text>
+          <text x="600" y="148" text-anchor="middle" fill="#5c6d67" font-size="9.5">Clear + state</text></g>
+        <g><rect x="255" y="216" width="130" height="40" rx="9" fill="#ffffff" stroke="#b8792f" stroke-width="1.5"/>
+          <text x="320" y="232" text-anchor="middle" fill="#b8792f" font-size="11" font-weight="500">#41</text>
+          <text x="320" y="246" text-anchor="middle" fill="#5c6d67" font-size="9.5">Recognition preview</text></g>
+        <g><rect x="415" y="216" width="130" height="40" rx="9" fill="#ffffff" stroke="#b8792f" stroke-width="1.5"/>
+          <text x="480" y="232" text-anchor="middle" fill="#b8792f" font-size="11" font-weight="500">#42</text>
+          <text x="480" y="246" text-anchor="middle" fill="#5c6d67" font-size="9.5">Add/delete steps</text></g>
+      </svg>
+      <p class="tree-caption">#1b unblocks everything. #40 must land before #41 and #42. #43 (below, not pictured) depends on all four upstream tickets.</p>
+    `,
+    tasks: [
+      { id:"#1b", owner:"alan", title:"Scaffold Next.js + Tailwind", status:"Not started",
+        story:"As the dev team, we need a real project structure, so every later ticket has somewhere to build.",
+        ac:["/frontend runs Next.js 14 (App Router) with Tailwind configured",
+            "npm run dev starts locally with no errors",
+            "npm run build completes successfully",
+            "Placeholder page replaced or extended, not left as-is"],
+        deps:"Blocks: #39–#44" },
+      { id:"#39", owner:"alan", title:"Problem display component", status:"Not started",
+        story:"As a student, I want to see the question clearly rendered, so I know what I'm solving before I start writing steps.",
+        ac:["Given a question_text prop, renders via KaTeX, not raw text",
+            "A fraction like 1/3 + 1/4 renders as a proper stacked fraction",
+            "Works with 2–3 hardcoded sample problems, no backend needed",
+            "Component is reusable — takes the question as a prop"],
+        deps:"Depends on: #1b" },
+      { id:"#40", owner:"alan", title:"Step-entry UI", status:"Not started",
+        story:"As a student, I want one clear box per step, so I can work through a problem incrementally.",
+        ac:["Given a problem is loaded, one rectangular step box is visible",
+            "Each box shows one state: unanswered / correct (✓) / incorrect (⚠), using mock data",
+            "Multiple steps render in order, numbered (Step 1, Step 2…)"],
+        deps:"Depends on: #1b · Blocks: #41, #42" },
+      { id:"#41", owner:"alan", title:"Recognition preview + Confirm/Edit", status:"Not started",
+        story:"As a student, if my handwriting is misread, I want to fix it myself, so one bad scan doesn't mark me wrong.",
+        ac:["Each step box shows \"Recognised as: [mock LaTeX]\" plus an Edit button",
+            "Edit opens a plain text input to correct the value (real handwriting comes later, #17)",
+            "Confirming locks in the mock recognized value for that step"],
+        deps:"Depends on: #40" },
+      { id:"#42", owner:"alan", title:"Add / delete step controls", status:"Not started",
+        story:"As a student, I want to add or remove steps as I work, so I'm not stuck with too few or too many boxes.",
+        ac:["\"+ Add next step\" appends a new empty step box",
+            "Each step box has a delete control (✕ / trash icon)",
+            "Adding/deleting updates the list correctly — no leftover or mis-numbered boxes"],
+        deps:"Depends on: #40" },
+      { id:"#43", owner:"alan", title:"\"Check my working\" action", status:"Not started",
+        story:"As a student, I want to submit my work and see feedback, so I know if I'm right before moving on.",
+        ac:["Button calls a mocked check function shaped like the EvaluationResult model",
+            "Renders ✓ or ⚠ per step based on the mock response",
+            "Shows hint text inline when a step is marked incorrect",
+            "Mock includes at least one correct case and one incorrect-with-hint case"],
+        deps:"Depends on: #40, #41, #42" },
+      { id:"#44", owner:"alan", title:"Clear + state management", status:"Not started",
+        story:"As a student, I want a way to start over, so one messy attempt doesn't block me from trying again cleanly.",
+        ac:["\"Clear\" button resets all steps to empty/initial state",
+            "Step data lives in React state (useState) — no localStorage",
+            "Refreshing the page resets to empty, confirming state is in-memory only"],
+        deps:"Depends on: #1b" }
+    ]
+  },
+  {
+    id: "s5", label: "Stage 5 · Integration",
+    intro: "Requires Jeff's real backend endpoints to be live — can't meaningfully start until Stages 2–3 are done.",
+    tree: null,
+    tasks: [
+      { id:"#45", owner:"alan", title:"Swap mocks for real backend endpoints", status:"Not started",
+        story:"As the frontend, I want to talk to the real backend, so the app works end-to-end, not just against fake data.",
+        ac:["All mocked calls (from #43) replaced with real fetch() calls to /recognize and /attempts/check",
+            "Response shape matches what the UI already expects, per the agreed contract",
+            "Loading states shown while waiting for real network responses"],
+        deps:"Depends on: #19, #37, #43" },
+      { id:"#46", owner:"all", title:"Test full flow with Jeff", status:"Not started",
+        story:"As the team, we want to see the whole pipeline work live, so we catch integration bugs before the pilot.",
+        ac:["Joint session: write a step, recognize it, validate it, see the hint — live, not mocked",
+            "At least 3 full attempts tested (correct, incorrect-with-hint, edge case)",
+            "Mismatches between frontend/backend assumptions logged as follow-up tickets"],
+        deps:"Depends on: #45" },
+      { id:"#46b", owner:"alan", title:"Handle network/error states in UI", status:"Not started",
+        story:"As a student, if something breaks, I want a clear message, not a frozen screen.",
+        ac:["Recognition timeout shows a retry-friendly error message",
+            "Backend 5xx error shows a generic 'something went wrong' state",
+            "UI never hangs indefinitely without feedback"],
+        deps:"Depends on: #45" }
+    ]
+  },
+  {
+    id: "s6", label: "Stage 6 · Testing, Security & Deploy",
+    intro: "Final pass before the pilot — unit/integration tests, curriculum verification, security hardening, and production deploy.",
+    tree: null,
+    tasks: [
+      { id:"#52", owner:"jeff", title:"Unit tests: parser, evaluator, misconception matcher", status:"Not started",
+        story:"As the team, we want confidence in the core logic before real students touch it.",
+        ac:["Unit tests exist for parser, evaluator, and misconception matcher",
+            "All tests passing before merge"],
+        deps:"Depends on: #22-31" },
+      { id:"#53", owner:"jeff", title:"Integration tests: full /attempts/check pipeline", status:"Not started",
+        story:"As the team, we want to know the whole pipeline works together, not just each piece alone.",
+        ac:["At least 3 end-to-end test cases (correct, incorrect-with-match, incorrect-no-match)",
+            "Tests runnable locally or in CI"],
+        deps:"Depends on: #37" },
+      { id:"#54", owner:"all", title:"Organize manual QA with real kids' handwriting via school", status:"Not started",
+        story:"As the team, we want to know the app actually works for real students, not just our own test input.",
+        ac:["At least 3 real students test the app via the bijles school connection",
+            "Handwriting samples collected and reviewed against recognition accuracy",
+            "Findings documented and fed back into #21 if needed"],
+        deps:"Depends on: #45 and school access" },
+      { id:"#55", owner:"richard", title:"Verify curriculum coverage vs SLO tussendoelen groep 7/8", status:"Not started",
+        story:"As the content owner, I want confidence the problem set actually matches official Dutch standards, not just intuition.",
+        ac:["Seeded problems cross-checked against SLO tussendoelen groep 7/8 targets",
+            "Gaps documented (topics in the standard not yet covered)"],
+        deps:"Depends on: #8" },
+      { id:"#47", owner:"all", title:"Enforce HTTPS everywhere", status:"Not started",
+        story:"As the team, we want all traffic encrypted, so student data isn't exposed in transit.",
+        ac:["No endpoint reachable over plain HTTP in production",
+            "Confirmed on both Vercel and Railway — verify, don't assume"],
+        deps:"None — quick verification" },
+      { id:"#48", owner:"alan", title:"Keep MyScript/Supabase keys server-side only", status:"Done",
+        story:"As the team, we want secrets to never reach the browser, so they can't be scraped from page source.",
+        ac:["service_role and MyScript keys exist only in backend/.env, never in frontend/.env.local",
+            "Verified: browser dev tools / page source contains no secret keys"],
+        deps:"Already implemented during setup" },
+      { id:"#49", owner:"alan", title:"Store LaTeX only, not raw ink, by default", status:"Not started",
+        story:"As the team, we want to minimize stored personal data, matching GDPR-for-minors best practice.",
+        ac:["Recognition Service (#18) discards raw stroke data after conversion to LaTeX",
+            "Optional ink storage stays off by default"],
+        deps:"Depends on: #18" },
+      { id:"#50", owner:"alan", title:"Add simple student access code", status:"Not started",
+        story:"As a student, I want a simple way to identify my session, without a full login system slowing down the pilot.",
+        ac:["A short code (not a full login) distinguishes one student's attempts from another's",
+            "No password/email/account system required for MVP",
+            "Tied into Attempt.student_id from the API contract"],
+        deps:"Depends on: #11" },
+      { id:"#51", owner:"all", title:"Tighten Supabase RLS policies", status:"Not started",
+        story:"As the team, we want real access control now that identity exists, not just permissive defaults.",
+        ac:["RLS policies updated so an access code can only read/write its own attempts",
+            "Verified: one code cannot read another's data"],
+        deps:"Depends on: #50" },
+      { id:"#57", owner:"alan", title:"Deploy frontend to Vercel (real app)", status:"In progress",
+        story:"As the team, we want the real app live, not just the placeholder.",
+        ac:["Placeholder page replaced with real frontend from Stage 4",
+            "Deployed build points at the real backend API URL, not localhost"],
+        deps:"Depends on: #45 · Placeholder already live" },
+      { id:"#58", owner:"all", title:"Smoke-test production environment", status:"Not started",
+        story:"As the team, we want one final check before real students touch it.",
+        ac:["Full flow tested against the live production URLs",
+            "No console errors, no broken network calls"],
+        deps:"Depends on: #56, #57" },
+      { id:"#59", owner:"alan", title:"Set up monitoring / error logging (Sentry)", status:"Not started",
+        story:"As the team, we want to know when something breaks in production, without waiting for a student to report it.",
+        ac:["Sentry (or equivalent) wired into both frontend and backend",
+            "A deliberately triggered test error appears in the dashboard within minutes"],
+        deps:"Depends on: real code existing in both frontend/backend" }
+    ]
+  },
+  {
+    id: "post", label: "Post-MVP (Blocked)",
+    intro: "Explicitly out of scope for the pilot — not being worked on now, kept here so nothing's forgotten.",
+    tree: null,
+    tasks: [
+      { id:"#60", owner:"richard", title:"Expand problem bank across all rekenen domains", status:"Blocked",
+        story:"As the content owner, I'll eventually cover all groep 7/8 rekenen domains, not just the MVP subset.",
+        ac:["Post-MVP — not relevant until after pilot feedback"],
+        deps:"Blocked · Post-MVP" },
+      { id:"#61", owner:"jeff", title:"Expand misconception rule library from real usage data", status:"Blocked",
+        story:"As the backend, I'll grow the rule library once we have real student data to learn from.",
+        ac:["Post-MVP — not relevant until after pilot feedback"],
+        deps:"Blocked · Post-MVP" },
+      { id:"#62", owner:"jeff", title:"Iterate hint wording based on observed confusion", status:"Blocked",
+        story:"As the backend, I'll refine hint wording once we've seen where real students get confused.",
+        ac:["Post-MVP — not relevant until after pilot feedback"],
+        deps:"Blocked · Post-MVP" }
+    ]
+  }
+];
+
+const tabsEl = document.getElementById('tabs');
+const panelsEl = document.getElementById('panels');
+
+STAGES.forEach((stage, i) => {
+  const btn = document.createElement('button');
+  btn.className = 'tab-btn' + (i===0 ? ' active' : '');
+  btn.textContent = stage.label;
+  btn.onclick = () => showStage(stage.id);
+  tabsEl.appendChild(btn);
+
+  const panel = document.createElement('div');
+  panel.className = 'stage-panel' + (i===0 ? ' active' : '');
+  panel.id = stage.id;
+
+  let html = `<p class="stage-intro">${stage.intro}</p>`;
+  if(stage.tree){ html += `<div class="tree-box">${stage.tree}</div>`; }
+  if(stage.tasks.length){
+    html += `<div class="cards">`;
+    stage.tasks.forEach(t => {
+      html += `
+        <div class="card">
+          <div class="card-top">
+            <div class="card-top-left">
+              <span class="ticket-id">${t.id}</span>
+              <span class="owner owner-${t.owner}">${t.owner.charAt(0).toUpperCase()+t.owner.slice(1)}</span>
+            </div>
+            <span class="status">${t.status}</span>
+          </div>
+          <h3>${t.title}</h3>
+          <p class="story"><b>Story —</b> ${t.story}</p>
+          <p class="ac-label">Acceptance Criteria</p>
+          <ul class="ac-list">
+            ${t.ac.map(a => `<li><input type="checkbox">${a}</li>`).join('')}
+          </ul>
+          <div class="card-footer">${t.deps}</div>
+        </div>`;
+    });
+    html += `</div>`;
+  }
+  panel.innerHTML = html;
+  panelsEl.appendChild(panel);
+});
+
+function showStage(id){
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', STAGES[i].id===id));
+  document.querySelectorAll('.stage-panel').forEach(p => p.classList.toggle('active', p.id===id));
+}
+</script>
+</body>
+</html>
