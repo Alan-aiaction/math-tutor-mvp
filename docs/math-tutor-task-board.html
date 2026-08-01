@@ -169,7 +169,19 @@ const STAGES = [
       </svg>
       <p class="tree-caption">Stage 4 (frontend, Alan) runs independently and in parallel — it doesn't wait on Stages 1–3. Stage 5 is the convergence point: it needs Stage 3's real backend <i>and</i> Stage 4's real frontend before it can start. A separate Post-MVP tab holds the Blocked, not-yet-relevant items.</p>
     `,
-    tasks: []
+    tasks: [
+      { id:"#5", owner:"alan", title:"C - Data/Content/Platform", status:"In progress",
+        story:"Establish/confirm Data/Content/Platform track ownership (Alan), so the team has a clear owner for schema, seed content coordination, and hosting/infra decisions.",
+        ac:["Track ownership confirmed with the team",
+            "Scope agreed: Supabase schema, seed content coordination, hosting/infra (Vercel, Railway)"],
+        deps:"Coordinate with: #11 · Recovered from the original planning spreadsheet (docs/math-tutor-task-tracker.xlsx) — title kept as-is from source" },
+      { id:"#11", owner:"all", title:"Agree API contract / Pydantic schema across all 3 tracks", status:"In progress",
+        story:"As the team, we need one agreed data contract, so frontend, backend, and content work can proceed independently without guessing each other's shapes.",
+        ac:["Draft reviewed as a team (docs/api_contract_draft_20260728.md)",
+            "Open questions resolved: difficulty scale, Attempt.status enum values, missing escalation-level field on EvaluationResult, Misconception.matching_rule format",
+            "Once agreed, committed as backend/models.py"],
+        deps:"Hard sync point — do before splitting off · Blocks: #6, #12, #50, #56, and effectively all backend work" }
+    ]
   },
   {
     id: "s1", label: "Stage 1 · Schema",
@@ -428,6 +440,12 @@ const STAGES = [
             "npm run build completes successfully",
             "Placeholder page replaced or extended, not left as-is"],
         deps:"Blocks: #39–#44" },
+      { id:"#17", owner:"alan", title:"Integrate MyScript iink Web SDK for ink capture", status:"Not started",
+        story:"As a student, I want to write math with a stylus/finger and have it captured as ink strokes in the browser, so recognition has something real to work with instead of mock data.",
+        ac:["MyScript iink-ts (or equivalent) web SDK wired into the step-entry UI",
+            "Ink strokes captured per step, ready to send to #19's /recognize endpoint",
+            "Referenced by #41 as the source of real (non-mock) recognized values"],
+        deps:"Depends on: MyScript keys (done) · Blocks: #41 moving from mock to real handwriting" },
       { id:"#39", owner:"alan", title:"Problem display component", status:"Not started",
         story:"As a student, I want to see the question clearly rendered, so I know what I'm solving before I start writing steps.",
         ac:["Given a question_text prop, renders via KaTeX, not raw text",
@@ -447,6 +465,10 @@ const STAGES = [
             "Edit opens a plain text input to correct the value (real handwriting comes later, #17)",
             "Confirming locks in the mock recognized value for that step"],
         deps:"Depends on: #40" },
+      { id:"#20", owner:"alan", title:"Add manual Edit fallback for recognized LaTeX", status:"Not started",
+        story:"As a student, if the recognized value is wrong, I want to fix it by hand, so one bad scan doesn't block me.",
+        ac:["Editable fallback available when recognition is wrong or missing"],
+        deps:"Possible overlap with #41's Confirm/Edit UI (already built) — worth checking with the team whether this is separate scope or already covered before starting" },
       { id:"#42", owner:"alan", title:"Add / delete step controls", status:"Not started",
         story:"As a student, I want to add or remove steps as I work, so I'm not stuck with too few or too many boxes.",
         ac:["\"+ Add next step\" appends a new empty step box",
@@ -545,6 +567,12 @@ const STAGES = [
         ac:["RLS policies updated so an access code can only read/write its own attempts",
             "Verified: one code cannot read another's data"],
         deps:"Depends on: #50" },
+      { id:"#56", owner:"all", title:"Deploy backend to Railway/Render, connect Supabase", status:"Not started",
+        story:"As the team, we want the real backend live, so the frontend has something real to call instead of mocks or localhost.",
+        ac:["Backend deployed to Railway (or Render)",
+            "Connected to the real Supabase project",
+            "Production backend URL documented (currently BACKEND_API_URL still points at localhost everywhere)"],
+        deps:"Depends on: Jeff's backend work · Blocks: #57 (frontend needs a real backend URL to point at), #58" },
       { id:"#57", owner:"alan", title:"Deploy frontend to Vercel (real app)", status:"In progress",
         story:"As the team, we want the real app live, not just the placeholder.",
         ac:["Placeholder page replaced with real frontend from Stage 4",
