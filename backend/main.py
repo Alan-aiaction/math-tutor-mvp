@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from recognition import RecognitionError, recognize_math
@@ -7,6 +8,17 @@ from recognition import RecognitionError, recognize_math
 load_dotenv()
 
 app = FastAPI(title="Math Tutor MVP Backend")
+
+app.add_middleware(
+    CORSMiddleware,
+    # Local dev, plus every Vercel deployment for this project (prod + all
+    # preview URLs). No credentials are involved (no cookies/auth headers),
+    # so a broad-but-scoped-to-Vercel origin match is reasonable here.
+    allow_origins=["http://localhost:3000"],
+    allow_origin_regex=r"https://.*\.vercel\.app",
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+)
 
 
 @app.get("/")
