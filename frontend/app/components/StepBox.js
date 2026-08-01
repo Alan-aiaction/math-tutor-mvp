@@ -1,6 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import InkCanvas from "./InkCanvas";
+
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
+const CANVAS_WIDTH = 400;
+const CANVAS_HEIGHT = 160;
 
 const STATUS_STYLES = {
   unanswered: {
@@ -29,6 +34,10 @@ export default function StepBox({ index, status = "unanswered", recognizedLatex 
   const [value, setValue] = useState(recognizedLatex);
   const [draft, setDraft] = useState(recognizedLatex);
   const [editing, setEditing] = useState(false);
+  const [drawing, setDrawing] = useState(false);
+  const [strokeGroups, setStrokeGroups] = useState([]);
+  const [recognizing, setRecognizing] = useState(false);
+  const [recognizeError, setRecognizeError] = useState(null);
 
   const startEdit = () => {
     setDraft(value);
@@ -38,6 +47,36 @@ export default function StepBox({ index, status = "unanswered", recognizedLatex 
   const confirmEdit = () => {
     setValue(draft);
     setEditing(false);
+  };
+
+  const startDrawing = () => {
+    setStrokeGroups([]);
+    setRecognizeError(null);
+    setDrawing(true);
+  };
+
+  const recognizeDrawing = async () => {
+    if (strokeGroups.length === 0) return;
+    setRecognizing(true);
+    setRecognizeError(null);
+    try {
+      const res = await fetch(`${BACKEND_URL}/recognize`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ strokeGroups, width: CANVAS_WIDTH, height: CANVAS_HEIGHT }),
+      });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.detail || `Recognition failed (${res.status})`);
+      }
+      const data = await res.json();
+      setValue(data.latex);
+      setDrawing(false);
+    } catch (err) {
+      setRecognizeError(err.message || "Recognition failed");
+    } finally {
+      setRecognizing(false);
+    }
   };
 
   return (
@@ -63,7 +102,29 @@ export default function StepBox({ index, status = "unanswered", recognizedLatex 
       </div>
 
       <div className="mt-3 border-t border-gray-100 pt-3 text-left">
-        {editing ? (
+        {drawing ? (
+          <div className="flex flex-col gap-2">
+            <InkCanvas width={CANVAS_WIDTH} height={CANVAS_HEIGHT} onStrokesChange={setStrokeGroups} />
+            {recognizeError && <p className="text-xs text-red-600">{recognizeError}</p>}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={recognizeDrawing}
+                disabled={strokeGroups.length === 0 || recognizing}
+                className="rounded bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-40"
+              >
+                {recognizing ? "Recognising…" : "Recognise"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setDrawing(false)}
+                className="text-xs font-medium text-gray-500 hover:underline"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : editing ? (
           <div className="flex items-center gap-2">
             <input
               type="text"
@@ -85,13 +146,22 @@ export default function StepBox({ index, status = "unanswered", recognizedLatex 
             <span className="text-sm text-gray-600">
               Recognised as: <span className="font-mono">{value || "—"}</span>
             </span>
-            <button
-              type="button"
-              onClick={startEdit}
-              className="text-xs font-medium text-blue-600 hover:underline"
-            >
-              Edit
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={startDrawing}
+                className="text-xs font-medium text-blue-600 hover:underline"
+              >
+                Draw
+              </button>
+              <button
+                type="button"
+                onClick={startEdit}
+                className="text-xs font-medium text-blue-600 hover:underline"
+              >
+                Edit
+              </button>
+            </div>
           </div>
         )}
       </div>
