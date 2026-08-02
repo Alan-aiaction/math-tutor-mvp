@@ -1,16 +1,17 @@
-# API Contract — Draft (Task #11)
-> Status: DRAFT — for discussion, not yet agreed. Bring to team call before treating any of this as final.
+# API Contract (Task #11)
+> Status: AGREED — approved by the team 2026-08-02, as written below. The open questions
+> listed under each model are non-blocking follow-ups, not blockers — schema (#6) and
+> `backend/models.py` (#12) work can proceed against the shapes below as they stand.
 > Covers the "Domain Models / Schemas (Pydantic)" box in the architecture diagram.
 
 ## Purpose
 
-Before frontend, backend, and content work proceed independently, all three of us need to
-agree on the exact shape of the data passed between frontend ↔ backend ↔ database. This doc
-is a starting proposal — not a decision — to make that conversation concrete instead of
-starting from a blank page.
+This is the agreed shape of the data passed between frontend ↔ backend ↔ database, so
+frontend, backend, and content work can proceed independently without guessing at each
+other's assumptions.
 
-Once agreed, this becomes `backend/models.py` (Pydantic classes) and directly maps to the
-Supabase schema (task #6).
+This becomes `backend/models.py` (Pydantic classes) and directly maps to the Supabase
+schema (task #6).
 
 ---
 
@@ -123,7 +124,7 @@ class Hint(BaseModel):
 
 ## Next steps
 
-1. Review as a team — adjust field names/types together, don't treat this as final
-2. Resolve the open questions listed under each model
-3. Once agreed, commit as `backend/models.py`
+1. ~~Review as a team — adjust field names/types together, don't treat this as final~~ Done, approved 2026-08-02
+2. Resolve the open questions listed under each model — non-blocking, revisit as they come up
+3. Commit as `backend/models.py` (task #12)
 4. Cross-check against the Supabase schema (task #6) so table columns match these fields exactly

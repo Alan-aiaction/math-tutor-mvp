@@ -175,12 +175,12 @@ const STAGES = [
         ac:["Track ownership confirmed with the team",
             "Scope agreed: Supabase schema, seed content coordination, hosting/infra (Vercel, Railway)"],
         deps:"Coordinate with: #11 · Recovered from the original planning spreadsheet (docs/math-tutor-task-tracker.xlsx) — title kept as-is from source" },
-      { id:"#11", owner:"all", title:"Agree API contract / Pydantic schema across all 3 tracks", status:"In progress",
+      { id:"#11", owner:"all", title:"Agree API contract / Pydantic schema across all 3 tracks", status:"Done",
         story:"As the team, we need one agreed data contract, so frontend, backend, and content work can proceed independently without guessing each other's shapes.",
-        ac:["Draft reviewed as a team (docs/api_contract_draft_20260728.md)",
-            "Open questions resolved: difficulty scale, Attempt.status enum values, missing escalation-level field on EvaluationResult, Misconception.matching_rule format",
-            "Once agreed, committed as backend/models.py"],
-        deps:"Hard sync point — do before splitting off · Blocks: #6, #12, #50, #56, and effectively all backend work" }
+        ac:["Draft reviewed as a team (docs/api_contract_draft_20260728.md) - approved 2026-08-02",
+            "Open questions (difficulty scale, Attempt.status enum values, missing escalation-level field on EvaluationResult, Misconception.matching_rule format) - approved as non-blocking follow-ups, not resolved yet but not gating #6/#12",
+            "Committed as backend/models.py - not yet, that's #12's job now that this is agreed"],
+        deps:"Hard sync point, cleared · Unblocks: #6, #12, #50, #56" }
     ]
   },
   {
