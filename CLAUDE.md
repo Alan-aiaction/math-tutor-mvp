@@ -58,6 +58,21 @@ A task is not complete until:
 - **The repo is public** — treat that as the real enforced boundary, not `.gitignore`
   alone. Nothing committed here can ever be assumed private, even briefly.
 
+## Local dev environment
+
+- Prerequisites: Python 3.11+, Node.js 18.17+.
+- `.env` values (Supabase, MyScript) come from Alan via a safe channel (password manager
+  or similar) — never generate, guess, or fabricate these. If they're missing, ask the
+  user rather than inventing placeholder-looking real values.
+- `frontend/.env.local`'s `NEXT_PUBLIC_BACKEND_API_URL` is a real decision, not a fixed
+  default: `http://localhost:8000` if the backend is also running locally, or
+  `https://math-tutor-mvp-production.up.railway.app` (live) if not. Don't silently assume
+  one — ask which the user wants if it's not already set.
+- `run-dev.ps1` (repo root, Windows) starts both dev servers in separate windows with one
+  command — use it instead of writing new start scripts.
+- Full manual setup steps are in `README.md` — read that before improvising an install
+  process.
+
 ## Project structure
 
 ```
