@@ -8,7 +8,7 @@ diagnosing misconceptions and guiding with hints rather than giving direct answe
 (hosting, database, recognition API) unless a decision explicitly says otherwise.
 
 See `/docs` for the full product spec, architecture diagram, and sprint task board
-(`docs/math-tutor-task-board.html`).
+(`docs/tracking/math-tutor-task-board.html`).
 
 ## Repo structure
 

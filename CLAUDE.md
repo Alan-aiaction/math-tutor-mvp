@@ -41,7 +41,7 @@ A task is not complete until:
 
 ## AI model tracking
 
-`docs/ai-model-log.md` tracks who was working, with which AI tool/model, and when — not
+`docs/tracking/ai-model-log.md` tracks who was working, with which AI tool/model, and when — not
 Claude-only, since Jeff or Richard may use a different tool (or none). This section only
 governs Claude Code sessions; it can't make other tools do the same, since they don't read
 this file.
@@ -129,9 +129,12 @@ this file.
 ## Project structure
 
 ```
-/frontend   Next.js client
-/backend    FastAPI backend
-/docs       Specs, architecture, API contract — finalized/agreed content only
+/frontend           Next.js client
+/backend            FastAPI backend
+/docs               Finalized/agreed content only
+  /architecture     Architecture diagrams, system design docs, API contract
+  /tracking         Task board, task tracker, AI model log
+  /content          Seed/curriculum content sourced for the problem bank
 ```
 
 Working drafts, curriculum content, and meeting notes live in the team's shared Google
@@ -144,5 +147,5 @@ Drive, not this repo. Only commit content here once it's finalized.
 - Endpoints, content, curriculum: Richard
 - Data/Content/Platform lead: Alan
 
-See `docs/api_contract_draft_20260728.md` for the agreed data models before touching
+See `docs/architecture/api_contract_draft_20260728.md` for the agreed data models before touching
 `backend/models.py`.
