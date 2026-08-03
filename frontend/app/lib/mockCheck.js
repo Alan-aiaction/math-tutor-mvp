@@ -1,5 +1,5 @@
 // Mocked stand-in for POST /attempts/check (task #45 swaps this for the real call).
-// Shaped like the EvaluationResult model from docs/api_contract_draft_20260728.md.
+// Shaped like the EvaluationResult model from docs/architecture/api_contract_draft_20260728.md.
 const MOCK_RESULTS_CYCLE = [
   { valid: true, misconception_id: null, hint_text: null },
   {
