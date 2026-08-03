@@ -3,6 +3,7 @@
 import { useState } from "react";
 import StepList from "./components/StepList";
 import ProblemDisplay from "./components/ProblemDisplay";
+import StudentCode from "./components/StudentCode";
 import { mockCheckWork } from "./lib/mockCheck";
 
 const INITIAL_STEPS = [
@@ -20,6 +21,8 @@ const SAMPLE_PROBLEMS = [
 export default function Home() {
   const [steps, setSteps] = useState(INITIAL_STEPS);
   const [results, setResults] = useState(null);
+  // Not yet sent anywhere - #45/#15 will pick this up to populate Attempt.student_id.
+  const [studentCode, setStudentCode] = useState("");
 
   const addStep = () => {
     setSteps((prev) => [...prev, { status: "unanswered", recognizedLatex: "" }]);
@@ -46,6 +49,8 @@ export default function Home() {
         <h1 className="text-3xl font-semibold">Math Tutor MVP</h1>
         <p className="text-gray-600">Placeholder deployment — real UI coming in Phase 9.</p>
       </div>
+
+      <StudentCode onChange={setStudentCode} />
 
       <div className="flex w-full max-w-md flex-col gap-3">
         <h2 className="text-left text-sm font-medium uppercase tracking-wide text-gray-500">

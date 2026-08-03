@@ -53,7 +53,7 @@ Entries are chronological (oldest first), matching `ai-model-log.md`'s conventio
 ## [Confirmed] misconception_rules.escalation_hint_id left as an unenforced reference
 
 - **Date decided:** 2026-08-03
-- **Status:** Confirmed — part of the #6 schema plan, not yet implemented
+- **Status:** Confirmed — implemented in `docs/architecture/database_schema.sql`
 - **Affects:** #6 (schema), #9 (seed data), #30 (rule-matching engine)
 - **Options considered:**
   - Enforce foreign keys in both directions between `misconception_rules` and `hints`
@@ -71,7 +71,8 @@ Entries are chronological (oldest first), matching `ai-model-log.md`'s conventio
 ## [Confirmed] Add Problem.solving_tip as a plain field, not a Hint
 
 - **Date decided:** 2026-08-03
-- **Status:** Confirmed — part of the #6 schema plan, not yet implemented
+- **Status:** Confirmed — implemented in `docs/architecture/database_schema.sql` and
+  `docs/architecture/api_contract_draft_20260728.md`
 - **Affects:** #6 (schema), #12 (models), `docs/architecture/api_contract_draft_20260728.md`,
   #8 (seed content)
 - **Options considered:**
@@ -107,7 +108,8 @@ Entries are chronological (oldest first), matching `ai-model-log.md`'s conventio
   a `text` + `CHECK`/enum, and it doesn't foreclose finer-grained sequencing later (e.g.
   1-5 → 1-10) without a breaking rename the way adding a 4th/5th label bucket would. Also
   zero rewrite from the current contract draft, which already has `difficulty: int`.
-- **Team feedback:** _pending_
+- **Team feedback:** _pending_ — #6's schema (`database_schema.sql`) and the contract doc
+  proceed on this basis in the meantime, per project lead's explicit go-ahead 2026-08-03.
 
 ---
 
@@ -133,4 +135,5 @@ Entries are chronological (oldest first), matching `ai-model-log.md`'s conventio
   while seeding (#9) instead of it silently breaking later in Jeff's matching engine (#30).
   Not chosen for querying/indexing power — at #9's seed scale (5-10 rules) nothing queries
   into the JSON structure from SQL, so that upside doesn't apply yet.
-- **Team feedback:** _pending_
+- **Team feedback:** _pending_ — #6's schema (`database_schema.sql`) and the contract doc
+  proceed on this basis in the meantime, per project lead's explicit go-ahead 2026-08-03.
