@@ -55,6 +55,9 @@ class RecognizeResponse(BaseModel):
 
 @app.post("/recognize", response_model=RecognizeResponse)
 def recognize(payload: RecognizeRequest):
+    # Privacy invariant (task #49): raw strokeGroups are never persisted or logged past
+    # this request - only the returned LaTeX matters. Keep it that way when #13/#15 land:
+    # attempt_steps should store recognized_latex only, never stroke coordinates.
     stroke_groups = [g.model_dump(exclude_none=True) for g in payload.strokeGroups]
     try:
         latex = recognize_math(stroke_groups, width=payload.width, height=payload.height)
