@@ -91,6 +91,18 @@ this file.
 - Full manual setup steps are in `README.md` — read that before improvising an install
   process.
 
+## Working style — decisions and multi-issue fixes
+
+- **Tradeoffs get prose, not forced-choice prompts.** When a decision is a genuine
+  tradeoff (design, cost, product/UX — "should we do A or B and why") rather than a quick
+  mechanical pick (which library, which file), lay it out as plain text with a clear
+  recommendation and reasoning, and let the conversation continue naturally. Reserve
+  structured multiple-choice prompts for narrow, mechanical choices where a quick forced
+  pick is genuinely what's needed.
+- **Fix one problem at a time.** If an audit or investigation turns up more than one
+  issue, don't bundle fixes for all of them into a single change. Check which problem,
+  and which solution approach, the user wants to tackle before starting each one.
+
 ## Project structure
 
 ```
