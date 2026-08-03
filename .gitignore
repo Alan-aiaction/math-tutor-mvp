@@ -35,3 +35,6 @@ Thumbs.db
 
 # --- Local Claude Code plans (not shared with team) ---
 .claude/plans/
+
+# --- Local Claude Code MCP server config (not shared with team) ---
+.mcp.json
