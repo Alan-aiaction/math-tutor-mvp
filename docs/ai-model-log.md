@@ -13,3 +13,4 @@ what happened — your tool won't know this file exists otherwise.
 | Date | User | Tool | Model | Model ID | Notes |
 |---|---|---|---|---|---|
 | 2026-08-02 | Alan | Claude Code | Claude Sonnet 5 | `claude-sonnet-5` | Session covering: #17 ink capture, #18/#19 recognition wrapper + endpoint, #22-24 parser chain, Railway deploy verification (#56), API contract approval (#11), team onboarding docs (README, run-dev.ps1, CLAUDE.md local-dev section) |
+| 2026-08-02 | Alan | Claude Code | Claude Sonnet 5 | `claude-sonnet-5` | Session covering: audited task-board.html + task-tracker.xlsx against merged GitHub PRs and actual code, corrected #17/#18/#19 from "Not started" to "Done" (AC-verified), added docs/Architecture.md noting the diagram's stale "+ confidence" text |
