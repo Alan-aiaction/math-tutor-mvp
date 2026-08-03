@@ -23,14 +23,28 @@ A single math question presented to the student.
 class Problem(BaseModel):
     id: int
     topic: str              # e.g. "fractions", "percentages"
-    difficulty: int         # 1-5, TBD scale — confirm with team
+    difficulty: int         # 1-5 — proposed 2026-08-03, pending team confirmation
     question_text: str
     correct_answer: str
+    solving_tip: str | None  # added 2026-08-03 — per-problem worked-strategy hint, shown
+                             # regardless of the student's answer. Distinct from Hint (which
+                             # is reactive, keyed to a misconception). Source: groep8 CSV's
+                             # "Tip to Solve" column. See docs/tracking/decision-log.md.
 ```
 
 **Open questions:**
-- Is `difficulty` a number (1-5) or a label ("easy"/"medium"/"hard")?
+- ~~Is `difficulty` a number (1-5) or a label ("easy"/"medium"/"hard")?~~ Proposed
+  2026-08-03: numeric 1-5, plain `integer` column — see
+  `docs/tracking/decision-log.md`. Sent to the team, pending confirmation; schema (#6)
+  proceeds on this basis in the meantime.
 - Does `correct_answer` need to support multiple equivalent forms (e.g. 1/2 = 0.5 = 50%)?
+  Already effectively handled at the parser level by #23's canonical-form normalizer, not a
+  contract/schema concern.
+- Future idea, not a ticket: once the seed problem bank grows past the pilot's ~20-30
+  problems, an AI-assisted authoring tool could draft `solving_tip` values using the groep8
+  CSV's 64 rows as few-shot examples, with human (Richard) review before anything is seeded
+  — same "approved content" pattern already used for hints/rules. Not needed yet at pilot
+  scale.
 
 ---
 
@@ -95,12 +109,19 @@ class Misconception(BaseModel):
     id: str
     topic: str
     description: str
-    matching_rule: str       # pattern used by the rule-matching engine
-    escalation_hint_id: str | None
+    matching_rule: dict      # structured comparison, stored as jsonb — exact sub-schema
+                             # (which operation-types/keys exist) is task #29's job
+    escalation_hint_id: str | None  # not an enforced FK in storage — see decision log
 ```
 
 **Open questions:**
-- What does `matching_rule` actually look like technically (regex? structured comparison? something else)? This affects how Jeff builds the rule-matching engine (task #30).
+- ~~What does `matching_rule` actually look like technically (regex? structured comparison?
+  something else)?~~ Proposed 2026-08-03: structured comparison against the parsed SymPy
+  expression tree (not a string/regex), stored as `jsonb` for write-time validation — see
+  `docs/tracking/decision-log.md`. Sent to the team, pending confirmation. The *exact*
+  operation-type vocabulary inside that JSON structure is still #29's job to define with
+  Richard before #9 seeds real rules — this only resolves the outer format (structured vs.
+  regex), not the inner schema.
 
 ---
 

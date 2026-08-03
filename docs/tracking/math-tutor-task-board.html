@@ -214,12 +214,12 @@ const STAGES = [
       <p class="tree-caption">#6 unblocks #7 (all), #8 (Richard), and #9 (Jeff) in parallel — all three just need the schema agreed, not each other. #10 only needs #7's migrations to exist.</p>
     `,
     tasks: [
-      { id:"#6", owner:"all", title:"Design Supabase schema", status:"Not started",
+      { id:"#6", owner:"all", title:"Design Supabase schema", status:"Done",
         story:"As the team, we need agreed table shapes, so seeding and queries don't have to be redone later.",
         ac:["Tables defined: problems, attempts, attempt_steps, misconception_rules, hints",
             "Foreign keys in place: attempts → problems, attempt_steps → attempts",
             "Column names/types match the agreed Pydantic models from task #11"],
-        deps:"Depends on: #11 · Blocks: #7, #8, #9" },
+        deps:"Depends on: #11 · Blocks: #7, #8, #9 · Design in docs/architecture/database_schema.sql. misconception_rules.escalation_hint_id is deliberately not an enforced FK (avoids an insert-order cycle with hints - see decision log). Added problems.solving_tip (new field, from groep8 CSV). difficulty (numeric 1-5) and matching_rule (structured comparison, jsonb) are proposed 2026-08-03 and sent to the team - see docs/tracking/decision-log.md - schema proceeds on that basis pending confirmation. attempts.status stays a plain text column with no fixed value list yet, per the contract's own open question." },
       { id:"#7", owner:"all", title:"Write SQL migrations", status:"Not started",
         story:"As the team, we need the schema turned into real tables, so the app has somewhere to read/write data.",
         ac:["SQL migration files created for all 5 tables",
@@ -658,7 +658,7 @@ const STAGES = [
         story:"As the team, we want to minimize stored personal data, matching GDPR-for-minors best practice.",
         ac:["Recognition Service (#18) discards raw stroke data after conversion to LaTeX",
             "Optional ink storage stays off by default"],
-        deps:"Depends on: #18" },
+        deps:"Depends on: #18 · AC #1 incidentally true today - no storage layer exists at all yet (#13 not started), so nothing durable exists for ink to leak into. Documented as an explicit invariant via a code comment in backend/main.py's /recognize handler, so it isn't lost once #13/#15 land. AC #2 genuinely can't be satisfied yet - there's no ink-storage feature to have a default state for. Re-check this ticket for real completion once #13 (DB layer) and #15 (POST /attempts) are built." },
       { id:"#50", owner:"alan", title:"Add simple student access code", status:"In progress",
         story:"As a student, I want a simple way to identify my session, without a full login system slowing down the pilot.",
         ac:["A short code (not a full login) distinguishes one student's attempts from another's",
