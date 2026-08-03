@@ -115,6 +115,12 @@ this file.
   in the repo (already gitignored — local to this machine, not shared with the team) using
   a name tied to the ticket/task, not the tool's randomly-generated one, before starting
   implementation.
+- **Re-check live state before reporting it — don't recite it from memory.** PR/merge
+  status, branch state, and similar facts change during a session and can go stale between
+  one message and the next. Before telling the user something is open, merged, blocked, or
+  still needs doing, re-run the check (`gh pr list`, `git log`, etc.) instead of repeating
+  an earlier snapshot from the conversation. Got this wrong once this session — reported a
+  PR as still open several turns after it had actually merged.
 
 ## Project structure
 
