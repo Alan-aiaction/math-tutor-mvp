@@ -22,6 +22,12 @@ Follow these rules for every change, without needing to be asked each time.
   *before* merging it — don't merge it into its original (now-merged) base branch. After any
   stacked-PR chain merges, diff the final branch against `main` to confirm the code actually
   landed, not just that GitHub says "Merged."
+- **Return to a clean state after a PR is opened (or its work is otherwise done) —
+  don't just stay on that branch.** Check out `main` and pull latest before starting the
+  next unrelated task. Otherwise unrelated work quietly piles up on a branch that's already
+  tied to an open PR (or one that's since merged), and it becomes unclear which PR a given
+  change actually belongs to. If you're not sure a branch's PR has merged yet, check before
+  assuming it's safe to keep building on it.
 
 ## Definition of Done (applies to every task)
 
