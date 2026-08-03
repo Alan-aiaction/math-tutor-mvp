@@ -108,6 +108,13 @@ this file.
 - **Fix one problem at a time.** If an audit or investigation turns up more than one
   issue, don't bundle fixes for all of them into a single change. Check which problem,
   and which solution approach, the user wants to tackle before starting each one.
+- **Copy approved plans into the project before implementing.** Claude Code's plan mode
+  writes to one auto-managed file outside the repo, and that same file gets overwritten the
+  next time an unrelated plan is started — so anything meant to survive across sessions
+  needs a copy. Once a plan is approved, save it to `.claude/plans/<descriptive-name>.md`
+  in the repo (already gitignored — local to this machine, not shared with the team) using
+  a name tied to the ticket/task, not the tool's randomly-generated one, before starting
+  implementation.
 
 ## Project structure
 
