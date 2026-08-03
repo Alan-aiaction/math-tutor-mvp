@@ -32,3 +32,6 @@ frontend/myscript-demo/
 Thumbs.db
 .vscode/
 .idea/
+
+# --- Local Claude Code plans (not shared with team) ---
+.claude/plans/
