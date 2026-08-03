@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Math Tutor MVP — System Design</title>
+<style>
+  :root{
+    --ink:#1c2b27; --paper:#eef1ee; --card:#ffffff; --line:#d7ddd8;
+    --accent:#1f4d43; --accent-soft:#e4efec;
+    --amber:#b8792f; --amber-soft:#f6ead9;
+    --muted:#5c6d67;
+    --font-display: ui-serif, "Iowan Old Style", "Palatino Linotype", Georgia, "Times New Roman", serif;
+    --font-body: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --ink:#e9efec; --paper:#141b18; --card:#1b241f; --line:#324039;
+      --accent:#6fc3ac; --accent-soft:#20342c;
+      --amber:#e0ab6a; --amber-soft:#3a2e1c;
+      --muted:#93a39b;
+    }
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper); color:var(--ink); font-family:var(--font-body);
+    -webkit-font-smoothing:antialiased; line-height:1.5;
+  }
+  ::selection{ background:var(--accent-soft); }
+  a{ color:var(--accent); }
+  :focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  @media (prefers-reduced-motion: reduce){ *{ scroll-behavior:auto !important; animation:none !important; transition:none !important; } }
+
+  .topbar{
+    position:sticky; top:0; z-index:10;
+    background:var(--paper);
+    border-bottom:1px solid var(--line);
+  }
+  .topbar-inner{
+    max-width:920px; margin:0 auto; padding:14px 28px;
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  }
+  .brand{ font-family:var(--font-mono); font-size:12.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .toc{ display:flex; gap:16px; font-family:var(--font-mono); font-size:12px; letter-spacing:.02em; flex-wrap:wrap; }
+  .toc a{ text-decoration:none; color:var(--muted); }
+  .toc a:hover{ color:var(--accent); }
+
+  .wrap{ max-width:920px; margin:0 auto; padding:8px 28px 90px; }
+
+  header.hero{ padding:40px 0 8px; }
+  .eyebrow{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--accent); margin:0 0 12px;
+  }
+  h1{
+    font-family:var(--font-display); font-weight:600; font-size:clamp(28px,4vw,38px);
+    line-height:1.12; margin:0 0 14px; text-wrap:balance; letter-spacing:-0.01em;
+  }
+  .lede{ color:var(--muted); font-size:15.5px; max-width:66ch; margin:0 0 6px; }
+  .scope-note{
+    margin:22px 0 6px; padding:14px 18px; border-left:2px solid var(--amber);
+    background:var(--amber-soft); border-radius:0 8px 8px 0; font-size:13.5px; color:var(--ink);
+  }
+  .scope-note b{ font-weight:600; }
+
+  section.figure{ margin:56px 0; scroll-margin-top:78px; }
+  .fig-label{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--muted); margin:0 0 6px;
+  }
+  h2{
+    font-family:var(--font-display); font-weight:600; font-size:22px; margin:0 0 10px;
+    text-wrap:balance;
+  }
+  .fig-intro{ color:var(--muted); font-size:14.5px; max-width:68ch; margin:0 0 18px; }
+
+  .sheet{
+    background:#11221d; border:1px solid var(--line); border-radius:10px;
+    padding:20px; overflow-x:auto;
+  }
+  .sheet .mermaid{ margin:0; display:flex; justify-content:center; min-width:min-content; }
+
+  .caption{
+    margin-top:12px; font-size:13px; color:var(--muted); display:flex; gap:8px; align-items:flex-start;
+  }
+  .caption .dot{ width:7px; height:7px; border-radius:50%; background:var(--accent); margin-top:6px; flex:0 0 auto; }
+  .caption.open .dot{ background:var(--amber); }
+  .caption code{ font-family:var(--font-mono); background:var(--accent-soft); padding:1px 5px; border-radius:4px; font-size:.92em; }
+
+  .legend{ display:flex; gap:18px; flex-wrap:wrap; font-size:12.5px; color:var(--muted); margin-top:14px; }
+  .legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .swatch{ width:14px; height:14px; border-radius:3px; display:inline-block; }
+
+  .iftable{ width:100%; border-collapse:collapse; margin-top:22px; font-size:13px; }
+  .iftable caption{ text-align:left; font-family:var(--font-mono); font-size:12px; text-transform:uppercase;
+    letter-spacing:.08em; color:var(--muted); margin-bottom:10px; }
+  .iftable th{ text-align:left; font-family:var(--font-mono); font-size:11.5px; letter-spacing:.04em;
+    text-transform:uppercase; color:var(--muted); font-weight:500; padding:8px 14px 8px 0; border-bottom:1px solid var(--line); }
+  .iftable td{ padding:10px 14px 10px 0; border-bottom:1px solid var(--line); vertical-align:top; }
+  .iftable code{ font-family:var(--font-mono); font-size:12.5px; }
+  .status-pill{
+    display:inline-block; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.04em;
+    text-transform:uppercase; padding:2px 8px; border-radius:20px;
+  }
+  .status-pill.live{ background:var(--accent-soft); color:var(--accent); }
+  .status-pill.planned{ background:var(--amber-soft); color:var(--amber); }
+
+  .gaptable{ width:100%; border-collapse:collapse; font-size:13px; }
+  .gaptable th{ text-align:left; font-family:var(--font-mono); font-size:11px; letter-spacing:.04em;
+    text-transform:uppercase; color:var(--muted); font-weight:500; padding:0 14px 10px 0; border-bottom:1px solid var(--line); }
+  .gaptable td{ padding:14px 14px 14px 0; border-bottom:1px solid var(--line); vertical-align:top; }
+  .gaptable tr:last-child td{ border-bottom:none; }
+  .gaptable .gap-title{ font-weight:600; margin:0 0 4px; }
+  .gaptable .gap-detail{ color:var(--muted); font-size:12.5px; }
+  .gaptable code{ font-family:var(--font-mono); font-size:12px; background:var(--accent-soft); padding:1px 5px; border-radius:4px; }
+  .urgency{
+    display:inline-block; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.04em;
+    text-transform:uppercase; padding:2px 8px; border-radius:20px; white-space:nowrap;
+  }
+  .urgency.soon{ background:var(--amber-soft); color:var(--amber); }
+  .urgency.later{ background:var(--accent-soft); color:var(--accent); }
+
+  footer.note{
+    margin-top:64px; padding-top:20px; border-top:1px dashed var(--line);
+    font-size:12.5px; color:var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <span class="brand">Math Tutor MVP · System Design</span>
+    <nav class="toc">
+      <a href="#flow">Data Flow</a>
+      <a href="#interfaces">Interfaces</a>
+      <a href="#schema">Schema</a>
+      <a href="#logic">Decision Logic</a>
+      <a href="#lifecycle">Lifecycle</a>
+      <a href="#gaps">Open Gaps</a>
+    </nav>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="hero">
+    <p class="eyebrow">Architecture Review</p>
+    <h1>How the pieces actually fit together</h1>
+    <p class="lede">
+      Five views of the system, at the level a project architect reads it at — not who owns
+      which ticket, but how a step moves through the pipeline, what shape the data takes
+      crossing each boundary, where it's stored, what decisions get made along the way, and
+      what states things can be in. Companion to <code>Architecture.jpeg</code>, which covers
+      the component-level view; these five are new.
+    </p>
+  </header>
+
+  <div class="scope-note">
+    <b>Reading these diagrams:</b> teal marks what's already running in the codebase today.
+    Amber marks design that's agreed but not yet built, or a genuinely open question — not a
+    mistake, a deliberate flag.
+  </div>
+
+  <section class="figure" id="flow">
+    <p class="fig-label">Fig. 1</p>
+    <h2>Data flow — one step, start to finish</h2>
+    <p class="fig-intro">
+      What happens between a student drawing a stroke and seeing a checkmark or a hint. The
+      first exchange (ink to recognized LaTeX) is live in <code>backend/recognition.py</code>
+      and <code>backend/main.py</code> today. The shaded block is designed but not yet built —
+      its internal parse/evaluate/match/hint steps are deliberately collapsed to one line
+      here since Fig. 4 already shows that logic in full; this diagram's job is the
+      student-facing flow, not a repeat of Fig. 4.
+    </p>
+    <div class="sheet">
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    actor S as Student
+    participant FE as Frontend
+    participant BE as Backend API
+    participant MS as MyScript Cloud
+
+    S->>FE: draw ink strokes for a step
+    FE->>BE: POST recognize
+    BE->>MS: signed batch recognition request
+    MS-->>BE: recognized LaTeX
+    BE-->>FE: latex response
+    FE->>S: shows recognized value, Confirm or Edit
+    S->>FE: confirms or edits the value
+
+    rect rgb(58, 46, 28)
+        Note over FE,BE: designed, not yet built - internal logic is Fig 4
+        S->>FE: clicks Check my working
+        FE->>BE: POST attempts check
+        BE->>BE: parse, evaluate, match misconception, pick hint
+        BE-->>FE: evaluation result per step
+        FE->>S: shows checkmark or hint
+        BE->>BE: persist attempt and steps
+    end
+</pre>
+    </div>
+    <div class="legend">
+      <span><i class="swatch" style="background:var(--accent)"></i> Live in code today</span>
+      <span><i class="swatch" style="background:var(--amber)"></i> Designed, not yet built</span>
+    </div>
+  </section>
+
+  <section class="figure" id="interfaces">
+    <p class="fig-label">Fig. 2</p>
+    <h2>Interfaces — the shape of data crossing each boundary</h2>
+    <p class="fig-intro">
+      Fig. 1 shows who calls whom; this shows what they actually pass — the six models
+      already agreed in <code>docs/api_contract_draft_20260728.md</code>. Worth reading
+      alongside Fig. 3 (Schema): this is the <em>wire</em> shape, and it genuinely differs
+      from the <em>storage</em> shape in two places, noted below the diagram.
+    </p>
+    <div class="sheet">
+<pre class="mermaid">
+classDiagram
+    class Problem {
+        int id
+        string topic
+        int difficulty
+        string question_text
+        string correct_answer
+        string solving_tip
+    }
+    class Attempt {
+        int id
+        int problem_id
+        string student_id
+        string status
+        Step_list steps
+    }
+    class Step {
+        int id
+        int attempt_id
+        string recognized_latex
+        bool is_correct
+    }
+    class EvaluationResult {
+        bool valid
+        string misconception_id
+        string hint_text
+    }
+    class Misconception {
+        string id
+        string topic
+        string description
+        string matching_rule
+        string escalation_hint_id
+    }
+    class Hint {
+        string id
+        string misconception_id
+        string text
+        int level
+    }
+
+    Attempt --> Step : nests steps directly on the wire
+    Problem --> Attempt : problem_id
+    Misconception --> Hint : misconception_id
+    EvaluationResult ..> Misconception : misconception_id, not persisted
+</pre>
+    </div>
+    <div class="caption open">
+      <span class="dot"></span>
+      <span><code>Attempt.steps</code> is a nested list here, but becomes a separate
+      <code>attempt_steps</code> table with a foreign key in storage (Fig. 3) — the API
+      hands back a tree, Postgres stores rows.</span>
+    </div>
+    <div class="caption open">
+      <span class="dot"></span>
+      <span><code>EvaluationResult</code> isn't a table at all — it's the transient response
+      from <code>POST /attempts/check</code>, never written to the database.</span>
+    </div>
+
+    <table class="iftable">
+      <caption>Endpoint to model reference</caption>
+      <thead>
+        <tr><th>Endpoint</th><th>Request</th><th>Response</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>POST /recognize</code></td>
+          <td>stroke groups, width, height</td>
+          <td><code>{ latex }</code></td>
+          <td><span class="status-pill live">Live</span></td>
+        </tr>
+        <tr>
+          <td><code>GET /problems/{id}</code></td>
+          <td>—</td>
+          <td><code>Problem</code></td>
+          <td><span class="status-pill planned">Planned (#14)</span></td>
+        </tr>
+        <tr>
+          <td><code>POST /attempts</code></td>
+          <td><code>Attempt</code></td>
+          <td><code>Attempt</code> with generated id</td>
+          <td><span class="status-pill planned">Planned (#15)</span></td>
+        </tr>
+        <tr>
+          <td><code>POST /attempts/check</code></td>
+          <td><code>Step[]</code></td>
+          <td><code>EvaluationResult[]</code></td>
+          <td><span class="status-pill planned">Planned (#37)</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="figure" id="schema">
+    <p class="fig-label">Fig. 3</p>
+    <h2>Database schema — five tables, two real chains</h2>
+    <p class="fig-intro">
+      Direct mapping from the agreed API contract to Postgres tables. Two integer-keyed
+      tables (app-generated data) and two string-keyed tables (content authored by
+      Richard/Jeff) — the id type follows who creates the row.
+    </p>
+    <div class="sheet">
+<pre class="mermaid">
+erDiagram
+    PROBLEMS ||--o{ ATTEMPTS : "attempted in"
+    ATTEMPTS ||--o{ ATTEMPT_STEPS : "contains"
+    MISCONCEPTION_RULES ||--o{ HINTS : "explained by"
+
+    PROBLEMS {
+        bigint id PK
+        text topic
+        integer difficulty
+        text question_text
+        text correct_answer
+        text solving_tip "nullable, new field"
+    }
+    ATTEMPTS {
+        bigint id PK
+        bigint problem_id FK
+        text student_id
+        text status "value list open"
+    }
+    ATTEMPT_STEPS {
+        bigint id PK
+        bigint attempt_id FK
+        text recognized_latex
+        boolean is_correct
+    }
+    MISCONCEPTION_RULES {
+        text id PK
+        text topic
+        text description
+        text matching_rule "format open"
+        text escalation_hint_id "no enforced FK"
+    }
+    HINTS {
+        text id PK
+        text misconception_id FK
+        text text
+        integer level
+    }
+</pre>
+    </div>
+    <div class="caption">
+      <span class="dot"></span>
+      <span><code>misconception_rules.escalation_hint_id</code> points at a hint, but isn't
+      an enforced foreign key — enforcing both directions between misconceptions and hints
+      creates an insert-order cycle for no real benefit at seed-data scale.</span>
+    </div>
+    <div class="caption open">
+      <span class="dot"></span>
+      <span>Three fields are intentionally loose (<code>text</code>, not an
+      <code>enum</code>/<code>CHECK</code>) pending open questions in the contract:
+      <code>status</code>'s value list, <code>matching_rule</code>'s format, and
+      <code>difficulty</code>'s scale.</span>
+    </div>
+  </section>
+
+  <section class="figure" id="logic">
+    <p class="fig-label">Fig. 4</p>
+    <h2>Decision logic — the part that makes it a tutor</h2>
+    <p class="fig-intro">
+      Fig. 1 shows the service calls; this is what actually happens inside them — the
+      branching rules across the Evaluator (#25-28), Misconception Detector (#29-31), and
+      Hint Service (#33-35). This is the one diagram that isn't just structure — it's the
+      product's actual pedagogical logic.
+    </p>
+    <div class="sheet">
+<pre class="mermaid">
+flowchart TD
+    A[Step submitted] --> B{Expression valid?}
+    B -- no --> C[Return invalid, ask to rewrite]
+    B -- yes --> D{Mathematically correct?}
+    D -- yes --> E{Legal step from the previous one?}
+    E -- yes --> F[Return correct]
+    E -- no --> G[Return needs review, not silently wrong]
+    D -- no --> H{Matches a known misconception?}
+    H -- yes --> I[Look up hint for that misconception]
+    I --> J{Same misconception as last attempt?}
+    J -- yes --> K[Show escalated hint, level 2]
+    J -- no --> L[Show first hint, level 1]
+    H -- no --> M[Show generic fallback hint]
+</pre>
+    </div>
+    <div class="caption open">
+      <span class="dot"></span>
+      <span>The "same misconception as last attempt" branch (hint escalation) isn't specced
+      anywhere yet — #34/#35 describe the two hint levels, but nothing currently defines what
+      tracks "this is the second time" across attempts. Worth a real ticket, not just this
+      diagram's assumption.</span>
+    </div>
+  </section>
+
+  <section class="figure" id="lifecycle">
+    <p class="fig-label">Fig. 5</p>
+    <h2>Attempt lifecycle — including what's inside each step</h2>
+    <p class="fig-intro">
+      The contract flags <code>Attempt.status</code> as "needs a fixed list." The inner
+      states here aren't invented — they're the actual states <code>StepBox.js</code> already
+      cycles through today (drawing, recognizing, confirmed, evaluated), nested inside the
+      attempt-level state that's still just a proposal.
+    </p>
+    <div class="sheet">
+<pre class="mermaid">
+stateDiagram-v2
+    [*] --> in_progress: POST slash attempts creates the row
+
+    state in_progress {
+        [*] --> step_empty
+        step_empty --> step_drawing: student starts drawing
+        step_drawing --> step_recognizing: clicks Recognise
+        step_recognizing --> step_confirmed: recognize returns latex
+        step_recognizing --> step_drawing: recognition fails, retry
+        step_confirmed --> step_confirmed: Edit changes the value
+        step_confirmed --> step_evaluated: Check my working
+        step_evaluated --> step_correct: valid
+        step_evaluated --> step_incorrect: invalid
+        step_incorrect --> step_confirmed: student edits and rechecks
+        step_correct --> [*]
+    }
+
+    in_progress --> completed: trigger not yet defined
+    completed --> [*]
+</pre>
+    </div>
+    <div class="caption">
+      <span class="dot"></span>
+      <span>The inner cycle matches what's already implemented: <code>StepBox.js</code>'s
+      draw/edit/recognize states, and the fact that an incorrect step loops back to
+      confirmed rather than dead-ending — a student can keep revising one step.</span>
+    </div>
+    <div class="caption open">
+      <span class="dot"></span>
+      <span>Real gap found while building this: neither the API contract nor the current
+      frontend (#43, "Check my working") defines what actually flips an attempt to
+      <code>completed</code>. Checking steps isn't the same as closing the attempt — this
+      needs a decision before #12/#15 land, not just a status column.</span>
+    </div>
+  </section>
+
+  <section class="figure" id="gaps">
+    <p class="fig-label">Tracker</p>
+    <h2>Open design gaps found while building these diagrams</h2>
+    <p class="fig-intro">
+      Every amber note above, pulled into one list — what's missing, what deciding it
+      unblocks, and roughly how soon it matters. MVP goal per the tracker dashboard is
+      2026-08-22; "soon" below means it's on the critical path for a ticket that's likely to
+      start before then, "later" means it can wait until that ticket is actually picked up.
+    </p>
+    <div style="overflow-x:auto;">
+    <table class="gaptable" style="min-width:760px;">
+      <thead>
+        <tr>
+          <th style="width:22%">Gap</th>
+          <th style="width:26%">Action needed</th>
+          <th style="width:16%">Related tasks</th>
+          <th style="width:24%">Blocks</th>
+          <th style="width:12%">Needed before</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <p class="gap-title">Misconception.matching_rule format</p>
+            <p class="gap-detail">Regex? Structured comparison? Plain text? Undefined in the contract.</p>
+          </td>
+          <td>Jeff proposes a concrete format, reviewed with Richard since seed content must be authored in it.</td>
+          <td><code>#29</code>, <code>#30</code>, <code>#9</code></td>
+          <td>#9 seeding, #30 rule-matching engine</td>
+          <td><span class="urgency soon">Soon</span> before #29</td>
+        </tr>
+        <tr>
+          <td>
+            <p class="gap-title">Problem.difficulty scale</p>
+            <p class="gap-detail">Numeric 1-5 or a label (easy/medium/hard)? Undefined in the contract.</p>
+          </td>
+          <td>Team confirms the scale, documents it in the contract before tagging seed problems.</td>
+          <td><code>#6</code>, <code>#12</code>, <code>#8</code></td>
+          <td>#8 seeding consistency — Richard's already sourcing real content</td>
+          <td><span class="urgency soon">Soon</span> before #8</td>
+        </tr>
+        <tr>
+          <td>
+            <p class="gap-title">Attempt.status value list</p>
+            <p class="gap-detail">Typed as plain <code>str</code>; contract flags "needs a fixed list," only two examples given.</p>
+          </td>
+          <td>Team agrees the finite list (in_progress, completed, others?) and updates the contract.</td>
+          <td><code>#6</code>, <code>#12</code></td>
+          <td>#12's model validation; Fig. 5's lifecycle stays a proposal until this lands</td>
+          <td><span class="urgency soon">Soon</span> before #12</td>
+        </tr>
+        <tr>
+          <td>
+            <p class="gap-title">Attempt completion trigger</p>
+            <p class="gap-detail">Nothing defines what event flips status to completed — #43 checks steps, doesn't close the attempt.</p>
+          </td>
+          <td>Decide the trigger: explicit "finish" action, all steps correct, or something else.</td>
+          <td><code>#15</code>, <code>#43</code>, <code>#12</code></td>
+          <td>#15's implementation logic</td>
+          <td><span class="urgency soon">Soon</span> before #15</td>
+        </tr>
+        <tr>
+          <td>
+            <p class="gap-title">Hint escalation trigger</p>
+            <p class="gap-detail">Found while building Fig. 4 — nothing defines how the system knows a mistake repeated.</p>
+          </td>
+          <td>Decide what "repeated" means (same attempt? across attempts? same session?) and where that state lives.</td>
+          <td><code>#33</code>, <code>#34</code>, <code>#35</code></td>
+          <td>#33-35 can't fully implement escalation without this</td>
+          <td><span class="urgency later">Later</span> before #33</td>
+        </tr>
+        <tr>
+          <td>
+            <p class="gap-title">EvaluationResult missing escalation field</p>
+            <p class="gap-detail">Contract's own flagged gap — hint escalation is P0 but no field carries the level.</p>
+          </td>
+          <td>Add an escalation-level field to EvaluationResult; same underlying decision as the row above.</td>
+          <td><code>#28</code>, <code>#11</code></td>
+          <td>#28's return shape; frontend has no concept of hint level yet either</td>
+          <td><span class="urgency later">Later</span> before #28</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <footer class="note">
+    Companion to <code>Architecture.jpeg</code> (component view) and
+    <code>docs/api_contract_draft_20260728.md</code> (field-level source of truth). Generated
+    for architecture review — ownership intentionally omitted throughout.
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: 'dark', securityLevel: 'loose' });
+</script>
+</body>
+</html>
