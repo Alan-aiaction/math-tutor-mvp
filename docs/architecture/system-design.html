@@ -251,7 +251,7 @@ classDiagram
         string id
         string topic
         string description
-        string matching_rule
+        dict matching_rule
         string escalation_hint_id
     }
     class Hint {
@@ -331,7 +331,7 @@ erDiagram
     PROBLEMS {
         bigint id PK
         text topic
-        integer difficulty
+        integer difficulty "1-5, proposed - see decision log"
         text question_text
         text correct_answer
         text solving_tip "nullable, new field"
@@ -352,7 +352,7 @@ erDiagram
         text id PK
         text topic
         text description
-        text matching_rule "format open"
+        jsonb matching_rule "structured, proposed - see decision log"
         text escalation_hint_id "no enforced FK"
     }
     HINTS {
@@ -371,10 +371,16 @@ erDiagram
     </div>
     <div class="caption open">
       <span class="dot"></span>
-      <span>Three fields are intentionally loose (<code>text</code>, not an
-      <code>enum</code>/<code>CHECK</code>) pending open questions in the contract:
-      <code>status</code>'s value list, <code>matching_rule</code>'s format, and
-      <code>difficulty</code>'s scale.</span>
+      <span><code>attempts.status</code> stays a plain <code>text</code> column with no
+      <code>CHECK</code>/enum — no value list has been agreed at all yet (still a fully open
+      question in the contract).</span>
+    </div>
+    <div class="caption">
+      <span class="dot"></span>
+      <span><code>difficulty</code> (numeric 1-5) and <code>matching_rule</code> (structured,
+      <code>jsonb</code>) both have a proposed resolution as of 2026-08-03, sent to the team
+      and pending confirmation — see <code>docs/tracking/decision-log.md</code> for the full
+      reasoning. Schema proceeds on that basis in the meantime.</span>
     </div>
   </section>
 
@@ -487,9 +493,9 @@ stateDiagram-v2
         <tr>
           <td>
             <p class="gap-title">Misconception.matching_rule format</p>
-            <p class="gap-detail">Regex? Structured comparison? Plain text? Undefined in the contract.</p>
+            <p class="gap-detail">Regex? Structured comparison? Plain text? Proposed 2026-08-03: structured comparison, stored as jsonb — sent to team, pending confirmation. See decision-log.md.</p>
           </td>
-          <td>Jeff proposes a concrete format, reviewed with Richard since seed content must be authored in it.</td>
+          <td>Team confirms; #29 still needs to define the exact operation-type vocabulary inside the JSON with Richard.</td>
           <td><code>#29</code>, <code>#30</code>, <code>#9</code></td>
           <td>#9 seeding, #30 rule-matching engine</td>
           <td><span class="urgency soon">Soon</span> before #29</td>
@@ -497,9 +503,9 @@ stateDiagram-v2
         <tr>
           <td>
             <p class="gap-title">Problem.difficulty scale</p>
-            <p class="gap-detail">Numeric 1-5 or a label (easy/medium/hard)? Undefined in the contract.</p>
+            <p class="gap-detail">Numeric 1-5 or a label (easy/medium/hard)? Proposed 2026-08-03: numeric 1-5 — sent to team, pending confirmation. See decision-log.md.</p>
           </td>
-          <td>Team confirms the scale, documents it in the contract before tagging seed problems.</td>
+          <td>Team confirms; a written tagging rubric (e.g. "1-2 = single-step") still needed before Richard tags seed problems.</td>
           <td><code>#6</code>, <code>#12</code>, <code>#8</code></td>
           <td>#8 seeding consistency — Richard's already sourcing real content</td>
           <td><span class="urgency soon">Soon</span> before #8</td>
