@@ -115,6 +115,12 @@ this file.
   in the repo (already gitignored — local to this machine, not shared with the team) using
   a name tied to the ticket/task, not the tool's randomly-generated one, before starting
   implementation.
+- **Open every plan with "What this unlocks."** Before the Context section, state in 2-4
+  sentences what becomes possible once the plan is done — start from the ticket's own story
+  one-liner and expand it concretely (what can now be built on top of this, what's still
+  not user-visible yet, what it directly unblocks). AC bullets say what's true when it's
+  done; this says why that's worth doing. Applies to every plan, not just ticket-specific
+  ones.
 - **Re-check live state right before reporting it — don't recite it from memory.** PR/merge
   status, branch state, and similar facts change during a session and can go stale between
   one message and the next, since the user or a teammate can change them outside the
