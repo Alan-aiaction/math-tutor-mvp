@@ -89,8 +89,9 @@ flowchart LR
     subgraph ShadowLog["1st MVP - shadow logging, starts now"]
     B1[Wrong answer submitted] --> B2[Generic hint shown to student - #34]
     B1 --> B3[Shadow log: wrong step + expected answer, via attempt_steps]
-    B3 --> B4[Periodic human review of the shadow log]
-    B4 --> A1
+    B3 --> B4[Made queryable - #63]
+    B4 --> B5[Periodic human review of the shadow log]
+    B5 --> A1
     end
 ```
 
@@ -99,12 +100,13 @@ flowchart LR
 the structured rule from known `error_transform` examples, a human reviews and approves
 before it's seeded. AI stays in the safe, offline, human-reviewed authoring path.
 
-**Right loop — the shadow log (1st MVP, starts now):** no new logging infrastructure needed —
-`attempt_steps` (`recognized_latex`, `is_correct`) already captures every wrong step once
-#13/#15 ship, joinable back to `problems.correct_answer`. The only real work is making that
-data queryable for review. This feeds #61 ("Expand misconception rule library from real
-usage data," already Post-MVP-backlogged) instead of competing with it — 2nd MVP's rule set
-gets built from real groep 7/8 mistakes, not guesswork made under this MVP's time pressure.
+**Right loop — the shadow log (1st MVP, starts now):** no new *storage* infrastructure
+needed — `attempt_steps` (`recognized_latex`, `is_correct`) already captures every wrong
+step once #13/#15 ship, joinable back to `problems.correct_answer`. Making that data
+actually queryable for review is real, separate work, tracked as **#63**. This feeds #61
+("Expand misconception rule library from real usage data," already Post-MVP-backlogged)
+instead of competing with it — 2nd MVP's rule set gets built from real groep 7/8 mistakes,
+not guesswork made under this MVP's time pressure.
 
 **Deliberately not proposed:** calling an LLM on every single answer check in real time.
 Considered and rejected — it breaks hint escalation (no stable `misconception_id` without

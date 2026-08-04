@@ -169,7 +169,7 @@ Entries are chronological (oldest first), matching `ai-model-log.md`'s conventio
 
 - **Date decided:** 2026-08-03
 - **Status:** Confirmed — project lead's call, given 2026-08-22 MVP time pressure
-- **Affects:** #29 (design proceeds now), #30/#9 (deferred), #25-28/#34 (stay in 1st MVP), #13/#15 (stay in 1st MVP), #61 (Post-MVP backlog item this now directly feeds)
+- **Affects:** #29 (design proceeds now), #30/#9 (deferred), #25-28/#34 (stay in 1st MVP), #13/#15 (stay in 1st MVP), #63 (new ticket, makes the shadow log queryable), #61 (Post-MVP backlog item this now directly feeds)
 - **Options considered:**
   - Defer the entire misconception/hint chain (#25-38) to 2nd MVP
   - Ship #25-28 (Evaluator) and #34 (generic fallback hint) in 1st MVP; defer only the
@@ -182,7 +182,9 @@ Entries are chronological (oldest first), matching `ai-model-log.md`'s conventio
   pilot that doesn't actually test the product's real differentiator. Splitting the defer to
   just the misconception-specific layer keeps a real (if generic) hint in front of students
   while deferring only the harder, evidence-hungry personalized-diagnosis part. Shadow
-  logging moving to 1st MVP needs no new infrastructure — `attempt_steps` (#6/#7, live)
-  already captures every wrong step once #13/#15 ship — so 2nd MVP's rule set can be built
-  from real groep 7/8 usage data instead of guesswork made under this MVP's time pressure.
+  logging's *storage* needs no new infrastructure — `attempt_steps` (#6/#7, live) already
+  captures every wrong step once #13/#15 ship — but making that data actually queryable for
+  review is real, separate work, given its own ticket (#63) rather than left implicit, so
+  2nd MVP's rule set can be built from real groep 7/8 usage data instead of guesswork made
+  under this MVP's time pressure.
 - **Team feedback:** n/a — project lead scoping call, not yet sent to Jeff/Richard for review.
