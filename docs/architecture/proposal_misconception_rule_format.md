@@ -52,7 +52,7 @@ flowchart TD
     C --> D[Substitute operands into wrong_result_template]
     D --> E{Symbolically equivalent to student's answer?}
     E -- yes --> F[Matched - return misconception_id]
-    E -- no --> G[Try next rule, or no match]
+    E -- no --> G[No match - shadow logged, see Fig 2]
 ```
 
 **Notes:**
@@ -86,10 +86,10 @@ flowchart LR
     A2 --> A3[Human reviews and approves]
     A3 --> A4[Seeded to misconception_rules]
     end
-    subgraph Fallback["1st MVP - runtime, starts now"]
+    subgraph ShadowLog["1st MVP - shadow logging, starts now"]
     B1[Wrong answer submitted] --> B2[Generic hint shown to student - #34]
-    B1 --> B3[Wrong step captured via attempt_steps - #13/#15]
-    B3 --> B4[Periodic human review of logged answers]
+    B1 --> B3[Shadow log: wrong step + expected answer, via attempt_steps]
+    B3 --> B4[Periodic human review of the shadow log]
     B4 --> A1
     end
 ```
@@ -99,7 +99,7 @@ flowchart LR
 the structured rule from known `error_transform` examples, a human reviews and approves
 before it's seeded. AI stays in the safe, offline, human-reviewed authoring path.
 
-**Right loop (1st MVP, starts now):** no new logging infrastructure needed —
+**Right loop — the shadow log (1st MVP, starts now):** no new logging infrastructure needed —
 `attempt_steps` (`recognized_latex`, `is_correct`) already captures every wrong step once
 #13/#15 ship, joinable back to `problems.correct_answer`. The only real work is making that
 data queryable for review. This feeds #61 ("Expand misconception rule library from real
