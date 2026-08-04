@@ -10,7 +10,13 @@ Complements the "Open design gaps" tracker in
 `docs/architecture/system-design.html#gaps`: that table says *what* needs deciding and *what
 it blocks*; this log is *where the actual decision and reasoning get recorded* once made.
 
-Entries are chronological (oldest first), matching `ai-model-log.md`'s convention.
+Entries are chronological (oldest first), matching `ai-model-log.md`'s convention — except
+`[Living]` entries, which stay at the bottom regardless of date since they're continuously
+refreshed rather than dated one-time decisions. A `[Living]` entry isn't a decision at all —
+it's a standing view over the task board's current state (e.g. "what's next, in dependency
+order"), kept here because it's derived reasoning worth having in one place, not because it's
+a fact to trust blindly. Always carries a "Last verified" date; if that's gone stale, check
+the actual board before trusting it.
 
 ---
 
@@ -137,3 +143,30 @@ Entries are chronological (oldest first), matching `ai-model-log.md`'s conventio
   into the JSON structure from SQL, so that upside doesn't apply yet.
 - **Team feedback:** _pending_ — #6's schema (`database_schema.sql`) and the contract doc
   proceed on this basis in the meantime, per project lead's explicit go-ahead 2026-08-03.
+
+---
+
+## [Living] Recommended next-task sequence (dependency order, no owners)
+
+- **Last verified against the board:** 2026-08-04
+- **Purpose:** answers "what should happen next, regardless of who does it" — pure
+  leverage/dependency order, not a team assignment. Sequencing and ownership are kept as
+  separate questions on purpose.
+- **Update trigger:** refresh this section whenever a ticket listed below changes status, or
+  when PR #42 (#29) / PR #43 (#34, #63) merge — don't let it sit stale past that point.
+
+1. **#12** — Scaffold `backend/models.py`. Fully unblocked (#11 done). Foundational for
+   #13-16.
+2. **#8** — Seed problems. Unblocked (#6 done). Independent of everything else; needed for
+   any real testing/demo.
+3. **#25-28** — Evaluator (validity, correctness, transition, `EvaluationResult`). Unblocked
+   (#22 done). Confirmed 1st MVP scope.
+4. **#13** — Supabase DB layer. Unblocked (#6, #7 done). Needed for #14/#15/#16.
+5. **#34** — Generic fallback hint. Confirmed 1st MVP; decoupled from the deferred #33/#9
+   chain (PR #43, pending merge) — only needs #25-28 to know a step is wrong.
+
+**Deliberately not on this list, not because they're unimportant:**
+- **#29** — design proposal already out (PR #42, pending Jeff/Richard review) — no longer
+  meaningfully "not started" even though the board hasn't caught up to that yet.
+- **#9, #30** — explicitly deferred to 2nd MVP (see the scoping decision above).
+- **#63** — real, but smaller, and depends on #13/#15 landing first.
