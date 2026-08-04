@@ -376,12 +376,17 @@ const STAGES = [
             "Dutch comma decimal notation (0,75) explicitly tested",
             "All tests passing before merge"],
         deps:"Depends on: #22, #23" },
-      { id:"#25", owner:"jeff", title:"Implement expression validity check", status:"Not started",
+      { id:"#25", owner:"alan", title:"Implement expression validity check", status:"Done",
         story:"As the evaluator, I need to know if a submitted step is well-formed, before checking correctness.",
         ac:["Given a parsed SymPy expression, returns valid/invalid",
             "Malformed expressions are flagged invalid, not left to crash",
             "Covered by at least 3 test cases"],
-        deps:"Depends on: #22 (Alan's parser)" },
+        deps:"Depends on: #22 (done) · Blocks: #26 · Shipped 2026-08-05 in backend/expression_validity.py " +
+              "(is_valid_expression()) - rejects Relational/Eq, boolean, nan, zoo, +-oo, and complex results " +
+              "with a nonzero imaginary part (decided: never a valid grade 7-8 answer). Never raises - any " +
+              "unexpected exception during the check itself is caught and treated as invalid. 14 test cases " +
+              "in backend/test_expression_validity.py (backend/test_*.py suite: 48 passed). Not yet wired " +
+              "into any endpoint - #36 orchestration wires #25-28 together later." },
       { id:"#26", owner:"jeff", title:"Implement internal math correctness check", status:"Not started",
         story:"As the evaluator, I need to confirm a step's math actually holds true, not just that it's well-formed.",
         ac:["Given a valid expression, checks whether it's mathematically true (e.g. 2/7 = 4/28)",
