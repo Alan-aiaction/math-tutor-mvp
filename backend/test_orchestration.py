@@ -51,3 +51,21 @@ def test_misconception_id_always_none():
     steps = [make_step(1, "5/7")]
     results = run_pipeline(steps, correct_answer="7/12")
     assert results[0].misconception_id is None
+
+
+def test_logs_a_duration_for_each_pipeline_stage(caplog):
+    steps = [make_step(1, "7/12")]
+    with caplog.at_level("INFO", logger="orchestration"):
+        run_pipeline(steps, correct_answer="7/12")
+    stage_logs = [r for r in caplog.records if r.message.startswith("Stage '")]
+    assert len(stage_logs) > 0
+    assert any("took" in r.message for r in stage_logs)
+
+
+def test_logs_total_pipeline_time(caplog):
+    steps = [make_step(1, "7/12"), make_step(2, "5/7")]
+    with caplog.at_level("INFO", logger="orchestration"):
+        run_pipeline(steps, correct_answer="7/12")
+    total_logs = [r for r in caplog.records if "Pipeline completed in" in r.message]
+    assert len(total_logs) == 1
+    assert "2 step(s)" in total_logs[0].message

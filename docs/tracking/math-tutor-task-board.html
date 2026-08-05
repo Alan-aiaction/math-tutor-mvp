@@ -505,11 +505,20 @@ const STAGES = [
         ac:["Endpoint accepts steps, runs the full orchestration pipeline, returns the result",
             "Manually tested end-to-end with at least 2 real examples"],
         deps:"Depends on: #36 · Blocks: #45" },
-      { id:"#38", owner:"jeff", title:"Add timing/logging at each pipeline stage", status:"Not started",
+      { id:"#38", owner:"alan", title:"Add timing/logging at each pipeline stage", status:"Done",
         story:"As the team, we want to see where time is spent, so we can debug slow responses before they affect real students.",
         ac:["Each pipeline stage logs its duration",
             "Total pipeline time is visible in logs for at least one test request"],
-        deps:"Depends on: #36" },
+        deps:"Depends on: #36 (done) · Shipped 2026-08-05, instrumenting backend/orchestration.py " +
+              "directly (not a new file - modifies #36's existing run_pipeline(), a deliberate departure " +
+              "from every other ticket's new-file pattern since this is instrumentation, not new logic). " +
+              "_timed_stage() context manager wraps each of 5 per-step stages (parse, validate, " +
+              "correctness, hint, build_result), logged with the step index so a slow step is " +
+              "identifiable. Total pipeline time + step count logged before returning. Reuses this " +
+              "codebase's one existing logging convention from db.py (#13). No behavior change - pure " +
+              "instrumentation, same inputs/outputs. 2 new test cases (8 total in test_orchestration.py), " +
+              "full suite 79 passed. NOTE: implemented locally only (same branch as #25/#26/#27/#28/#34/" +
+              "#36), not yet pushed/PR'd - held back until PRs #46/#48/#49/#50/#51/#52 clear." },
       { id:"#63", owner:"alan", title:"Make shadow-logged wrong answers queryable", status:"Not started",
         story:"As the team, we want unmatched wrong answers to be reviewable, so 2nd MVP's misconception rules get built from real student data instead of guesswork.",
         ac:["A query or view surfaces incorrect attempt_steps joined with their problem's correct_answer, for human review",
