@@ -479,7 +479,11 @@ const STAGES = [
         story:"As a student (10-12yo, Dutch-speaking), I want hints that sound like they're talking to me, not a textbook.",
         ac:["Hint wording reviewed for age-appropriate Dutch phrasing",
             "At least one review round with Dev C (school context) before finalizing"],
-        deps:"Depends on: #9 · Validated by Dev C" },
+        deps:"Fixed 2026-08-05: was 'Depends on: #9' (stale - #9 is misconception rule seeding, deferred " +
+              "to 2nd MVP, same issue #34 had before PR #43 decoupled it). This ticket reviews/refines the " +
+              "GENERIC hint's wording (#34), not anything #9-specific - it only needs #34's hint text to " +
+              "exist to review. Depends on: #34 (done, held locally pending the PR merge gate) · Validated " +
+              "by Dev C" },
       { id:"#36", owner:"alan", title:"Implement pipeline: receive → recognize → parse → validate → detect → return", status:"Done",
         story:"As the backend, I need all pieces wired together in order, so a single request produces a full result.",
         ac:["Pipeline calls recognition, parser, evaluator, misconception detector, and hint service in sequence",
