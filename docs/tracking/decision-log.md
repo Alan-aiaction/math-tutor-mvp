@@ -146,6 +146,57 @@ the actual board before trusting it.
 
 ---
 
+## [Proposed] Misconception rule format (#29)
+
+- **Date proposed:** 2026-08-03
+- **Status:** Proposed — full spec at `docs/architecture/proposal_misconception_rule_format.md`, pending Jeff/Richard review per #29's own AC
+- **Affects:** `docs/architecture/api_contract_draft_20260728.md` (Misconception model), #9 (seed data), #30 (rule-matching engine)
+- **Options considered:**
+  - Real-time LLM classification of each wrong answer (no pre-defined rule format needed at all)
+  - A declarative JSON rule format (`operation`, `error_transform`, `check`), matched deterministically against the parsed expression tree
+- **Decision:** The declarative format. AI scoped to two narrower places instead of the hot
+  path: offline rule *authoring* (LLM drafts, human approves — same pattern as `solving_tip`),
+  and an offline shadow-logging loop where unmatched wrong answers get logged for later
+  human review, feeding future rule authoring.
+- **Reasoning:** Real-time LLM-per-check was rejected — it breaks hint escalation (no stable
+  `misconception_id` without deterministic matching), risks an incorrect or answer-revealing
+  hint reaching a real child with no human review, adds per-request cost the README asks to
+  minimize, adds latency to what should be immediate feedback, and isn't testable the way
+  #26's "no false positives" AC requires. It would also re-litigate a call already made once
+  for the adjacent hint-generation question (#34's board note: LLM generation deferred,
+  "revisit before pilot"). The declarative format keeps matching fast, deterministic, and
+  testable, while still using AI where it's genuinely safe and valuable — content creation
+  and offline pattern-mining, not live judgment on a real student's answer.
+- **Team feedback:** _pending_
+
+---
+
+## [Confirmed] Defer misconception-detection implementation to a 2nd MVP; pull shadow logging into the 1st
+
+- **Date decided:** 2026-08-03
+- **Status:** Confirmed — project lead's call, given 2026-08-22 MVP time pressure
+- **Affects:** #29 (design proceeds now), #30/#9 (deferred), #25-28/#34 (stay in 1st MVP), #13/#15 (stay in 1st MVP), #63 (new ticket, makes the shadow log queryable), #61 (Post-MVP backlog item this now directly feeds)
+- **Options considered:**
+  - Defer the entire misconception/hint chain (#25-38) to 2nd MVP
+  - Ship #25-28 (Evaluator) and #34 (generic fallback hint) in 1st MVP; defer only the
+    misconception-specific layer (#30 matching engine, #9 real rule seeding) to 2nd MVP
+- **Decision:** The second option, plus pulling shadow logging into 1st MVP rather than
+  waiting for 2nd MVP.
+- **Reasoning:** Deferring the whole chain would mean 1st MVP ships without any hint at all
+  on a wrong answer, closer to a bare correctness-checker than the "diagnosing misconceptions
+  and guiding with hints" tutor the README describes as the product's core value — risking a
+  pilot that doesn't actually test the product's real differentiator. Splitting the defer to
+  just the misconception-specific layer keeps a real (if generic) hint in front of students
+  while deferring only the harder, evidence-hungry personalized-diagnosis part. Shadow
+  logging's *storage* needs no new infrastructure — `attempt_steps` (#6/#7, live) already
+  captures every wrong step once #13/#15 ship — but making that data actually queryable for
+  review is real, separate work, given its own ticket (#63) rather than left implicit, so
+  2nd MVP's rule set can be built from real groep 7/8 usage data instead of guesswork made
+  under this MVP's time pressure.
+- **Team feedback:** n/a — project lead scoping call, not yet sent to Jeff/Richard for review.
+
+---
+
 ## [Confirmed] Permissive RLS baseline for anon/authenticated, tighten later (#10)
 
 - **Date decided:** 2026-08-05
