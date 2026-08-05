@@ -399,12 +399,23 @@ const STAGES = [
               "#36 orchestration wires #25-28 together later. NOTE: implemented locally only, not yet " +
               "pushed/PR'd - held back until PRs #46/#48/#49/#50/#51/#52 clear, to avoid adding another " +
               "branch to the shared-tracking-file conflict cascade." },
-      { id:"#27", owner:"jeff", title:"Implement transition validity check", status:"Not started",
+      { id:"#27", owner:"alan", title:"Implement transition validity check", status:"Done",
         story:"As the evaluator, I need to know if a step logically follows from the previous one, so an unrelated correct answer isn't accepted.",
         ac:["Given two consecutive steps, determines whether the second is a legal derivation from the first",
             "Explicitly tested against one 'correct but unusual method' case, per the product spec's edge case",
             "Cases it can't yet judge default to 'needs review', not silently wrong"],
-        deps:"Depends on: #26" },
+        deps:"Depends on: #26 (sequencing only - no code import, uses canonical_form.py directly) · " +
+              "Blocks: #28 · Shipped 2026-08-05 in backend/transition_validity.py (is_legal_transition()) " +
+              "- \"legal\" = value-preserving (are_equivalent), matching system-design.html's Fig. 4 " +
+              "decision flow (legal step? no -> needs review, never a hard 'illegal'). Unusual-method test " +
+              "case grounded in real seed content (groep8_math_practice_en.csv's friendly-numbers " +
+              "strategy: 6x199 vs 6x200-6x1). 6 test cases, full suite 51 passed. FLAGGED for #28: the " +
+              "agreed EvaluationResult model has no field for a needs-review outcome, and #28's own AC " +
+              "(correct/incorrect-with-misconception/incorrect-no-match) doesn't mention one either - #28 " +
+              "will need to resolve where this signal goes, not decided here. Not yet wired into any " +
+              "endpoint - #36 orchestration wires #25-28 together later. NOTE: implemented locally only " +
+              "(same branch as #26), not yet pushed/PR'd - held back until PRs #46/#48/#49/#50/#51/#52 " +
+              "clear." },
       { id:"#28", owner:"jeff", title:"Return structured EvaluationResult per step", status:"Not started",
         story:"As downstream services, we need one consistent result object, so nothing has to guess the shape.",
         ac:["Returns EvaluationResult matching the agreed Pydantic model",
