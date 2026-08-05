@@ -416,11 +416,24 @@ const STAGES = [
               "endpoint - #36 orchestration wires #25-28 together later. NOTE: implemented locally only " +
               "(same branch as #26), not yet pushed/PR'd - held back until PRs #46/#48/#49/#50/#51/#52 " +
               "clear." },
-      { id:"#28", owner:"jeff", title:"Return structured EvaluationResult per step", status:"Not started",
+      { id:"#28", owner:"alan", title:"Return structured EvaluationResult per step", status:"Done",
         story:"As downstream services, we need one consistent result object, so nothing has to guess the shape.",
         ac:["Returns EvaluationResult matching the agreed Pydantic model",
             "Covers all 3 outcomes: correct, incorrect-with-misconception, incorrect-no-match"],
-        deps:"Depends on: #25, #26, #27 · Blocks: #36" },
+        deps:"Depends on: #25, #26, #27 · Blocks: #36 · Shipped 2026-08-05 in backend/evaluation_result.py " +
+              "(build_evaluation_result()). Honest 1st-MVP scoping: only 2 outcomes are actually " +
+              "distinguishable today (correct / incorrect-with-generic-hint) - #30 (misconception " +
+              "matching) is confirmed 2nd-MVP scope, so misconception_id can never be populated with a " +
+              "real value yet; it's hardcoded None with a comment explaining why, not left as an " +
+              "unexplained gap. hint_text arrives as a plain parameter since #34 (generic hint) doesn't " +
+              "exist as code yet either - #28 stays agnostic to where the hint text comes from. #27's " +
+              "\"needs review\" signal is deliberately NOT consumed here (confirmed with project lead) - " +
+              "EvaluationResult has no field for it; extending the agreed contract is a separate decision, " +
+              "flagged, not made in this ticket. 4 test cases, full suite 55 passed. Not yet wired into " +
+              "any endpoint - #36 orchestration wires #25-28 together later. NOTE: implemented locally " +
+              "only (same branch as #26/#27, which also now has feature/12-scaffold-pydantic-models " +
+              "merged in locally so backend/models.py is importable), not yet pushed/PR'd - held back " +
+              "until PRs #46/#48/#49/#50/#51/#52 clear." },
       { id:"#29", owner:"jeff", title:"Define rule format for misconception_rules", status:"In progress",
         story:"As the backend, I need an agreed rule structure, so content (Dev C/Richard) and matching logic speak the same format.",
         ac:["Rule format documented (pattern type, matching fields)",
