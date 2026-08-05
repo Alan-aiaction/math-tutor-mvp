@@ -455,11 +455,21 @@ const STAGES = [
         ac:["Given a misconception_id, returns the matching hint from the hints table",
             "Falls back to #34 when no id or no matching hint exists"],
         deps:"Depends on: #9, #31" },
-      { id:"#34", owner:"jeff", title:"Implement fallback generic hint", status:"Not started",
+      { id:"#34", owner:"alan", title:"Implement fallback generic hint", status:"Done",
         story:"As a student, even if my mistake isn't recognized, I still want some guidance rather than silence.",
         ac:["A generic, non-answer-revealing hint returns when no specific hint matches",
             "Flagged for later: spec calls for this to eventually be LLM-generated, not static — revisit before pilot if time allows"],
-        deps:"Decoupled from #33 for 1st MVP (2026-08-03 scoping decision, see decision-log.md): #30/#9/#33's misconception-specific chain is deferred to 2nd MVP, but every wrong answer needs *some* hint in 1st MVP, so this ticket no longer waits on it - just needs #25-28 (Evaluator) to know a step is incorrect. #33 (real dependency once misconception matching exists) is 2nd MVP scope." },
+        deps:"Decoupled from #33 for 1st MVP (2026-08-03 scoping decision, see decision-log.md): #30/#9/#33's misconception-specific chain is deferred to 2nd MVP, but every wrong answer needs *some* hint in 1st MVP, so this ticket no longer waits on it - just needs #25-28 (Evaluator) to know a step is incorrect. #33 (real dependency once misconception matching exists) is 2nd MVP scope. · " +
+              "Shipped 2026-08-05 in backend/generic_hint.py (get_generic_hint()) - a static Dutch-language " +
+              "string per the agreed contract's \"Language: Dutch only for MVP\" (seed CSV's Tip to Solve " +
+              "column is English, deliberately not copied). Plain string, not the Hint model - " +
+              "Hint.misconception_id is required and this hint has no real misconception to attach to, " +
+              "mirroring the Problem.solving_tip decision. Kept behind a function (not a bare constant) so " +
+              "the eventual LLM-generated swap (AC #2) doesn't touch callers. Tone/wording refinement is " +
+              "#35's job, not redone here. 2 test cases, full suite 57 passed. Not yet wired into any " +
+              "endpoint - #36 orchestration passes this into #28's build_evaluation_result(). NOTE: " +
+              "implemented locally only (same branch as #26/#27/#28), not yet pushed/PR'd - held back " +
+              "until PRs #46/#48/#49/#50/#51/#52 clear." },
       { id:"#35", owner:"jeff", title:"Decide hint tone/language (Dutch, age-appropriate)", status:"Not started",
         story:"As a student (10-12yo, Dutch-speaking), I want hints that sound like they're talking to me, not a textbook.",
         ac:["Hint wording reviewed for age-appropriate Dutch phrasing",
