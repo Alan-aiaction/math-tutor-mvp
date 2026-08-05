@@ -431,7 +431,7 @@ const STAGES = [
         story:"As a student, even if my mistake isn't recognized, I still want some guidance rather than silence.",
         ac:["A generic, non-answer-revealing hint returns when no specific hint matches",
             "Flagged for later: spec calls for this to eventually be LLM-generated, not static — revisit before pilot if time allows"],
-        deps:"Depends on: #33" },
+        deps:"Decoupled from #33 for 1st MVP (2026-08-03 scoping decision, see decision-log.md): #30/#9/#33's misconception-specific chain is deferred to 2nd MVP, but every wrong answer needs *some* hint in 1st MVP, so this ticket no longer waits on it - just needs #25-28 (Evaluator) to know a step is incorrect. #33 (real dependency once misconception matching exists) is 2nd MVP scope." },
       { id:"#35", owner:"jeff", title:"Decide hint tone/language (Dutch, age-appropriate)", status:"Not started",
         story:"As a student (10-12yo, Dutch-speaking), I want hints that sound like they're talking to me, not a textbook.",
         ac:["Hint wording reviewed for age-appropriate Dutch phrasing",
@@ -452,7 +452,12 @@ const STAGES = [
         story:"As the team, we want to see where time is spent, so we can debug slow responses before they affect real students.",
         ac:["Each pipeline stage logs its duration",
             "Total pipeline time is visible in logs for at least one test request"],
-        deps:"Depends on: #36" }
+        deps:"Depends on: #36" },
+      { id:"#63", owner:"alan", title:"Make shadow-logged wrong answers queryable", status:"Not started",
+        story:"As the team, we want unmatched wrong answers to be reviewable, so 2nd MVP's misconception rules get built from real student data instead of guesswork.",
+        ac:["A query or view surfaces incorrect attempt_steps joined with their problem's correct_answer, for human review",
+            "Documented for Jeff/Richard how to access it"],
+        deps:"Depends on: #13, #15 (needs real persisted wrong answers to review) · Feeds: #61 · New ticket added 2026-08-03 - storage itself is free (attempt_steps already captures every wrong step once #13/#15 ship), this ticket covers making that data actually usable, not new storage infrastructure. See docs/architecture/proposal_misconception_rule_format.md (#29) Fig. 2 and decision-log.md." }
     ]
   },
   {
