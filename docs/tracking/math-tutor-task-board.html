@@ -649,11 +649,16 @@ const STAGES = [
         ac:["Seeded problems cross-checked against SLO tussendoelen groep 7/8 targets",
             "Gaps documented (topics in the standard not yet covered)"],
         deps:"Depends on: #8" },
-      { id:"#47", owner:"all", title:"Enforce HTTPS everywhere", status:"Not started",
+      { id:"#47", owner:"all", title:"Enforce HTTPS everywhere", status:"Done",
         story:"As the team, we want all traffic encrypted, so student data isn't exposed in transit.",
         ac:["No endpoint reachable over plain HTTP in production",
             "Confirmed on both Vercel and Railway — verify, don't assume"],
-        deps:"None — quick verification" },
+        deps:"None — quick verification · Verified 2026-08-05: a plain http:// request to the live " +
+              "Railway backend returns a 301 redirect to https://; a plain http:// request to the live " +
+              "Vercel frontend returns a 308 redirect to https://. Neither serves real content over plain " +
+              "HTTP. Decided to rely on the platform-level guarantee rather than add app-level redirect " +
+              "middleware (redirect-loop risk behind Railway's proxy without proxy-header handling) - " +
+              "full reasoning in docs/tracking/decision-log.md. No code changed." },
       { id:"#48", owner:"alan", title:"Keep MyScript/Supabase keys server-side only", status:"Done",
         story:"As the team, we want secrets to never reach the browser, so they can't be scraped from page source.",
         ac:["service_role and MyScript keys exist only in backend/.env, never in frontend/.env.local",

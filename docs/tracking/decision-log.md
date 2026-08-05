@@ -197,6 +197,29 @@ the actual board before trusting it.
 
 ---
 
+## [Confirmed] HTTPS enforcement relies on Railway/Vercel platform guarantee (#47)
+
+- **Date decided:** 2026-08-05
+- **Status:** Confirmed — verified, no code change
+- **Affects:** `backend/main.py`, `backend/Procfile` (neither touched); deployment posture only
+- **Options considered:**
+  - Add app-level HTTPS enforcement (redirect middleware) as defense-in-depth
+  - Rely on Railway/Vercel's platform-level HTTPS guarantee; verify it, don't add app code
+- **Decision:** The second option — verify + document only.
+- **Reasoning:** Railway terminates TLS at its edge and forwards plain HTTP internally to the
+  container; a naive `HTTPSRedirectMiddleware` added inside the app risks a redirect loop
+  unless the app is explicitly told to trust `X-Forwarded-Proto` (no `--proxy-headers` flag
+  currently set). Taking on that risk isn't worth it for a gap live verification shows doesn't
+  exist.
+- **Verified (2026-08-05):** a plain `http://` request to the live Railway backend
+  (`math-tutor-mvp-production.up.railway.app`) returns a `301` redirect to `https://`; a plain
+  `http://` request to the live Vercel frontend (`math-tutor-mvp.vercel.app`) returns a `308`
+  redirect to `https://`. Neither serves real content over plain HTTP — this is the actual "verify,
+  don't assume" check the AC calls for, not an assumption from platform marketing claims.
+- **Team feedback:** n/a — decided directly with the project lead.
+
+---
+
 ## [Living] Full 1st MVP task order (dependency order, no owners, all statuses)
 
 - **Last verified against the board:** 2026-08-04
