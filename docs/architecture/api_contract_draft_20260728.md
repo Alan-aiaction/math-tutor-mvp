@@ -109,8 +109,9 @@ class Misconception(BaseModel):
     id: str
     topic: str
     description: str
-    matching_rule: dict      # structured comparison, stored as jsonb — exact sub-schema
-                             # (which operation-types/keys exist) is task #29's job
+    matching_rule: dict      # structured comparison, stored as jsonb — see
+                             # docs/architecture/proposal_misconception_rule_format.md
+                             # (task #29, proposed, pending Jeff/Richard review)
     escalation_hint_id: str | None  # not an enforced FK in storage — see decision log
 ```
 
