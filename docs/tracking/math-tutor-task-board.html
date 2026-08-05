@@ -480,12 +480,26 @@ const STAGES = [
         ac:["Hint wording reviewed for age-appropriate Dutch phrasing",
             "At least one review round with Dev C (school context) before finalizing"],
         deps:"Depends on: #9 · Validated by Dev C" },
-      { id:"#36", owner:"jeff", title:"Implement pipeline: receive → recognize → parse → validate → detect → return", status:"Not started",
+      { id:"#36", owner:"alan", title:"Implement pipeline: receive → recognize → parse → validate → detect → return", status:"Done",
         story:"As the backend, I need all pieces wired together in order, so a single request produces a full result.",
         ac:["Pipeline calls recognition, parser, evaluator, misconception detector, and hint service in sequence",
             "Returns a complete EvaluationResult at the end",
             "Failure at any stage is caught and returns a clear error, not a silent crash"],
-        deps:"Depends on: #19, #28, #31, #33" },
+        deps:"Depends on: #19 (done), #28 (done), #34 (done) - #31/#33 listed here are stale, per the " +
+              "[Living] entry's own scope note for #36: 'simplified for 1st MVP, skips the misconception-" +
+              "detect step entirely' · Blocks: #37, #38 · Shipped 2026-08-05 in backend/orchestration.py " +
+              "(run_pipeline(), PipelineError). \"Calls recognition\" is aspirational per AC text - " +
+              "pipeline actually starts from already-recognized, already-confirmed Step.recognized_latex " +
+              "(recognition/#19 is a separate, already-live step, confirmed via system-design.html's " +
+              "sequence diagram). Returns list[EvaluationResult], one per step (matches the already-built " +
+              "frontend's per-step display, not AC text's more ambiguous singular wording). Does NOT call " +
+              "is_legal_transition() (#27) - confirmed with project lead - EvaluationResult has nowhere to " +
+              "put that signal yet. 3-case failure handling: malformed student recognized_latex -> " +
+              "invalid, not a crash; malformed correct_answer -> LatexParseError propagates unmodified " +
+              "(content bug, matches #26); anything else unexpected -> wrapped as PipelineError with the " +
+              "failing step index. 6 test cases, full suite 77 passed. NOTE: implemented locally only " +
+              "(same branch as #25/#26/#27/#28/#34, plus #12's models.py merged in locally), not yet " +
+              "pushed/PR'd - held back until PRs #46/#48/#49/#50/#51/#52 clear." },
       { id:"#37", owner:"jeff", title:"Wire POST /attempts/check to full pipeline", status:"Not started",
         story:"As the frontend, I need one endpoint that does the whole check, not five separate calls.",
         ac:["Endpoint accepts steps, runs the full orchestration pipeline, returns the result",
