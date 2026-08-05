@@ -382,11 +382,23 @@ const STAGES = [
             "Malformed expressions are flagged invalid, not left to crash",
             "Covered by at least 3 test cases"],
         deps:"Depends on: #22 (Alan's parser)" },
-      { id:"#26", owner:"jeff", title:"Implement internal math correctness check", status:"Not started",
+      { id:"#26", owner:"alan", title:"Implement internal math correctness check", status:"Done",
         story:"As the evaluator, I need to confirm a step's math actually holds true, not just that it's well-formed.",
         ac:["Given a valid expression, checks whether it's mathematically true (e.g. 2/7 = 4/28)",
             "No false positives across at least 5 test cases"],
-        deps:"Depends on: #25" },
+        deps:"Depends on: #25 (sequencing dependency only, not a code import - #26 assumes validity " +
+              "already checked by the caller) · Blocks: #27, #28 · Shipped 2026-08-05 in " +
+              "backend/correctness_check.py (is_correct()) - a thin wrapper parsing correct_answer via " +
+              "parse_math_latex (#22) then comparing via canonical_form.are_equivalent() (#23). Note: the " +
+              "AC's own '2/7 = 4/28' example is actually a FALSE pair (4/28 = 1/7, not 2/7) - used as a " +
+              "false-positive guard test case instead, not a true-pair example. correct_answer comes from " +
+              "curated seed content (#8), not a student, so a malformed correct_answer raises " +
+              "LatexParseError rather than being silently swallowed (deliberately different from #25's " +
+              "\"never raises\" - that's for untrusted student input specifically). 11 test cases in " +
+              "backend/test_correctness_check.py, full suite 45 passed. Not yet wired into any endpoint - " +
+              "#36 orchestration wires #25-28 together later. NOTE: implemented locally only, not yet " +
+              "pushed/PR'd - held back until PRs #46/#48/#49/#50/#51/#52 clear, to avoid adding another " +
+              "branch to the shared-tracking-file conflict cascade." },
       { id:"#27", owner:"jeff", title:"Implement transition validity check", status:"Not started",
         story:"As the evaluator, I need to know if a step logically follows from the previous one, so an unrelated correct answer isn't accepted.",
         ac:["Given two consecutive steps, determines whether the second is a legal derivation from the first",
