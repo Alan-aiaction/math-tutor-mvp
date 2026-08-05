@@ -278,12 +278,12 @@ const STAGES = [
       <p class="tree-caption">#12 and #13 are parallel foundations — #14, #15 (Richard), and #16 both need them ready, but not each other.</p>
     `,
     tasks: [
-      { id:"#12", owner:"all", title:"Scaffold FastAPI + Pydantic models", status:"Not started",
+      { id:"#12", owner:"all", title:"Scaffold FastAPI + Pydantic models", status:"Done",
         story:"As the backend team, we need the agreed contract turned into real code, so every endpoint returns consistently-shaped data.",
         ac:["FastAPI project scaffolded in /backend",
             "Pydantic classes from task #11 committed as backend/models.py",
             "App starts locally with uvicorn, no import errors"],
-        deps:"Depends on: #11" },
+        deps:"Depends on: #11 · AC #1 was already true before this ticket (main.py, requirements.txt, other modules already running in production). AC #2: backend/models.py added with the 6 contract models (Problem, Step, Attempt, EvaluationResult, Misconception, Hint), field-for-field from api_contract_draft_20260728.md incl. solving_tip and matching_rule:dict. AC #3 verified by actually starting uvicorn locally and hitting /health (200) - not assumed. Unblocks #13-16, #36-38." },
       { id:"#13", owner:"all", title:"Supabase Python client / DB layer", status:"Not started",
         story:"As the backend, we need a working DB connection, so endpoints can actually read and write real data.",
         ac:["supabase-py client initialized using .env credentials",
@@ -398,11 +398,11 @@ const STAGES = [
         ac:["Returns EvaluationResult matching the agreed Pydantic model",
             "Covers all 3 outcomes: correct, incorrect-with-misconception, incorrect-no-match"],
         deps:"Depends on: #25, #26, #27 · Blocks: #36" },
-      { id:"#29", owner:"jeff", title:"Define rule format for misconception_rules", status:"Not started",
+      { id:"#29", owner:"jeff", title:"Define rule format for misconception_rules", status:"In progress",
         story:"As the backend, I need an agreed rule structure, so content (Dev C/Richard) and matching logic speak the same format.",
         ac:["Rule format documented (pattern type, matching fields)",
             "Reviewed and agreed with Dev C before content seeding begins"],
-        deps:"Coordinate with: #6, #9" },
+        deps:"Coordinate with: #6, #9 · AC #1 done: proposal at docs/architecture/proposal_misconception_rule_format.md (declarative JSON format, AI scoped to offline rule authoring + shadow logging, not real-time per-check matching). AC #2 still needs real Jeff/Richard sign-off - see docs/tracking/decision-log.md. Scoping note: implementation (#30, real #9 seeding) deferred to 2nd MVP given 2026-08-22 time pressure; #25-28 and #34 still ship in 1st MVP, and shadow logging starts now via #13/#15's attempt_steps persistence, so 2nd MVP's rules get built from real usage data." },
       { id:"#30", owner:"jeff", title:"Implement rule-matching engine", status:"Not started",
         story:"As the evaluator, given a wrong answer, I want to find which known misconception it matches, so the student gets a targeted hint.",
         ac:["Given a wrong step and expected step, returns a matching misconception_id if found",
@@ -649,11 +649,16 @@ const STAGES = [
         ac:["Seeded problems cross-checked against SLO tussendoelen groep 7/8 targets",
             "Gaps documented (topics in the standard not yet covered)"],
         deps:"Depends on: #8" },
-      { id:"#47", owner:"all", title:"Enforce HTTPS everywhere", status:"Not started",
+      { id:"#47", owner:"all", title:"Enforce HTTPS everywhere", status:"Done",
         story:"As the team, we want all traffic encrypted, so student data isn't exposed in transit.",
         ac:["No endpoint reachable over plain HTTP in production",
             "Confirmed on both Vercel and Railway — verify, don't assume"],
-        deps:"None — quick verification" },
+        deps:"None — quick verification · Verified 2026-08-05: a plain http:// request to the live " +
+              "Railway backend returns a 301 redirect to https://; a plain http:// request to the live " +
+              "Vercel frontend returns a 308 redirect to https://. Neither serves real content over plain " +
+              "HTTP. Decided to rely on the platform-level guarantee rather than add app-level redirect " +
+              "middleware (redirect-loop risk behind Railway's proxy without proxy-header handling) - " +
+              "full reasoning in docs/tracking/decision-log.md. No code changed." },
       { id:"#48", owner:"alan", title:"Keep MyScript/Supabase keys server-side only", status:"Done",
         story:"As the team, we want secrets to never reach the browser, so they can't be scraped from page source.",
         ac:["service_role and MyScript keys exist only in backend/.env, never in frontend/.env.local",

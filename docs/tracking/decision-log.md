@@ -146,6 +146,80 @@ the actual board before trusting it.
 
 ---
 
+## [Proposed] Misconception rule format (#29)
+
+- **Date proposed:** 2026-08-03
+- **Status:** Proposed — full spec at `docs/architecture/proposal_misconception_rule_format.md`, pending Jeff/Richard review per #29's own AC
+- **Affects:** `docs/architecture/api_contract_draft_20260728.md` (Misconception model), #9 (seed data), #30 (rule-matching engine)
+- **Options considered:**
+  - Real-time LLM classification of each wrong answer (no pre-defined rule format needed at all)
+  - A declarative JSON rule format (`operation`, `error_transform`, `check`), matched deterministically against the parsed expression tree
+- **Decision:** The declarative format. AI scoped to two narrower places instead of the hot
+  path: offline rule *authoring* (LLM drafts, human approves — same pattern as `solving_tip`),
+  and an offline shadow-logging loop where unmatched wrong answers get logged for later
+  human review, feeding future rule authoring.
+- **Reasoning:** Real-time LLM-per-check was rejected — it breaks hint escalation (no stable
+  `misconception_id` without deterministic matching), risks an incorrect or answer-revealing
+  hint reaching a real child with no human review, adds per-request cost the README asks to
+  minimize, adds latency to what should be immediate feedback, and isn't testable the way
+  #26's "no false positives" AC requires. It would also re-litigate a call already made once
+  for the adjacent hint-generation question (#34's board note: LLM generation deferred,
+  "revisit before pilot"). The declarative format keeps matching fast, deterministic, and
+  testable, while still using AI where it's genuinely safe and valuable — content creation
+  and offline pattern-mining, not live judgment on a real student's answer.
+- **Team feedback:** _pending_
+
+---
+
+## [Confirmed] Defer misconception-detection implementation to a 2nd MVP; pull shadow logging into the 1st
+
+- **Date decided:** 2026-08-03
+- **Status:** Confirmed — project lead's call, given 2026-08-22 MVP time pressure
+- **Affects:** #29 (design proceeds now), #30/#9 (deferred), #25-28/#34 (stay in 1st MVP), #13/#15 (stay in 1st MVP), #63 (new ticket, makes the shadow log queryable), #61 (Post-MVP backlog item this now directly feeds)
+- **Options considered:**
+  - Defer the entire misconception/hint chain (#25-38) to 2nd MVP
+  - Ship #25-28 (Evaluator) and #34 (generic fallback hint) in 1st MVP; defer only the
+    misconception-specific layer (#30 matching engine, #9 real rule seeding) to 2nd MVP
+- **Decision:** The second option, plus pulling shadow logging into 1st MVP rather than
+  waiting for 2nd MVP.
+- **Reasoning:** Deferring the whole chain would mean 1st MVP ships without any hint at all
+  on a wrong answer, closer to a bare correctness-checker than the "diagnosing misconceptions
+  and guiding with hints" tutor the README describes as the product's core value — risking a
+  pilot that doesn't actually test the product's real differentiator. Splitting the defer to
+  just the misconception-specific layer keeps a real (if generic) hint in front of students
+  while deferring only the harder, evidence-hungry personalized-diagnosis part. Shadow
+  logging's *storage* needs no new infrastructure — `attempt_steps` (#6/#7, live) already
+  captures every wrong step once #13/#15 ship — but making that data actually queryable for
+  review is real, separate work, given its own ticket (#63) rather than left implicit, so
+  2nd MVP's rule set can be built from real groep 7/8 usage data instead of guesswork made
+  under this MVP's time pressure.
+- **Team feedback:** n/a — project lead scoping call, not yet sent to Jeff/Richard for review.
+
+---
+
+## [Confirmed] HTTPS enforcement relies on Railway/Vercel platform guarantee (#47)
+
+- **Date decided:** 2026-08-05
+- **Status:** Confirmed — verified, no code change
+- **Affects:** `backend/main.py`, `backend/Procfile` (neither touched); deployment posture only
+- **Options considered:**
+  - Add app-level HTTPS enforcement (redirect middleware) as defense-in-depth
+  - Rely on Railway/Vercel's platform-level HTTPS guarantee; verify it, don't add app code
+- **Decision:** The second option — verify + document only.
+- **Reasoning:** Railway terminates TLS at its edge and forwards plain HTTP internally to the
+  container; a naive `HTTPSRedirectMiddleware` added inside the app risks a redirect loop
+  unless the app is explicitly told to trust `X-Forwarded-Proto` (no `--proxy-headers` flag
+  currently set). Taking on that risk isn't worth it for a gap live verification shows doesn't
+  exist.
+- **Verified (2026-08-05):** a plain `http://` request to the live Railway backend
+  (`math-tutor-mvp-production.up.railway.app`) returns a `301` redirect to `https://`; a plain
+  `http://` request to the live Vercel frontend (`math-tutor-mvp.vercel.app`) returns a `308`
+  redirect to `https://`. Neither serves real content over plain HTTP — this is the actual "verify,
+  don't assume" check the AC calls for, not an assumption from platform marketing claims.
+- **Team feedback:** n/a — decided directly with the project lead.
+
+---
+
 ## [Living] Full 1st MVP task order (dependency order, no owners, all statuses)
 
 - **Last verified against the board:** 2026-08-04
