@@ -10,7 +10,13 @@ Complements the "Open design gaps" tracker in
 `docs/architecture/system-design.html#gaps`: that table says *what* needs deciding and *what
 it blocks*; this log is *where the actual decision and reasoning get recorded* once made.
 
-Entries are chronological (oldest first), matching `ai-model-log.md`'s convention.
+Entries are chronological (oldest first), matching `ai-model-log.md`'s convention — except
+`[Living]` entries, which stay at the bottom regardless of date since they're continuously
+refreshed rather than dated one-time decisions. A `[Living]` entry isn't a decision at all —
+it's a standing view over the task board's current state (e.g. "what's next, in dependency
+order"), kept here because it's derived reasoning worth having in one place, not because it's
+a fact to trust blindly. Always carries a "Last verified" date; if that's gone stale, check
+the actual board before trusting it.
 
 ---
 
@@ -188,3 +194,70 @@ Entries are chronological (oldest first), matching `ai-model-log.md`'s conventio
   2nd MVP's rule set can be built from real groep 7/8 usage data instead of guesswork made
   under this MVP's time pressure.
 - **Team feedback:** n/a — project lead scoping call, not yet sent to Jeff/Richard for review.
+
+---
+
+## [Living] Full 1st MVP task order (dependency order, no owners, all statuses)
+
+- **Last verified against the board:** 2026-08-04
+- **Purpose:** every ticket needed for the 1st MVP pilot, in one dependency-ordered
+  sequence — regardless of who owns it or its current status. Full detail (story, AC) stays
+  on each ticket's own board card; this is the ordering layer only, not a duplicate.
+- **Scope:** excludes #9/#30/#31/#33 (misconception-specific chain, deferred to 2nd MVP —
+  see the scoping decision above), #21 (superseded), #60-62 (Post-MVP backlog).
+- **Update trigger:** refresh whenever a listed ticket's status changes, or when PR #42
+  (#29), #43 (#34/#63), or #33 (#8's owner) land — don't let this sit stale past that.
+
+**Already done (17):** #1b, #6, #7, #11, #17, #18, #19, #22, #23, #24, #39, #40, #41, #42,
+#43, #44, #48 — listed for completeness ("regardless of status"), not re-sequenced.
+
+**Remaining, in dependency order:**
+
+1. **#12** — Scaffold `backend/models.py`. Needs #11 (done).
+2. **#8** — Seed problems. Needs #6 (done). Independent of everything else below.
+3. **#13** — Supabase DB layer. Needs #6, #7 (done).
+4. **#10** — Enable Supabase RLS (permissive baseline). Needs #7 (done).
+5. **#25** — Expression validity check. Needs #22 (done).
+6. **#47** — Enforce HTTPS everywhere. No real dependency, quick verification.
+7. **#49** — Store LaTeX only. Needs #18 (done); full completion also needs #13/#15 (below).
+8. **#29** — Rule format sign-off. Design already out (PR #42) — just needs Jeff/Richard
+   review, not gated on #9 actually being seeded.
+9. **#14** — `GET /problems/{id}`. Needs #12, #13, #8 (1, 3, 2 above).
+10. **#15** — `POST /attempts`. Needs #12, #13 (1, 3).
+11. **#16** — Error handling/logging. Needs #12, #13 (1, 3).
+12. **#26** — Internal math correctness check. Needs #25 (5).
+13. **#63** — Make shadow-logged wrong answers queryable. Needs #13, #15 (3, 10).
+14. **#27** — Transition validity check. Needs #26 (12).
+15. **#35** — Hint tone/language for the generic hint. Board still says `Depends on: #9` —
+    **flagged, not yet fixed**, same issue #34 had: the one generic hint (#34) needs a tone
+    decision regardless of real misconception content existing yet.
+16. **#28** — Structured `EvaluationResult`. Needs #25, #26, #27 (5, 12, 14).
+17. **#34** — Generic fallback hint. Needs #28 (16); already decoupled from #33/#9 (PR #43).
+18. **#36** — Orchestration pipeline — **scope note:** simplified for 1st MVP, skips the
+    misconception-detect step entirely (that's 2nd MVP). Needs #19 (done), #28, #34 (16, 17).
+19. **#50** — Student access code. Frontend done; full tie-in needs #12/#13/#15 (1, 3, 10).
+20. **#37** — Wire `POST /attempts/check` to the pipeline. Needs #36 (18).
+21. **#38** — Pipeline timing/logging. Needs #36 (18).
+22. **#51** — Tighten RLS with real access-code policies. Needs #50 (19).
+23. **#56** — Deploy backend, connect Supabase. In progress; needs backend broadly done
+    (through 21).
+24. **#45** — Swap frontend mocks for real endpoints. Needs #19 (done), #37, #43 (done)
+    (20).
+25. **#52** — Unit tests: parser, evaluator — **scope note:** skip misconception-matcher
+    tests, that piece is deferred. Needs #25-28 (5, 12, 14, 16).
+26. **#53** — Integration tests: full `/attempts/check` pipeline. Needs #37 (20).
+27. **#57** — Deploy frontend to Vercel (real app). Needs #45 (24).
+28. **#46** — Test full flow live with Jeff. Needs #45 (24).
+29. **#46b** — Network/error states in the UI. Needs #45 (24).
+30. **#55** — Verify curriculum coverage vs. SLO tussendoelen. Needs #8 (2).
+31. **#58** — Smoke-test production. Needs #56, #57 (23, 27).
+32. **#59** — Monitoring/error logging (Sentry). Needs real code existing broadly — late,
+    before real students touch it.
+33. **#54** — Manual QA with real kids' handwriting. Needs #45 (24) + school access — this
+    is effectively the pilot itself, last by design.
+
+**Also flagged, not sequenced above:**
+- **#20** (manual edit fallback) — no real blocking dependency, but its own board note
+  already says it's likely fully covered by #41's existing Confirm/Edit. Probably a
+  close-as-covered candidate rather than something to schedule — not resolved here, same as
+  #35, left for a separate decision.
