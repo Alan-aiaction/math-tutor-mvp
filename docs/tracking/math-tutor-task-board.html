@@ -834,11 +834,19 @@ const STAGES = [
         ac:["Full flow tested against the live production URLs",
             "No console errors, no broken network calls"],
         deps:"Depends on: #56, #57" },
-      { id:"#59", owner:"alan", title:"Set up monitoring / error logging (Sentry)", status:"Not started",
+      { id:"#59", owner:"alan", title:"Set up monitoring / error logging (Sentry)", status:"In progress",
         story:"As the team, we want to know when something breaks in production, without waiting for a student to report it.",
         ac:["Sentry (or equivalent) wired into both frontend and backend",
             "A deliberately triggered test error appears in the dashboard within minutes"],
-        deps:"Depends on: real code existing in both frontend/backend" }
+        deps:"Depends on: real code existing in both frontend/backend · Backend done 2026-08-06: " +
+              "sentry_sdk.init() in main.py (send_default_pii=False - matches this project's " +
+              "GDPR-for-minors stance from #49), wired into the existing #16 catch-all exception " +
+              "handler via capture_exception(). Logging integration's event_level explicitly set " +
+              "to None so already-handled logger.error() calls (db.py credential errors, " +
+              "DatabaseError, etc.) don't also become Sentry events - only true unhandled " +
+              "exceptions do. Verified live: triggered a real captured exception against the real " +
+              "DSN, confirmed events were sent. Frontend (Next.js) half still pending - needs its " +
+              "own Sentry project/DSN, not yet created." }
     ]
   },
   {
