@@ -660,10 +660,18 @@ const STAGES = [
             "Edit opens a plain text input to correct the value (real handwriting comes later, #17)",
             "Confirming locks in the mock recognized value for that step"],
         deps:"Depends on: #40" },
-      { id:"#20", owner:"alan", title:"Add manual Edit fallback for recognized LaTeX", status:"Not started",
+      { id:"#20", owner:"alan", title:"Add manual Edit fallback for recognized LaTeX", status:"Done",
         story:"As a student, if the recognized value is wrong, I want to fix it by hand, so one bad scan doesn't block me.",
         ac:["Editable fallback available when recognition is wrong or missing"],
-        deps:"Possible overlap with #41's Confirm/Edit UI (already built) — worth checking with the team whether this is separate scope or already covered before starting" },
+        deps:"Fully covered by #41's shipped work - verified 2026-08-06 by reading " +
+              "frontend/app/components/StepBox.js directly: the default step-box view always " +
+              "renders an unconditional Edit button (line ~157), not gated behind any " +
+              "error/failure state. Clicking it opens a text input pre-filled with the current " +
+              "value, Confirm commits whatever's typed (lines ~127-143). 'Wrong' is covered " +
+              "(edit corrects it); 'missing' is covered too - the recognized value defaults to " +
+              "an empty string (renders as '—') and goes through the identical Edit/Confirm " +
+              "path, no separate branch needed. No gap, no code changes - #41 already fully " +
+              "subsumes this ticket's AC." },
       { id:"#42", owner:"alan", title:"Add / delete step controls", status:"Done",
         story:"As a student, I want to add or remove steps as I work, so I'm not stuck with too few or too many boxes.",
         ac:["\"+ Add next step\" appends a new empty step box",
