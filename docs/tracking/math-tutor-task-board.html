@@ -311,12 +311,26 @@ const STAGES = [
             "Returns a clean 404 for a nonexistent ID",
             "Manually tested against at least 3 seeded problems"],
         deps:"Depends on: #12, #13, #8" },
-      { id:"#15", owner:"richard", title:"Implement POST /attempts", status:"Not started",
+      { id:"#15", owner:"alan", title:"Implement POST /attempts", status:"Done",
         story:"As the frontend, I need to save a student's attempt, so progress isn't lost after a session ends.",
         ac:["Endpoint accepts an Attempt object (with nested Steps) and persists it",
             "Returns the saved attempt with its generated ID",
             "Malformed requests are rejected with a clear validation error"],
-        deps:"Depends on: #12, #13" },
+        deps:"Depends on: #12 (done), #13 (done) · Unblocks: #63, full #50 tie-in · Shipped " +
+              "2026-08-06 in backend/attempts.py (create_attempt()) + POST /attempts in main.py - the " +
+              "backend's first real database write. IDs are DB-generated (bigint identity), so the " +
+              "request uses new local AttemptCreate/StepCreate models (id-less), matching " +
+              "RecognizeRequest's existing precedent, not the contract's Attempt/Step directly. AC #3's " +
+              "real substance: a nonexistent problem_id (live FK constraint) is caught and mapped to a " +
+              "clean 400, not a raw 500 - malformed JSON shape already gets an automatic 422 for free " +
+              "from Pydantic. Steps insert is one bulk call (all-or-nothing), not one-per-step - not " +
+              "cross-table-transactional with the attempts insert (no easy multi-table transaction in " +
+              "supabase-py without a Postgres RPC), flagged as a known limitation, not solved here. " +
+              "4 mocked unit tests + 1 real integration test (self-contained: creates and cleans up its " +
+              "own throwaway problems row, verified zero residue after). Also manually verified live via " +
+              "a real running uvicorn instance - success (real generated IDs), malformed request (422), " +
+              "and invalid problem_id (400 with a clear message) - not just unit tests. Full suite 58 " +
+              "passed." },
       { id:"#16", owner:"all", title:"Error handling, validation, logging", status:"Not started",
         story:"As the team, we want failures to be visible, so a bad request doesn't fail silently in production.",
         ac:["All endpoints validate input via Pydantic",
@@ -402,22 +416,58 @@ const STAGES = [
               "unexpected exception during the check itself is caught and treated as invalid. 14 test cases " +
               "in backend/test_expression_validity.py (backend/test_*.py suite: 48 passed). Not yet wired " +
               "into any endpoint - #36 orchestration wires #25-28 together later." },
-      { id:"#26", owner:"jeff", title:"Implement internal math correctness check", status:"Not started",
+      { id:"#26", owner:"alan", title:"Implement internal math correctness check", status:"Done",
         story:"As the evaluator, I need to confirm a step's math actually holds true, not just that it's well-formed.",
         ac:["Given a valid expression, checks whether it's mathematically true (e.g. 2/7 = 4/28)",
             "No false positives across at least 5 test cases"],
-        deps:"Depends on: #25" },
-      { id:"#27", owner:"jeff", title:"Implement transition validity check", status:"Not started",
+        deps:"Depends on: #25 (sequencing dependency only, not a code import - #26 assumes validity " +
+              "already checked by the caller) · Blocks: #27, #28 · Shipped 2026-08-05 in " +
+              "backend/correctness_check.py (is_correct()) - a thin wrapper parsing correct_answer via " +
+              "parse_math_latex (#22) then comparing via canonical_form.are_equivalent() (#23). Note: the " +
+              "AC's own '2/7 = 4/28' example is actually a FALSE pair (4/28 = 1/7, not 2/7) - used as a " +
+              "false-positive guard test case instead, not a true-pair example. correct_answer comes from " +
+              "curated seed content (#8), not a student, so a malformed correct_answer raises " +
+              "LatexParseError rather than being silently swallowed (deliberately different from #25's " +
+              "\"never raises\" - that's for untrusted student input specifically). 11 test cases in " +
+              "backend/test_correctness_check.py, full suite 45 passed. Not yet wired into any endpoint - " +
+              "#36 orchestration wires #25-28 together later. NOTE: implemented locally only, not yet " +
+              "pushed/PR'd - held back until PRs #46/#48/#49/#50/#51/#52 clear, to avoid adding another " +
+              "branch to the shared-tracking-file conflict cascade." },
+      { id:"#27", owner:"alan", title:"Implement transition validity check", status:"Done",
         story:"As the evaluator, I need to know if a step logically follows from the previous one, so an unrelated correct answer isn't accepted.",
         ac:["Given two consecutive steps, determines whether the second is a legal derivation from the first",
             "Explicitly tested against one 'correct but unusual method' case, per the product spec's edge case",
             "Cases it can't yet judge default to 'needs review', not silently wrong"],
-        deps:"Depends on: #26" },
-      { id:"#28", owner:"jeff", title:"Return structured EvaluationResult per step", status:"Not started",
+        deps:"Depends on: #26 (sequencing only - no code import, uses canonical_form.py directly) · " +
+              "Blocks: #28 · Shipped 2026-08-05 in backend/transition_validity.py (is_legal_transition()) " +
+              "- \"legal\" = value-preserving (are_equivalent), matching system-design.html's Fig. 4 " +
+              "decision flow (legal step? no -> needs review, never a hard 'illegal'). Unusual-method test " +
+              "case grounded in real seed content (groep8_math_practice_en.csv's friendly-numbers " +
+              "strategy: 6x199 vs 6x200-6x1). 6 test cases, full suite 51 passed. FLAGGED for #28: the " +
+              "agreed EvaluationResult model has no field for a needs-review outcome, and #28's own AC " +
+              "(correct/incorrect-with-misconception/incorrect-no-match) doesn't mention one either - #28 " +
+              "will need to resolve where this signal goes, not decided here. Not yet wired into any " +
+              "endpoint - #36 orchestration wires #25-28 together later. NOTE: implemented locally only " +
+              "(same branch as #26), not yet pushed/PR'd - held back until PRs #46/#48/#49/#50/#51/#52 " +
+              "clear." },
+      { id:"#28", owner:"alan", title:"Return structured EvaluationResult per step", status:"Done",
         story:"As downstream services, we need one consistent result object, so nothing has to guess the shape.",
         ac:["Returns EvaluationResult matching the agreed Pydantic model",
             "Covers all 3 outcomes: correct, incorrect-with-misconception, incorrect-no-match"],
-        deps:"Depends on: #25, #26, #27 · Blocks: #36" },
+        deps:"Depends on: #25, #26, #27 · Blocks: #36 · Shipped 2026-08-05 in backend/evaluation_result.py " +
+              "(build_evaluation_result()). Honest 1st-MVP scoping: only 2 outcomes are actually " +
+              "distinguishable today (correct / incorrect-with-generic-hint) - #30 (misconception " +
+              "matching) is confirmed 2nd-MVP scope, so misconception_id can never be populated with a " +
+              "real value yet; it's hardcoded None with a comment explaining why, not left as an " +
+              "unexplained gap. hint_text arrives as a plain parameter since #34 (generic hint) doesn't " +
+              "exist as code yet either - #28 stays agnostic to where the hint text comes from. #27's " +
+              "\"needs review\" signal is deliberately NOT consumed here (confirmed with project lead) - " +
+              "EvaluationResult has no field for it; extending the agreed contract is a separate decision, " +
+              "flagged, not made in this ticket. 4 test cases, full suite 55 passed. Not yet wired into " +
+              "any endpoint - #36 orchestration wires #25-28 together later. NOTE: implemented locally " +
+              "only (same branch as #26/#27, which also now has feature/12-scaffold-pydantic-models " +
+              "merged in locally so backend/models.py is importable), not yet pushed/PR'd - held back " +
+              "until PRs #46/#48/#49/#50/#51/#52 clear." },
       { id:"#29", owner:"jeff", title:"Define rule format for misconception_rules", status:"In progress",
         story:"As the backend, I need an agreed rule structure, so content (Dev C/Richard) and matching logic speak the same format.",
         ac:["Rule format documented (pattern type, matching fields)",
@@ -439,32 +489,69 @@ const STAGES = [
         ac:["Given a misconception_id, returns the matching hint from the hints table",
             "Falls back to #34 when no id or no matching hint exists"],
         deps:"Depends on: #9, #31" },
-      { id:"#34", owner:"jeff", title:"Implement fallback generic hint", status:"Not started",
+      { id:"#34", owner:"alan", title:"Implement fallback generic hint", status:"Done",
         story:"As a student, even if my mistake isn't recognized, I still want some guidance rather than silence.",
         ac:["A generic, non-answer-revealing hint returns when no specific hint matches",
             "Flagged for later: spec calls for this to eventually be LLM-generated, not static — revisit before pilot if time allows"],
-        deps:"Decoupled from #33 for 1st MVP (2026-08-03 scoping decision, see decision-log.md): #30/#9/#33's misconception-specific chain is deferred to 2nd MVP, but every wrong answer needs *some* hint in 1st MVP, so this ticket no longer waits on it - just needs #25-28 (Evaluator) to know a step is incorrect. #33 (real dependency once misconception matching exists) is 2nd MVP scope." },
+        deps:"Decoupled from #33 for 1st MVP (2026-08-03 scoping decision, see decision-log.md): #30/#9/#33's misconception-specific chain is deferred to 2nd MVP, but every wrong answer needs *some* hint in 1st MVP, so this ticket no longer waits on it - just needs #25-28 (Evaluator) to know a step is incorrect. #33 (real dependency once misconception matching exists) is 2nd MVP scope. · " +
+              "Shipped 2026-08-05 in backend/generic_hint.py (get_generic_hint()) - a static Dutch-language " +
+              "string per the agreed contract's \"Language: Dutch only for MVP\" (seed CSV's Tip to Solve " +
+              "column is English, deliberately not copied). Plain string, not the Hint model - " +
+              "Hint.misconception_id is required and this hint has no real misconception to attach to, " +
+              "mirroring the Problem.solving_tip decision. Kept behind a function (not a bare constant) so " +
+              "the eventual LLM-generated swap (AC #2) doesn't touch callers. Tone/wording refinement is " +
+              "#35's job, not redone here. 2 test cases, full suite 57 passed. Not yet wired into any " +
+              "endpoint - #36 orchestration passes this into #28's build_evaluation_result(). NOTE: " +
+              "implemented locally only (same branch as #26/#27/#28), not yet pushed/PR'd - held back " +
+              "until PRs #46/#48/#49/#50/#51/#52 clear." },
       { id:"#35", owner:"jeff", title:"Decide hint tone/language (Dutch, age-appropriate)", status:"Not started",
         story:"As a student (10-12yo, Dutch-speaking), I want hints that sound like they're talking to me, not a textbook.",
         ac:["Hint wording reviewed for age-appropriate Dutch phrasing",
             "At least one review round with Dev C (school context) before finalizing"],
-        deps:"Depends on: #9 · Validated by Dev C" },
-      { id:"#36", owner:"jeff", title:"Implement pipeline: receive → recognize → parse → validate → detect → return", status:"Not started",
+        deps:"Fixed 2026-08-05: was 'Depends on: #9' (stale - #9 is misconception rule seeding, deferred " +
+              "to 2nd MVP, same issue #34 had before PR #43 decoupled it). This ticket reviews/refines the " +
+              "GENERIC hint's wording (#34), not anything #9-specific - it only needs #34's hint text to " +
+              "exist to review. Depends on: #34 (done, held locally pending the PR merge gate) · Validated " +
+              "by Dev C" },
+      { id:"#36", owner:"alan", title:"Implement pipeline: receive → recognize → parse → validate → detect → return", status:"Done",
         story:"As the backend, I need all pieces wired together in order, so a single request produces a full result.",
         ac:["Pipeline calls recognition, parser, evaluator, misconception detector, and hint service in sequence",
             "Returns a complete EvaluationResult at the end",
             "Failure at any stage is caught and returns a clear error, not a silent crash"],
-        deps:"Depends on: #19, #28, #31, #33" },
+        deps:"Depends on: #19 (done), #28 (done), #34 (done) - #31/#33 listed here are stale, per the " +
+              "[Living] entry's own scope note for #36: 'simplified for 1st MVP, skips the misconception-" +
+              "detect step entirely' · Blocks: #37, #38 · Shipped 2026-08-05 in backend/orchestration.py " +
+              "(run_pipeline(), PipelineError). \"Calls recognition\" is aspirational per AC text - " +
+              "pipeline actually starts from already-recognized, already-confirmed Step.recognized_latex " +
+              "(recognition/#19 is a separate, already-live step, confirmed via system-design.html's " +
+              "sequence diagram). Returns list[EvaluationResult], one per step (matches the already-built " +
+              "frontend's per-step display, not AC text's more ambiguous singular wording). Does NOT call " +
+              "is_legal_transition() (#27) - confirmed with project lead - EvaluationResult has nowhere to " +
+              "put that signal yet. 3-case failure handling: malformed student recognized_latex -> " +
+              "invalid, not a crash; malformed correct_answer -> LatexParseError propagates unmodified " +
+              "(content bug, matches #26); anything else unexpected -> wrapped as PipelineError with the " +
+              "failing step index. 6 test cases, full suite 77 passed. NOTE: implemented locally only " +
+              "(same branch as #25/#26/#27/#28/#34, plus #12's models.py merged in locally), not yet " +
+              "pushed/PR'd - held back until PRs #46/#48/#49/#50/#51/#52 clear." },
       { id:"#37", owner:"jeff", title:"Wire POST /attempts/check to full pipeline", status:"Not started",
         story:"As the frontend, I need one endpoint that does the whole check, not five separate calls.",
         ac:["Endpoint accepts steps, runs the full orchestration pipeline, returns the result",
             "Manually tested end-to-end with at least 2 real examples"],
         deps:"Depends on: #36 · Blocks: #45" },
-      { id:"#38", owner:"jeff", title:"Add timing/logging at each pipeline stage", status:"Not started",
+      { id:"#38", owner:"alan", title:"Add timing/logging at each pipeline stage", status:"Done",
         story:"As the team, we want to see where time is spent, so we can debug slow responses before they affect real students.",
         ac:["Each pipeline stage logs its duration",
             "Total pipeline time is visible in logs for at least one test request"],
-        deps:"Depends on: #36" },
+        deps:"Depends on: #36 (done) · Shipped 2026-08-05, instrumenting backend/orchestration.py " +
+              "directly (not a new file - modifies #36's existing run_pipeline(), a deliberate departure " +
+              "from every other ticket's new-file pattern since this is instrumentation, not new logic). " +
+              "_timed_stage() context manager wraps each of 5 per-step stages (parse, validate, " +
+              "correctness, hint, build_result), logged with the step index so a slow step is " +
+              "identifiable. Total pipeline time + step count logged before returning. Reuses this " +
+              "codebase's one existing logging convention from db.py (#13). No behavior change - pure " +
+              "instrumentation, same inputs/outputs. 2 new test cases (8 total in test_orchestration.py), " +
+              "full suite 79 passed. NOTE: implemented locally only (same branch as #25/#26/#27/#28/#34/" +
+              "#36), not yet pushed/PR'd - held back until PRs #46/#48/#49/#50/#51/#52 clear." },
       { id:"#63", owner:"alan", title:"Make shadow-logged wrong answers queryable", status:"Done",
         story:"As the team, we want unmatched wrong answers to be reviewable, so 2nd MVP's misconception rules get built from real student data instead of guesswork.",
         ac:["A query or view surfaces incorrect attempt_steps joined with their problem's correct_answer, for human review",
@@ -690,11 +777,21 @@ const STAGES = [
         ac:["service_role and MyScript keys exist only in backend/.env, never in frontend/.env.local",
             "Verified: browser dev tools / page source contains no secret keys"],
         deps:"Already implemented during setup" },
-      { id:"#49", owner:"alan", title:"Store LaTeX only, not raw ink, by default", status:"Not started",
+      { id:"#49", owner:"alan", title:"Store LaTeX only, not raw ink, by default", status:"Done",
         story:"As the team, we want to minimize stored personal data, matching GDPR-for-minors best practice.",
         ac:["Recognition Service (#18) discards raw stroke data after conversion to LaTeX",
             "Optional ink storage stays off by default"],
-        deps:"Depends on: #18 · AC #1 incidentally true today - no storage layer exists at all yet (#13 not started), so nothing durable exists for ink to leak into. Documented as an explicit invariant via a code comment in backend/main.py's /recognize handler, so it isn't lost once #13/#15 land. AC #2 genuinely can't be satisfied yet - there's no ink-storage feature to have a default state for. Re-check this ticket for real completion once #13 (DB layer) and #15 (POST /attempts) are built." },
+        deps:"Depends on: #18 (done) · Re-checked for real 2026-08-06 as this card's own note asked, now " +
+              "that #13 and #15 are built. AC #1 confirmed structurally, not just observed: " +
+              "attempt_steps has exactly recognized_latex/is_correct beyond its id/FK - no column a raw " +
+              "stroke coordinate could go into even if something tried. recognition.py's recognize_math() " +
+              "only ever returns a LaTeX string (strokes never leave that function's scope after the API " +
+              "call); #15's StepCreate/create_attempt() only ever accept recognized_latex/is_correct per " +
+              "step, no stroke field exists in the request model either. The full pipeline is now " +
+              "structurally incapable of persisting raw ink, not merely 'doesn't happen to today.' AC #2 " +
+              "stays vacuously true, honestly framed: no ink-storage feature exists anywhere (no opt-in " +
+              "toggle, no blob storage, no raw-stroke column) - there's no default to verify because the " +
+              "feature the AC's wording implies was never built. No code changes - verification only." },
       { id:"#50", owner:"alan", title:"Add simple student access code", status:"In progress",
         story:"As a student, I want a simple way to identify my session, without a full login system slowing down the pilot.",
         ac:["A short code (not a full login) distinguishes one student's attempts from another's",
