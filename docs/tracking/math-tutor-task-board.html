@@ -818,20 +818,19 @@ const STAGES = [
         ac:["RLS policies updated so an access code can only read/write its own attempts",
             "Verified: one code cannot read another's data"],
         deps:"Depends on: #50" },
-      { id:"#56", owner:"all", title:"Deploy backend to Railway/Render, connect Supabase", status:"In progress",
+      { id:"#56", owner:"all", title:"Deploy backend to Railway/Render, connect Supabase", status:"Done",
         story:"As the team, we want the real backend live, so the frontend has something real to call instead of mocks or localhost.",
         ac:["Backend deployed to Railway - DONE, live at https://math-tutor-mvp-production.up.railway.app, verified 2026-08-02: /health returns 200, POST /recognize returns real MyScript-recognized LaTeX",
-            "Connected to the real Supabase project - STILL NOT done, but the reason has changed: " +
-            "#13 (DB layer, backend/db.py) shipped and merged weeks ago, so this is no longer a " +
-            "missing-code problem. Re-verified live 2026-08-06: GET /health returns 200 (backend " +
-            "is up), but POST /attempts with a bogus problem_id returns a clean 502 " +
-            "{\"detail\":\"Supabase credentials are not configured\"} - db.py's own DatabaseError, " +
-            "raised before any DB write. SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY were simply never " +
-            "added to Railway's environment variables. Concrete next action: set those two env " +
-            "vars in Railway's dashboard and redeploy - same class of gap as #59/#61's still-" +
-            "pending Vercel env vars.",
+            "Connected to the real Supabase project - DONE 2026-08-06: SUPABASE_URL/" +
+            "SUPABASE_SERVICE_ROLE_KEY added to Railway's env vars, redeployed. Verified live: " +
+            "POST /attempts with a bogus problem_id now returns 400 with a real Postgres foreign-" +
+            "key violation ({'code': '23503', ...'violates foreign key constraint " +
+            "\"attempts_problem_id_fkey\"'}), not the earlier 502 'credentials are not " +
+            "configured' - proves Supabase is genuinely reachable and the insert path runs for " +
+            "real, not just that the backend is up. No residue (FK violation means nothing " +
+            "committed).",
             "Production backend URL documented - done, see above. Still need to set NEXT_PUBLIC_BACKEND_API_URL in Vercel's env vars to this URL so the deployed frontend can actually reach it (currently only works from localhost)"],
-        deps:"Depends on: Railway env vars being set (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY) - not code, not #13 (already shipped) · Blocks: #57 (frontend needs a real backend URL to point at - now available), #58" },
+        deps:"Blocks: #57 (frontend needs a real backend URL to point at - now available), #58" },
       { id:"#57", owner:"alan", title:"Deploy frontend to Vercel (real app)", status:"In progress",
         story:"As the team, we want the real app live, not just the placeholder.",
         ac:["Placeholder page replaced with real frontend from Stage 4",
