@@ -1,4 +1,14 @@
-# AI Tool/Model Log
+# AI Tool/Model Log — historical, frozen as of 2026-08-06
+
+**New entries no longer go in this file.** Every PR appending a row here was landing on the
+same few lines, so any two PRs open at the same time reliably conflicted with each other —
+happened repeatedly in practice, not hypothetically. As of 2026-08-06, each work session gets
+its own new file in `docs/tracking/ai-model-log/` instead (see that folder's `README.md` for
+the convention) — two new files can never collide, so this removes the conflict source
+entirely. This file's existing rows stay exactly as they are, untouched, as the historical
+record up to the cutover.
+
+---
 
 Tracks who was working, with which AI tool and model, and when — for provenance and
 auditing. Not Claude-specific: Jeff/Richard may use a different AI tool (Copilot, Cursor,
