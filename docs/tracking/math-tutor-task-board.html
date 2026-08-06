@@ -311,12 +311,26 @@ const STAGES = [
             "Returns a clean 404 for a nonexistent ID",
             "Manually tested against at least 3 seeded problems"],
         deps:"Depends on: #12, #13, #8" },
-      { id:"#15", owner:"richard", title:"Implement POST /attempts", status:"Not started",
+      { id:"#15", owner:"alan", title:"Implement POST /attempts", status:"Done",
         story:"As the frontend, I need to save a student's attempt, so progress isn't lost after a session ends.",
         ac:["Endpoint accepts an Attempt object (with nested Steps) and persists it",
             "Returns the saved attempt with its generated ID",
             "Malformed requests are rejected with a clear validation error"],
-        deps:"Depends on: #12, #13" },
+        deps:"Depends on: #12 (done), #13 (done) · Unblocks: #63, full #50 tie-in · Shipped " +
+              "2026-08-06 in backend/attempts.py (create_attempt()) + POST /attempts in main.py - the " +
+              "backend's first real database write. IDs are DB-generated (bigint identity), so the " +
+              "request uses new local AttemptCreate/StepCreate models (id-less), matching " +
+              "RecognizeRequest's existing precedent, not the contract's Attempt/Step directly. AC #3's " +
+              "real substance: a nonexistent problem_id (live FK constraint) is caught and mapped to a " +
+              "clean 400, not a raw 500 - malformed JSON shape already gets an automatic 422 for free " +
+              "from Pydantic. Steps insert is one bulk call (all-or-nothing), not one-per-step - not " +
+              "cross-table-transactional with the attempts insert (no easy multi-table transaction in " +
+              "supabase-py without a Postgres RPC), flagged as a known limitation, not solved here. " +
+              "4 mocked unit tests + 1 real integration test (self-contained: creates and cleans up its " +
+              "own throwaway problems row, verified zero residue after). Also manually verified live via " +
+              "a real running uvicorn instance - success (real generated IDs), malformed request (422), " +
+              "and invalid problem_id (400 with a clear message) - not just unit tests. Full suite 58 " +
+              "passed." },
       { id:"#16", owner:"all", title:"Error handling, validation, logging", status:"Not started",
         story:"As the team, we want failures to be visible, so a bad request doesn't fail silently in production.",
         ac:["All endpoints validate input via Pydantic",
