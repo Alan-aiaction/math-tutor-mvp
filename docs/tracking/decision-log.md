@@ -219,6 +219,40 @@ the actual board before trusting it.
 
 ---
 
+## [Confirmed] Permissive RLS baseline for anon/authenticated, tighten later (#10)
+
+- **Date decided:** 2026-08-05
+- **Status:** Confirmed — implemented via Supabase migration
+- **Affects:** All 5 tables (`problems`, `attempts`, `attempt_steps`, `misconception_rules`,
+  `hints`); unblocks #51 (real access-code-scoped policies)
+- **Options considered:**
+  - Write real per-role policies now, scoped to something meaningful
+  - A fully open `USING (true)`/`WITH CHECK (true)` policy for `anon`/`authenticated` on every
+    table, explicitly marked temporary
+- **Decision:** The second option — one blanket permissive policy per table, plus the matching
+  SQL `GRANT`s (RLS policies alone don't grant access; #13 already found this same gap for
+  `service_role`, and `anon`/`authenticated` had the identical missing-grant problem before
+  this migration).
+- **Reasoning:** There's no real identity to scope access to yet — #50 (access code) is
+  frontend-only today, not tied to any backend auth. Writing a "real" scoped policy now would
+  mean inventing a scoping rule that #51 will just replace once #50 actually exists.
+  Also worth noting honestly: nothing in the codebase currently uses `anon`/`authenticated` at
+  all (the backend only ever connects via `service_role`, which already bypasses RLS
+  regardless of policy content) — so this ticket's value today is satisfying the AC, clearing
+  Supabase's advisor lint for RLS-enabled-zero-policies, and removing friction for #51, not
+  unblocking any live consumer.
+- **Verified:** `pg_policies` shows a `mvp_permissive_all` policy on all 5 tables for
+  `anon`/`authenticated`; `information_schema.role_table_grants` shows full
+  `SELECT`/`INSERT`/`UPDATE`/`DELETE` for both roles on all 5 tables; Supabase's security
+  advisor no longer flags the RLS-enabled-zero-policy warning after the migration.
+- **New, separate finding (not fixed here):** the advisor now shows a pre-existing, unrelated
+  warning — `public.rls_auto_enable()`, a `SECURITY DEFINER` function callable by
+  `anon`/`authenticated`. Not created by this migration; flagged for a separate decision, per
+  "fix one problem at a time."
+- **Team feedback:** n/a — decided directly with the project lead.
+
+---
+
 ## [Confirmed] HTTPS enforcement relies on Railway/Vercel platform guarantee (#47)
 
 - **Date decided:** 2026-08-05

@@ -238,12 +238,19 @@ const STAGES = [
             "Each misconception has one first-level hint and one escalation hint",
             "Wording/format coordinated with Dev C before seeding"],
         deps:"Depends on: #6 · Blocks: #30, #33" },
-      { id:"#10", owner:"all", title:"Enable Supabase RLS policies", status:"Not started",
+      { id:"#10", owner:"all", title:"Enable Supabase RLS policies", status:"Done",
         story:"As the team, we want baseline security on, so we're not fully exposed even before auth exists.",
         ac:["RLS enabled on all 5 tables",
             "Policies are permissive for MVP (documented as temporary)",
             "Noted for tightening later once access code (#50) exists"],
-        deps:"Depends on: #7" }
+        deps:"Depends on: #7 (done) · Unblocks: #51 · Shipped 2026-08-05 via Supabase migration - " +
+              "one mvp_permissive_all policy per table (anon+authenticated, USING (true)/WITH CHECK (true)) " +
+              "plus matching SQL GRANTs (same gap #13 found for service_role also existed for anon/" +
+              "authenticated - fixed here too). Honest caveat: nothing in the codebase uses anon/" +
+              "authenticated yet (backend only connects via service_role), so this satisfies the AC and " +
+              "clears Supabase's advisor lint without unblocking a live consumer today. Full reasoning in " +
+              "docs/tracking/decision-log.md. Verified via pg_policies + role_table_grants + get_advisors " +
+              "before/after." }
     ]
   },
   {
