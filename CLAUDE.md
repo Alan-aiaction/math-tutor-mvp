@@ -132,6 +132,25 @@ this file.
   made isn't "stale"). Got this wrong once this session — reported a PR as still open
   several turns after it had actually merged.
 
+## Test Pyramid
+
+Applies as new code is written, not as a one-time backfill effort — see
+`docs/tracking/decision-log.md`'s "Test pyramid design + CI wiring deferred to 2nd MVP" entry
+for the full unit/integration/E2E design (that infrastructure build-out is deferred; this
+per-change practice is not):
+
+- **New pure logic → unit test, no mocking.** No I/O, no external system touched by the test.
+- **New code touching an external system (DB, API, filesystem, queue) → integration test
+  against a real test instance of that system, not a mock of it.**
+- **New user-facing flow → ask before adding E2E coverage.** Don't add it automatically.
+- **Test via the public interface only — never assert on internal implementation details.**
+
+Currently applies to backend only (already the existing practice — every backend module has
+shipped with tests alongside it, e.g. `recognition.py`, `latex_parser.py`, `canonical_form.py`,
+`db.py`). Frontend has zero test infrastructure yet, so this waits there until a frontend test
+framework is chosen (open question in `.claude/plans/test-pyramid-design.md`) — not decided
+here.
+
 ## Project structure
 
 ```
