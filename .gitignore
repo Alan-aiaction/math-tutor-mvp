@@ -38,3 +38,7 @@ Thumbs.db
 
 # --- Local Claude Code MCP server config (not shared with team) ---
 .mcp.json
+
+# --- Decision log: stopped tracking in git 2026-08-06 (repeated merge conflicts, edited-
+# in-place file everyone's PRs touched) - ask Alan for the latest copy directly ---
+docs/tracking/decision-log.md

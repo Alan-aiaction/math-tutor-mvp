@@ -41,21 +41,29 @@ A task is not complete until:
 
 ## AI model tracking
 
-`docs/tracking/ai-model-log.md` tracks who was working, with which AI tool/model, and when — not
+`docs/tracking/ai-model-log/` tracks who was working, with which AI tool/model, and when — not
 Claude-only, since Jeff or Richard may use a different tool (or none). This section only
 governs Claude Code sessions; it can't make other tools do the same, since they don't read
 this file.
 
-- At the start of every work session, check the most recent entry. If the model you're
-  running as differs from that entry, tell the user explicitly (e.g. "model changed from
-  Sonnet 5 to X since the last session") and append a new row.
-- Also append a new row (even if the model is unchanged) at the start of any session that
-  does non-trivial code generation, so the log stays a useful timeline of "when was what
-  written," not just "when did the model change." Fill in the Tool column as "Claude Code."
-- For the User column: use the name matching this clone's `git config user.email` (see
-  Git identity below) — e.g. `alan@aiaction.ai` -> "Alan." If that's ambiguous or unset,
-  ask rather than guess.
-- Append-only — never edit or delete past entries, so the log stays an honest record.
+**One new file per session, not a shared table.** `docs/tracking/ai-model-log.md` was a single
+append-only table everyone's PRs edited — any two PRs open at once reliably conflicted on it,
+in practice, repeatedly. As of 2026-08-06, each session adds its own new file to
+`docs/tracking/ai-model-log/` instead (see that folder's `README.md` for the exact naming
+convention and file format) — two new files can never collide.
+
+- At the start of every work session, check the most recent file in
+  `docs/tracking/ai-model-log/` (highest timestamp filename). If the model you're running as
+  differs from it, tell the user explicitly (e.g. "model changed from Sonnet 5 to X since the
+  last session") and add a new file.
+- Also add a new file (even if the model is unchanged) at the start of any session that does
+  non-trivial code generation, so the log stays a useful timeline of "when was what written,"
+  not just "when did the model change."
+- For the User field: use the name matching this clone's `git config user.email` (see Git
+  identity below) — e.g. `alan@aiaction.ai` -> "Alan." If that's ambiguous or unset, ask
+  rather than guess.
+- Never edit or delete a past session's file — same append-only spirit as before, just
+  enforced structurally now instead of by convention alone.
 
 ## Git identity & Vercel deploys
 

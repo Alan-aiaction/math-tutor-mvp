@@ -7,6 +7,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+from attempts import AttemptPersistenceError, create_attempt
+from db import DatabaseError
+from models import Attempt
 from recognition import RecognitionError, recognize_math
 
 load_dotenv()
@@ -93,3 +96,30 @@ def recognize(payload: RecognizeRequest):
     except RecognitionError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     return RecognizeResponse(latex=latex)
+
+
+class StepCreate(BaseModel):
+    recognized_latex: str
+    is_correct: bool
+
+
+class AttemptCreate(BaseModel):
+    problem_id: int
+    student_id: str
+    status: str
+    steps: list[StepCreate]
+
+
+@app.post("/attempts", response_model=Attempt)
+def create_attempt_endpoint(payload: AttemptCreate):
+    try:
+        return create_attempt(
+            problem_id=payload.problem_id,
+            student_id=payload.student_id,
+            status=payload.status,
+            steps=[s.model_dump() for s in payload.steps],
+        )
+    except AttemptPersistenceError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except DatabaseError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
