@@ -119,6 +119,28 @@ the actual board before trusting it.
 
 ---
 
+## [Confirmed] Test pyramid design + CI wiring deferred to 2nd MVP
+
+- **Date decided:** 2026-08-04
+- **Status:** Confirmed — deferred, not built
+- **Affects:** All backend/frontend modules (full test-suite scope); no specific ticket yet
+- **Options considered:**
+  - Design the full 70/20/10 unit/integration/E2E test suite now and start implementing
+    (backend route tests, frontend test tooling adoption, GitHub Actions CI)
+  - Design it now for reference, but defer any implementation to 2nd MVP
+- **Decision:** The second option. A full test-pyramid design was produced (unit/integration/
+  E2E candidates across both backend and frontend, plus a GitHub Actions CI mapping — free for
+  this public repo) and saved to `.claude/plans/test-pyramid-design.md` (local-only, per this
+  repo's plan-file convention) for reference when the team picks this up.
+- **Reasoning:** Not in scope for the 1st MVP — project lead's call. The design stays useful
+  as-is once revisited: it already accounts for what exists today (backend pytest conventions,
+  zero frontend test infra) and flags real open questions (frontend test tooling choice, a
+  test-Supabase-project strategy for #14/#15) that'll need deciding whenever this is picked
+  back up.
+- **Team feedback:** n/a — decided directly with the project lead.
+
+---
+
 ## [Proposed] Misconception.matching_rule format
 
 - **Date proposed:** 2026-08-03
@@ -194,6 +216,63 @@ the actual board before trusting it.
   2nd MVP's rule set can be built from real groep 7/8 usage data instead of guesswork made
   under this MVP's time pressure.
 - **Team feedback:** n/a — project lead scoping call, not yet sent to Jeff/Richard for review.
+
+---
+
+## [Confirmed] Permissive RLS baseline for anon/authenticated, tighten later (#10)
+
+- **Date decided:** 2026-08-05
+- **Status:** Confirmed — implemented via Supabase migration
+- **Affects:** All 5 tables (`problems`, `attempts`, `attempt_steps`, `misconception_rules`,
+  `hints`); unblocks #51 (real access-code-scoped policies)
+- **Options considered:**
+  - Write real per-role policies now, scoped to something meaningful
+  - A fully open `USING (true)`/`WITH CHECK (true)` policy for `anon`/`authenticated` on every
+    table, explicitly marked temporary
+- **Decision:** The second option — one blanket permissive policy per table, plus the matching
+  SQL `GRANT`s (RLS policies alone don't grant access; #13 already found this same gap for
+  `service_role`, and `anon`/`authenticated` had the identical missing-grant problem before
+  this migration).
+- **Reasoning:** There's no real identity to scope access to yet — #50 (access code) is
+  frontend-only today, not tied to any backend auth. Writing a "real" scoped policy now would
+  mean inventing a scoping rule that #51 will just replace once #50 actually exists.
+  Also worth noting honestly: nothing in the codebase currently uses `anon`/`authenticated` at
+  all (the backend only ever connects via `service_role`, which already bypasses RLS
+  regardless of policy content) — so this ticket's value today is satisfying the AC, clearing
+  Supabase's advisor lint for RLS-enabled-zero-policies, and removing friction for #51, not
+  unblocking any live consumer.
+- **Verified:** `pg_policies` shows a `mvp_permissive_all` policy on all 5 tables for
+  `anon`/`authenticated`; `information_schema.role_table_grants` shows full
+  `SELECT`/`INSERT`/`UPDATE`/`DELETE` for both roles on all 5 tables; Supabase's security
+  advisor no longer flags the RLS-enabled-zero-policy warning after the migration.
+- **New, separate finding (not fixed here):** the advisor now shows a pre-existing, unrelated
+  warning — `public.rls_auto_enable()`, a `SECURITY DEFINER` function callable by
+  `anon`/`authenticated`. Not created by this migration; flagged for a separate decision, per
+  "fix one problem at a time."
+- **Team feedback:** n/a — decided directly with the project lead.
+
+---
+
+## [Confirmed] HTTPS enforcement relies on Railway/Vercel platform guarantee (#47)
+
+- **Date decided:** 2026-08-05
+- **Status:** Confirmed — verified, no code change
+- **Affects:** `backend/main.py`, `backend/Procfile` (neither touched); deployment posture only
+- **Options considered:**
+  - Add app-level HTTPS enforcement (redirect middleware) as defense-in-depth
+  - Rely on Railway/Vercel's platform-level HTTPS guarantee; verify it, don't add app code
+- **Decision:** The second option — verify + document only.
+- **Reasoning:** Railway terminates TLS at its edge and forwards plain HTTP internally to the
+  container; a naive `HTTPSRedirectMiddleware` added inside the app risks a redirect loop
+  unless the app is explicitly told to trust `X-Forwarded-Proto` (no `--proxy-headers` flag
+  currently set). Taking on that risk isn't worth it for a gap live verification shows doesn't
+  exist.
+- **Verified (2026-08-05):** a plain `http://` request to the live Railway backend
+  (`math-tutor-mvp-production.up.railway.app`) returns a `301` redirect to `https://`; a plain
+  `http://` request to the live Vercel frontend (`math-tutor-mvp.vercel.app`) returns a `308`
+  redirect to `https://`. Neither serves real content over plain HTTP — this is the actual "verify,
+  don't assume" check the AC calls for, not an assumption from platform marketing claims.
+- **Team feedback:** n/a — decided directly with the project lead.
 
 ---
 
