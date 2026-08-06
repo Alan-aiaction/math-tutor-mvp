@@ -465,12 +465,17 @@ const STAGES = [
         ac:["Each pipeline stage logs its duration",
             "Total pipeline time is visible in logs for at least one test request"],
         deps:"Depends on: #36" },
-      { id:"#63", owner:"alan", title:"Make shadow-logged wrong answers queryable", status:"In progress",
+      { id:"#63", owner:"alan", title:"Make shadow-logged wrong answers queryable", status:"Done",
         story:"As the team, we want unmatched wrong answers to be reviewable, so 2nd MVP's misconception rules get built from real student data instead of guesswork.",
         ac:["A query or view surfaces incorrect attempt_steps joined with their problem's correct_answer, for human review",
             "Documented for Jeff/Richard how to access it"],
         deps:"Depends on: #13, #15 (needs real persisted wrong answers to review) · Feeds: #61 · New ticket added 2026-08-03 - storage itself is free (attempt_steps already captures every wrong step once #13/#15 ship), this ticket covers making that data actually usable, not new storage infrastructure. See docs/architecture/proposal_misconception_rule_format.md (#29) Fig. 2 and decision-log.md. · " +
-              "2026-08-06: migration + docs written (supabase/migrations/20260806170000_shadow_log_wrong_answers_view.sql, docs/architecture/shadow-log-review.md), PR open. NOT yet Done - Supabase MCP is disconnected this session, so the view hasn't been applied/verified against the live database yet. Needs either the MCP reconnected or manual application via Supabase's SQL editor, then a verification pass, before this closes out." }
+              "Shipped 2026-08-06 in supabase/migrations/20260806170000_shadow_log_wrong_answers_view.sql " +
+              "(shadow_log_wrong_answers view), docs/architecture/shadow-log-review.md (access doc for " +
+              "Jeff/Richard). Applied and verified live once the Supabase MCP reconnected: inserted a " +
+              "throwaway problem + attempt with one correct and one incorrect step, confirmed the view " +
+              "surfaced exactly the incorrect one with the right joined question_text/correct_answer, " +
+              "confirmed the correct step was excluded, cleaned up with zero residue after." }
     ]
   },
   {
