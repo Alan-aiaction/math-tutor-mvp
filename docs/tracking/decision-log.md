@@ -119,6 +119,28 @@ the actual board before trusting it.
 
 ---
 
+## [Confirmed] Test pyramid design + CI wiring deferred to 2nd MVP
+
+- **Date decided:** 2026-08-04
+- **Status:** Confirmed — deferred, not built
+- **Affects:** All backend/frontend modules (full test-suite scope); no specific ticket yet
+- **Options considered:**
+  - Design the full 70/20/10 unit/integration/E2E test suite now and start implementing
+    (backend route tests, frontend test tooling adoption, GitHub Actions CI)
+  - Design it now for reference, but defer any implementation to 2nd MVP
+- **Decision:** The second option. A full test-pyramid design was produced (unit/integration/
+  E2E candidates across both backend and frontend, plus a GitHub Actions CI mapping — free for
+  this public repo) and saved to `.claude/plans/test-pyramid-design.md` (local-only, per this
+  repo's plan-file convention) for reference when the team picks this up.
+- **Reasoning:** Not in scope for the 1st MVP — project lead's call. The design stays useful
+  as-is once revisited: it already accounts for what exists today (backend pytest conventions,
+  zero frontend test infra) and flags real open questions (frontend test tooling choice, a
+  test-Supabase-project strategy for #14/#15) that'll need deciding whenever this is picked
+  back up.
+- **Team feedback:** n/a — decided directly with the project lead.
+
+---
+
 ## [Proposed] Misconception.matching_rule format
 
 - **Date proposed:** 2026-08-03
