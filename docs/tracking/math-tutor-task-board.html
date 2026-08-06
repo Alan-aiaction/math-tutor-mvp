@@ -684,11 +684,21 @@ const STAGES = [
         ac:["service_role and MyScript keys exist only in backend/.env, never in frontend/.env.local",
             "Verified: browser dev tools / page source contains no secret keys"],
         deps:"Already implemented during setup" },
-      { id:"#49", owner:"alan", title:"Store LaTeX only, not raw ink, by default", status:"Not started",
+      { id:"#49", owner:"alan", title:"Store LaTeX only, not raw ink, by default", status:"Done",
         story:"As the team, we want to minimize stored personal data, matching GDPR-for-minors best practice.",
         ac:["Recognition Service (#18) discards raw stroke data after conversion to LaTeX",
             "Optional ink storage stays off by default"],
-        deps:"Depends on: #18 · AC #1 incidentally true today - no storage layer exists at all yet (#13 not started), so nothing durable exists for ink to leak into. Documented as an explicit invariant via a code comment in backend/main.py's /recognize handler, so it isn't lost once #13/#15 land. AC #2 genuinely can't be satisfied yet - there's no ink-storage feature to have a default state for. Re-check this ticket for real completion once #13 (DB layer) and #15 (POST /attempts) are built." },
+        deps:"Depends on: #18 (done) · Re-checked for real 2026-08-06 as this card's own note asked, now " +
+              "that #13 and #15 are built. AC #1 confirmed structurally, not just observed: " +
+              "attempt_steps has exactly recognized_latex/is_correct beyond its id/FK - no column a raw " +
+              "stroke coordinate could go into even if something tried. recognition.py's recognize_math() " +
+              "only ever returns a LaTeX string (strokes never leave that function's scope after the API " +
+              "call); #15's StepCreate/create_attempt() only ever accept recognized_latex/is_correct per " +
+              "step, no stroke field exists in the request model either. The full pipeline is now " +
+              "structurally incapable of persisting raw ink, not merely 'doesn't happen to today.' AC #2 " +
+              "stays vacuously true, honestly framed: no ink-storage feature exists anywhere (no opt-in " +
+              "toggle, no blob storage, no raw-stroke column) - there's no default to verify because the " +
+              "feature the AC's wording implies was never built. No code changes - verification only." },
       { id:"#50", owner:"alan", title:"Add simple student access code", status:"In progress",
         story:"As a student, I want a simple way to identify my session, without a full login system slowing down the pilot.",
         ac:["A short code (not a full login) distinguishes one student's attempts from another's",
