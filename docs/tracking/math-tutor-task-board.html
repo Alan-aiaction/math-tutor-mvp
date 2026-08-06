@@ -331,12 +331,27 @@ const STAGES = [
               "a real running uvicorn instance - success (real generated IDs), malformed request (422), " +
               "and invalid problem_id (400 with a clear message) - not just unit tests. Full suite 58 " +
               "passed." },
-      { id:"#16", owner:"all", title:"Error handling, validation, logging", status:"Not started",
+      { id:"#16", owner:"alan", title:"Error handling, validation, logging", status:"Done",
         story:"As the team, we want failures to be visible, so a bad request doesn't fail silently in production.",
         ac:["All endpoints validate input via Pydantic",
             "Unhandled exceptions are caught and logged, not left to crash",
             "Basic structured logging in place (timestamp, endpoint, status)"],
-        deps:"Depends on: #12, #13" }
+        deps:"Depends on: #12 (done), #13 (done) · Shipped 2026-08-06 in backend/main.py. Real finding, " +
+              "verified directly (not assumed): nothing in this app had ever called logging.basicConfig() " +
+              "- logger.info() calls (db.py, orchestration.py) were being SILENTLY DROPPED (default level " +
+              "is WARNING, confirmed via getEffectiveLevel()==30), and logger.error() printed with no " +
+              "timestamp/structure. Concretely: #38's pipeline-stage-duration logs were never actually " +
+              "visible until this ticket. Fix: one basicConfig call (root logger), inherited by every " +
+              "module's logger automatically - not just new logging added here. Also added: request-" +
+              "logging middleware (method/path/status/duration per request) and a global exception " +
+              "handler for genuinely unanticipated errors -> clean 500, not a raw crash; verified this " +
+              "doesn't shadow /recognize's existing RecognitionError->502 mapping (FastAPI's built-in " +
+              "HTTPException handler takes priority). AC #1 was already true (Pydantic validates every " +
+              "typed request body automatically) - verified, not new work. 3 test cases + full suite 56 " +
+              "passed. Also manually verified live via a real running uvicorn instance - confirmed an " +
+              "actual timestamped log line in the console (not just a mocked assertion): '2026-08-06 " +
+              "15:12:14,577 INFO main GET /health -> 200 (1.56ms)'. Route-agnostic by design - " +
+              "automatically covers /attempts (#15) too once PR #56 merges, no coordination needed." }
     ]
   },
   {

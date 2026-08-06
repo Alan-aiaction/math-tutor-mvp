@@ -1,6 +1,10 @@
+import logging
+import time
+
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from attempts import AttemptPersistenceError, create_attempt
@@ -9,6 +13,13 @@ from models import Attempt
 from recognition import RecognitionError, recognize_math
 
 load_dotenv()
+
+# Task #16: nothing in this app ever called basicConfig before this - logger.info() calls
+# (db.py, orchestration.py) were being silently dropped (default level is WARNING), and
+# logger.error() calls printed with no timestamp/structure. This is the actual fix: configures
+# the root logger once, which every module's logging.getLogger(__name__) inherits.
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Math Tutor MVP Backend")
 
@@ -22,6 +33,24 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
 )
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start = time.perf_counter()
+    response = await call_next(request)
+    duration_ms = (time.perf_counter() - start) * 1000
+    logger.info("%s %s -> %s (%.2fms)", request.method, request.url.path, response.status_code, duration_ms)
+    return response
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    # Only reached for exceptions a route didn't already convert to HTTPException itself
+    # (e.g. RecognitionError -> 502) - FastAPI's built-in HTTPException handler takes
+    # priority over this one, so existing per-route error mapping is unaffected.
+    logger.error("Unhandled exception on %s %s: %s", request.method, request.url.path, exc)
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 
 @app.get("/")
