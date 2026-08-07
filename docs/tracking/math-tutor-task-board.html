@@ -548,11 +548,15 @@ const STAGES = [
               "failing step index. 6 test cases, full suite 77 passed. NOTE: implemented locally only " +
               "(same branch as #25/#26/#27/#28/#34, plus #12's models.py merged in locally), not yet " +
               "pushed/PR'd - held back until PRs #46/#48/#49/#50/#51/#52 clear." },
-      { id:"#37", owner:"jeff", title:"Wire POST /attempts/check to full pipeline", status:"Not started",
+      { id:"#37", owner:"jeff", title:"Wire POST /attempts/check to full pipeline", status:"In progress",
         story:"As the frontend, I need one endpoint that does the whole check, not five separate calls.",
-        ac:["Endpoint accepts steps, runs the full orchestration pipeline, returns the result",
-            "Manually tested end-to-end with at least 2 real examples"],
-        deps:"Depends on: #36 · Blocks: #45" },
+        ac:["Endpoint accepts steps, runs the full orchestration pipeline, returns the result - " +
+            "DONE, POST /attempts/check in main.py wraps #36's run_pipeline()",
+            "Manually tested end-to-end with at least 2 real examples - DONE, 4 automated " +
+            "TestClient cases (correct, incorrect-with-hint, multi-step, malformed " +
+            "correct_answer -> 400), no mocking (pure computation, no I/O)"],
+        deps:"Depends on: #36 (done) · Blocks: #45 · Built at Alan's direction, approved by " +
+              "Jeff, now open for real review as PR #66 (was held locally until approved)" },
       { id:"#38", owner:"alan", title:"Add timing/logging at each pipeline stage", status:"Done",
         story:"As the team, we want to see where time is spent, so we can debug slow responses before they affect real students.",
         ac:["Each pipeline stage logs its duration",
