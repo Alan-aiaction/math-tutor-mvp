@@ -1,7 +1,10 @@
 import logging
+import os
 import time
 
+import sentry_sdk
 from dotenv import load_dotenv
+from sentry_sdk.integrations.logging import LoggingIntegration
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -20,6 +23,21 @@ load_dotenv()
 # the root logger once, which every module's logging.getLogger(__name__) inherits.
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 logger = logging.getLogger(__name__)
+
+# Task #59: send_default_pii=False (not Sentry's suggested True) - this app handles minors'
+# data, matching the GDPR-for-minors stance behind #49. A missing SENTRY_DSN (e.g. a
+# teammate's local env) makes this a documented no-op, not an error.
+#
+# event_level=None on the logging integration: Sentry's default would turn every
+# logger.error() call (db.py's missing-credentials error, DatabaseError, etc.) into its own
+# Sentry event - those are already-handled, already-logged cases (see #59's plan), not
+# "something broke unexpectedly." The one deliberate signal this ticket wants is the explicit
+# capture_exception() call in unhandled_exception_handler below.
+sentry_sdk.init(
+    dsn=os.environ.get("SENTRY_DSN"),
+    send_default_pii=False,
+    integrations=[LoggingIntegration(level=logging.INFO, event_level=None)],
+)
 
 app = FastAPI(title="Math Tutor MVP Backend")
 
@@ -49,6 +67,10 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     # Only reached for exceptions a route didn't already convert to HTTPException itself
     # (e.g. RecognitionError -> 502) - FastAPI's built-in HTTPException handler takes
     # priority over this one, so existing per-route error mapping is unaffected.
+    # This custom handler replaces Starlette's default exception-handling middleware, which
+    # is what Sentry's FastAPI integration normally hooks into - so capture_exception must be
+    # called explicitly here, or these errors would never reach Sentry (#59).
+    sentry_sdk.capture_exception(exc)
     logger.error("Unhandled exception on %s %s: %s", request.method, request.url.path, exc)
     return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
