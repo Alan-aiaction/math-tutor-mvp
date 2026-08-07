@@ -864,12 +864,22 @@ const STAGES = [
               "stays vacuously true, honestly framed: no ink-storage feature exists anywhere (no opt-in " +
               "toggle, no blob storage, no raw-stroke column) - there's no default to verify because the " +
               "feature the AC's wording implies was never built. No code changes - verification only." },
-      { id:"#50", owner:"alan", title:"Add simple student access code", status:"In progress",
+      { id:"#50", owner:"alan", title:"Add simple student access code", status:"Done",
         story:"As a student, I want a simple way to identify my session, without a full login system slowing down the pilot.",
-        ac:["A short code (not a full login) distinguishes one student's attempts from another's",
-            "No password/email/account system required for MVP",
-            "Tied into Attempt.student_id from the API contract"],
-        deps:"Depends on: #11 · AC #1 and #2 shipped: frontend/app/components/StudentCode.js - a plain text input persisted to localStorage, mounted on the home page. AC #3 can only be prepared for, not completed - there's no backend/models.py (#12), DB layer (#13), or POST /attempts (#15) yet for the code to actually tie into. The value is held in page.js's studentCode state, ready for #45 to pick up once #15 exists. Re-check for full completion once #12/#13/#15 land." },
+        ac:["A short code (not a full login) distinguishes one student's attempts from another's - " +
+            "DONE, frontend/app/components/StudentCode.js, persisted to localStorage",
+            "No password/email/account system required for MVP - DONE, plain text input, no auth",
+            "Tied into Attempt.student_id from the API contract - DONE 2026-08-08: page.js now " +
+            "fetches a real problem (GET /problems/{id}, closing the SAMPLE_PROBLEMS/" +
+            "CORRECT_ANSWER stopgap from #45) and persists a real Attempt via POST /attempts " +
+            "after every successful check, with studentCode as student_id. Verified live end to " +
+            "end: fetched real problem 12 (\"6 × 199\"), checked both a correct and an incorrect " +
+            "answer against its real correct_answer, confirmed real attempts/attempt_steps rows " +
+            "landed each time with the right is_correct value, cleaned up with zero residue after."],
+        deps:"Depends on: #11 (done), #12 (done), #13 (done), #15 (done) · Real problem-selection " +
+              "UI (picking from multiple problems) is still a deliberate, minimal stopgap - " +
+              "hardcoded to one known seeded problem id, same treatment #45's correct_answer " +
+              "stopgap got. Future scope, not blocking this ticket's own AC." },
       { id:"#51", owner:"all", title:"Tighten Supabase RLS policies", status:"Not started",
         story:"As the team, we want real access control now that identity exists, not just permissive defaults.",
         ac:["RLS policies updated so an access code can only read/write its own attempts",
