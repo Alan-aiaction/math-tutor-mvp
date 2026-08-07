@@ -226,12 +226,23 @@ const STAGES = [
             "Migration runs against the Supabase project with no errors",
             "Foreign key constraints verified with a manual test insert"],
         deps:"Depends on: #6 · Migration in supabase/migrations/20260803120000_initial_schema.sql, applied 2026-08-03 via the Supabase MCP server - all 5 tables live, confirmed via list_tables. FK verified: inserted a real problem + attempt referencing it (succeeded), then an attempt referencing a nonexistent problem_id (correctly rejected with a foreign key violation), then cleaned up both test rows - tables are empty again. Note for #10: Supabase enables RLS by default on new tables, so all 5 already have RLS on with zero policies yet - only service_role can currently read/write." },
-      { id:"#8", owner:"richard", title:"Seed problems table (~20-30 problems)", status:"Not started",
+      { id:"#8", owner:"richard", title:"Seed problems table (~20-30 problems)", status:"In progress",
         story:"As the content owner, I want a real starter set of problems sourced from school context, so the pilot has authentic material instead of placeholder text.",
-        ac:["At least 20-30 problems seeded into the problems table",
-            "Each problem tagged with topic and difficulty, matching the agreed schema",
-            "At least one batch reviewed against real school curriculum materials"],
-        deps:"Depends on: #6 · Leverages Richard's school access" },
+        ac:["At least 20-30 problems seeded into the problems table - DONE 2026-08-07, 47 " +
+            "rows seeded (exceeds the 20-30 target), sourced from docs/content/" +
+            "groep8_math_practice_en.csv (real school-context content, not placeholder)",
+            "Each problem tagged with topic and difficulty, matching the agreed schema - DONE, " +
+            "topic uses the CSV's own Category values (calculateInteger/calculateMoney), " +
+            "difficulty (1-5) derived from complexity signals in the data (multiplier size, " +
+            "closeness to round numbers, plain formula vs. word problem) since the CSV had no " +
+            "difficulty column - see supabase/migrations/20260807090000_seed_groep8_problems.sql " +
+            "for the full per-row mapping",
+            "At least one batch reviewed against real school curriculum materials - NOT done, " +
+            "needs Richard's actual sign-off, can't be self-certified"],
+        deps:"Depends on: #6 (done) · Leverages Richard's school access · 17 of the CSV's 64 " +
+              "rows are multiple-choice (options like A/B/C/D) and were deliberately excluded - " +
+              "the Problem model has no field for MC options and the app has no UI for picking " +
+              "from choices. Not lost, just parked until MC becomes a supported question type." },
       { id:"#9", owner:"jeff", title:"Seed misconception_rules and hints (first batch)", status:"Not started",
         story:"As the backend team, we need real misconception/hint content to test the detector against, not just placeholder rules.",
         ac:["At least 5-10 misconception rules seeded, each tied to a topic",
