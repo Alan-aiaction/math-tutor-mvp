@@ -849,7 +849,7 @@ const STAGES = [
         ac:["Full flow tested against the live production URLs",
             "No console errors, no broken network calls"],
         deps:"Depends on: #56, #57" },
-      { id:"#59", owner:"alan", title:"Set up monitoring / error logging (Sentry)", status:"In progress",
+      { id:"#59", owner:"alan", title:"Set up monitoring / error logging (Sentry)", status:"Done",
         story:"As the team, we want to know when something breaks in production, without waiting for a student to report it.",
         ac:["Sentry (or equivalent) wired into both frontend and backend",
             "A deliberately triggered test error appears in the dashboard within minutes"],
@@ -860,8 +860,19 @@ const STAGES = [
               "to None so already-handled logger.error() calls (db.py credential errors, " +
               "DatabaseError, etc.) don't also become Sentry events - only true unhandled " +
               "exceptions do. Verified live: triggered a real captured exception against the real " +
-              "DSN, confirmed events were sent. Frontend (Next.js) half still pending - needs its " +
-              "own Sentry project/DSN, not yet created." }
+              "DSN, confirmed events were sent. Frontend done 2026-08-06: @sentry/nextjs wired " +
+              "via instrumentation-client.js (browser), sentry.server.config.js (Node), " +
+              "sentry.edge.config.js (Edge), instrumentation.js (runtime dispatch + " +
+              "onRequestError hook), and app/global-error.js (App Router root error boundary) - " +
+              "sendDefaultPii: false, matching the backend. Error Monitoring only, no Tracing/" +
+              "Replay/Logging - out of scope for this ticket and, for Replay specifically, a " +
+              "real privacy tradeoff for an app used by minors. next.config.js intentionally not " +
+              "wrapped with withSentryConfig() (source maps/tunnel route need a separate " +
+              "SENTRY_AUTH_TOKEN that doesn't exist yet - production stack-trace readability is " +
+              "a follow-up, not core wiring). Verified server-side live (temporary throw in " +
+              "layout.js, real 500, reverted after - see PR). Vercel production env vars " +
+              "(SENTRY_DSN/NEXT_PUBLIC_SENTRY_DSN) still need setting, same as Railway's for " +
+              "the backend - flagged as a deploy follow-up, not done here." }
     ]
   },
   {
