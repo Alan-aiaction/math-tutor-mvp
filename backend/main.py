@@ -12,7 +12,9 @@ from pydantic import BaseModel
 
 from attempts import AttemptPersistenceError, create_attempt
 from db import DatabaseError
-from models import Attempt, Problem
+from latex_parser import LatexParseError
+from models import Attempt, EvaluationResult, Problem, Step
+from orchestration import run_pipeline
 from problems import ProblemNotFoundError, get_problem
 from recognition import RecognitionError, recognize_math
 
@@ -146,6 +148,33 @@ def create_attempt_endpoint(payload: AttemptCreate):
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except DatabaseError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+class CheckStep(BaseModel):
+    recognized_latex: str
+
+
+class CheckRequest(BaseModel):
+    steps: list[CheckStep]
+    correct_answer: str
+
+
+@app.post("/attempts/check", response_model=list[EvaluationResult])
+def check_attempt(payload: CheckRequest):
+    # Placeholder id/attempt_id: run_pipeline only ever reads recognized_latex - this
+    # endpoint checks work before a real Attempt/Step exists to attach real ids to,
+    # matching test_orchestration.py's own make_step() precedent.
+    steps = [
+        Step(id=0, attempt_id=0, recognized_latex=s.recognized_latex, is_correct=False)
+        for s in payload.steps
+    ]
+    try:
+        return run_pipeline(steps, correct_answer=payload.correct_answer)
+    except LatexParseError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    # PipelineError is deliberately not caught here - it signals a genuine unexpected bug
+    # (per orchestration.py's own docstring), not bad input, so it falls through to the
+    # global unhandled_exception_handler (#16) for logging, Sentry capture, and a clean 500.
 
 
 @app.get("/problems/{problem_id}", response_model=Problem)
