@@ -660,10 +660,18 @@ const STAGES = [
             "Edit opens a plain text input to correct the value (real handwriting comes later, #17)",
             "Confirming locks in the mock recognized value for that step"],
         deps:"Depends on: #40" },
-      { id:"#20", owner:"alan", title:"Add manual Edit fallback for recognized LaTeX", status:"Not started",
+      { id:"#20", owner:"alan", title:"Add manual Edit fallback for recognized LaTeX", status:"Done",
         story:"As a student, if the recognized value is wrong, I want to fix it by hand, so one bad scan doesn't block me.",
         ac:["Editable fallback available when recognition is wrong or missing"],
-        deps:"Possible overlap with #41's Confirm/Edit UI (already built) — worth checking with the team whether this is separate scope or already covered before starting" },
+        deps:"Fully covered by #41's shipped work - verified 2026-08-06 by reading " +
+              "frontend/app/components/StepBox.js directly: the default step-box view always " +
+              "renders an unconditional Edit button (line ~157), not gated behind any " +
+              "error/failure state. Clicking it opens a text input pre-filled with the current " +
+              "value, Confirm commits whatever's typed (lines ~127-143). 'Wrong' is covered " +
+              "(edit corrects it); 'missing' is covered too - the recognized value defaults to " +
+              "an empty string (renders as '—') and goes through the identical Edit/Confirm " +
+              "path, no separate branch needed. No gap, no code changes - #41 already fully " +
+              "subsumes this ticket's AC." },
       { id:"#42", owner:"alan", title:"Add / delete step controls", status:"Done",
         story:"As a student, I want to add or remove steps as I work, so I'm not stuck with too few or too many boxes.",
         ac:["\"+ Add next step\" appends a new empty step box",
@@ -818,12 +826,19 @@ const STAGES = [
         ac:["RLS policies updated so an access code can only read/write its own attempts",
             "Verified: one code cannot read another's data"],
         deps:"Depends on: #50" },
-      { id:"#56", owner:"all", title:"Deploy backend to Railway/Render, connect Supabase", status:"In progress",
+      { id:"#56", owner:"all", title:"Deploy backend to Railway/Render, connect Supabase", status:"Done",
         story:"As the team, we want the real backend live, so the frontend has something real to call instead of mocks or localhost.",
         ac:["Backend deployed to Railway - DONE, live at https://math-tutor-mvp-production.up.railway.app, verified 2026-08-02: /health returns 200, POST /recognize returns real MyScript-recognized LaTeX",
-            "Connected to the real Supabase project - NOT done yet, no DB layer exists in the codebase at all (blocked on #13)",
+            "Connected to the real Supabase project - DONE 2026-08-06: SUPABASE_URL/" +
+            "SUPABASE_SERVICE_ROLE_KEY added to Railway's env vars, redeployed. Verified live: " +
+            "POST /attempts with a bogus problem_id now returns 400 with a real Postgres foreign-" +
+            "key violation ({'code': '23503', ...'violates foreign key constraint " +
+            "\"attempts_problem_id_fkey\"'}), not the earlier 502 'credentials are not " +
+            "configured' - proves Supabase is genuinely reachable and the insert path runs for " +
+            "real, not just that the backend is up. No residue (FK violation means nothing " +
+            "committed).",
             "Production backend URL documented - done, see above. Still need to set NEXT_PUBLIC_BACKEND_API_URL in Vercel's env vars to this URL so the deployed frontend can actually reach it (currently only works from localhost)"],
-        deps:"Depends on: Jeff's backend work (for the Supabase part) · Blocks: #57 (frontend needs a real backend URL to point at - now available), #58" },
+        deps:"Blocks: #57 (frontend needs a real backend URL to point at - now available), #58" },
       { id:"#57", owner:"alan", title:"Deploy frontend to Vercel (real app)", status:"In progress",
         story:"As the team, we want the real app live, not just the placeholder.",
         ac:["Placeholder page replaced with real frontend from Stage 4",
