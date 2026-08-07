@@ -766,12 +766,22 @@ const STAGES = [
             "At least 3 full attempts tested (correct, incorrect-with-hint, edge case)",
             "Mismatches between frontend/backend assumptions logged as follow-up tickets"],
         deps:"Depends on: #45" },
-      { id:"#46b", owner:"alan", title:"Handle network/error states in UI", status:"Not started",
+      { id:"#46b", owner:"alan", title:"Handle network/error states in UI", status:"In progress",
         story:"As a student, if something breaks, I want a clear message, not a frozen screen.",
-        ac:["Recognition timeout shows a retry-friendly error message",
-            "Backend 5xx error shows a generic 'something went wrong' state",
-            "UI never hangs indefinitely without feedback"],
-        deps:"Depends on: #45" }
+        ac:["Recognition timeout shows a retry-friendly error message - DONE, verified in " +
+            "isolation: a 2s timeout against a hanging server fires at ~2020ms with a " +
+            "retry-friendly message, not a browser-default multi-minute wait",
+            "Backend 5xx error shows a generic 'something went wrong' state - DONE, verified: " +
+            "a real 500 with backend-internal detail text in the body was correctly hidden, " +
+            "generic message shown instead - Sentry (#59) already captures the real error " +
+            "server-side, no need to leak it to the student",
+            "UI never hangs indefinitely without feedback - DONE, shared apiFetch() helper " +
+            "wraps both /recognize and /attempts/check with a 15s AbortController timeout"],
+        deps:"Depends on: #45 (open PR #67, not yet merged) - built on top of #45's branch " +
+              "per explicit direction rather than waiting; will retarget this branch's base to " +
+              "master before merging, once #45 lands, per CLAUDE.md's stacked-PR handling. " +
+              "New shared frontend/app/lib/apiFetch.js also net-reduces duplication that " +
+              "already existed between the two call sites before this ticket." }
     ]
   },
   {
