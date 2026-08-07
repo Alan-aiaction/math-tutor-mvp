@@ -735,12 +735,31 @@ const STAGES = [
       <p class="tree-caption">#45 is the real convergence point of the whole project — it needs Stage 3's backend and Stage 4's frontend both live. #46 and #46b only need #45, not each other.</p>
     `,
     tasks: [
-      { id:"#45", owner:"alan", title:"Swap mocks for real backend endpoints", status:"Not started",
+      { id:"#45", owner:"alan", title:"Swap mocks for real backend endpoints", status:"Done",
         story:"As the frontend, I want to talk to the real backend, so the app works end-to-end, not just against fake data.",
-        ac:["All mocked calls (from #43) replaced with real fetch() calls to /recognize and /attempts/check",
-            "Response shape matches what the UI already expects, per the agreed contract",
-            "Loading states shown while waiting for real network responses"],
-        deps:"Depends on: #19, #37, #43" },
+        ac:["All mocked calls (from #43) replaced with real fetch() calls to /recognize and " +
+            "/attempts/check - DONE. /recognize was already real (built in an earlier " +
+            "ticket); mockCheckWork() (mockCheck.js, now deleted) was the only remaining mock - " +
+            "checkWork() in page.js now calls real POST /attempts/check",
+            "Response shape matches what the UI already expects, per the agreed contract - " +
+            "DONE, already true before this ticket (StepBox.js already read " +
+            "result.valid/hint_text, exactly EvaluationResult's shape)",
+            "Loading states shown while waiting for real network responses - DONE, 'Check my " +
+            "working' disables and shows 'Checking…' during the call, matching the existing " +
+            "'Recognising…' pattern"],
+        deps:"Depends on: #19 (done), #37 (done), #43 (done) · Real gap found and fixed along " +
+              "the way: StepBox.js tracked its recognized/edited value in local state only, " +
+              "never reporting it up to page.js - added an onChange prop so the real check " +
+              "call sends what the student actually entered, not stale initial values. Also " +
+              "fixed INITIAL_STEPS' mock data itself: it used full 'lhs = rhs' equation " +
+              "strings, which the real evaluator can't correctly check (confirmed live - " +
+              "returned invalid for a value that should've been correct) - switched to plain " +
+              "single-expression values matching how the real pipeline actually works. " +
+              "correct_answer has no real source yet (no problem-selection UX exists) - a " +
+              "CORRECT_ANSWER constant is a deliberate, minimal stopgap; real wiring via #14 " +
+              "is separate, later scope. Verified: real backend call confirmed correct via " +
+              "curl with the exact payload shape page.js sends (valid:true for the fixed " +
+              "correct step, valid:false + hint for the incorrect one); npm run build clean." },
       { id:"#46", owner:"all", title:"Test full flow with Jeff", status:"Not started",
         story:"As the team, we want to see the whole pipeline work live, so we catch integration bugs before the pilot.",
         ac:["Joint session: write a step, recognize it, validate it, see the hint — live, not mocked",

@@ -28,7 +28,7 @@ const STATUS_STYLES = {
   },
 };
 
-export default function StepBox({ index, status = "unanswered", recognizedLatex = "", result = null, onDelete }) {
+export default function StepBox({ index, status = "unanswered", recognizedLatex = "", result = null, onDelete, onChange }) {
   const effectiveStatus = result ? (result.valid ? "correct" : "incorrect") : status;
   const style = STATUS_STYLES[effectiveStatus] ?? STATUS_STYLES.unanswered;
   const [value, setValue] = useState(recognizedLatex);
@@ -46,6 +46,7 @@ export default function StepBox({ index, status = "unanswered", recognizedLatex 
 
   const confirmEdit = () => {
     setValue(draft);
+    onChange?.(draft);
     setEditing(false);
   };
 
@@ -71,6 +72,7 @@ export default function StepBox({ index, status = "unanswered", recognizedLatex 
       }
       const data = await res.json();
       setValue(data.latex);
+      onChange?.(data.latex);
       setDrawing(false);
     } catch (err) {
       setRecognizeError(err.message || "Recognition failed");
