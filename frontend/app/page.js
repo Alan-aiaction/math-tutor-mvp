@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import StepList from "./components/StepList";
 import ProblemDisplay from "./components/ProblemDisplay";
 import StudentCode from "./components/StudentCode";
@@ -8,33 +8,40 @@ import { apiFetch } from "./lib/apiFetch";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
-// recognizedLatex holds a single expression (the step's answer), not a full "lhs = rhs"
-// equation - matches how the real evaluator pipeline actually checks a step (confirmed via
-// backend/test_orchestration.py's own examples), not how the old mock data looked.
-const INITIAL_STEPS = [
-  { status: "correct", recognizedLatex: "7/12" },
-  { status: "incorrect", recognizedLatex: "2/7" },
-  { status: "unanswered", recognizedLatex: "" },
-];
+// No real problem-selection UX exists yet (picking from multiple problems is a separate,
+// future ticket) - hardcoding a known real seeded problem (#8) is a deliberate, minimal
+// stopgap so the app works against real backend data end to end, not a permanent design.
+const PROBLEM_ID = 12;
 
-const SAMPLE_PROBLEMS = [
-  "\\frac{1}{3} + \\frac{1}{4} = \\, ?",
-  "\\frac{5}{8} - \\frac{1}{4} = \\, ?",
-  "2\\frac{1}{2} \\times \\frac{2}{5} = \\, ?",
-];
-
-// Matches SAMPLE_PROBLEMS[0] / INITIAL_STEPS[0]'s existing "7/12" assumption - the UI has no
-// real problem-selection concept yet (that's #14's frontend wiring, a separate ticket), so
-// this is a deliberate, minimal stopgap to make the real check call meaningful.
-const CORRECT_ANSWER = "7/12";
+const INITIAL_STEPS = [{ status: "unanswered", recognizedLatex: "" }];
 
 export default function Home() {
   const [steps, setSteps] = useState(INITIAL_STEPS);
   const [results, setResults] = useState(null);
   const [checking, setChecking] = useState(false);
   const [checkError, setCheckError] = useState(null);
-  // Not yet sent anywhere - #45/#15 will pick this up to populate Attempt.student_id.
+  const [saveError, setSaveError] = useState(null);
+  const [problem, setProblem] = useState(null);
+  const [loadingProblem, setLoadingProblem] = useState(true);
+  const [problemError, setProblemError] = useState(null);
   const [studentCode, setStudentCode] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await apiFetch(`${BACKEND_URL}/problems/${PROBLEM_ID}`);
+        if (!cancelled) setProblem(data);
+      } catch (err) {
+        if (!cancelled) setProblemError(err.message || "Could not load the problem");
+      } finally {
+        if (!cancelled) setLoadingProblem(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const addStep = () => {
     setSteps((prev) => [...prev, { status: "unanswered", recognizedLatex: "" }]);
@@ -51,19 +58,41 @@ export default function Home() {
     setResults(null);
   };
 
+  const persistAttempt = async (checkResults) => {
+    try {
+      await apiFetch(`${BACKEND_URL}/attempts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          problem_id: problem.id,
+          student_id: studentCode,
+          status: "completed",
+          steps: steps.map((s, i) => ({
+            recognized_latex: s.recognizedLatex,
+            is_correct: checkResults[i]?.valid ?? false,
+          })),
+        }),
+      });
+    } catch (err) {
+      setSaveError(err.message || "Could not save this attempt");
+    }
+  };
+
   const checkWork = async () => {
     setChecking(true);
     setCheckError(null);
+    setSaveError(null);
     try {
       const data = await apiFetch(`${BACKEND_URL}/attempts/check`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           steps: steps.map((s) => ({ recognized_latex: s.recognizedLatex })),
-          correct_answer: CORRECT_ANSWER,
+          correct_answer: problem.correct_answer,
         }),
       });
       setResults(data);
+      await persistAttempt(data);
     } catch (err) {
       setCheckError(err.message || "Check failed");
     } finally {
@@ -87,15 +116,21 @@ export default function Home() {
 
       <div className="flex w-full max-w-md flex-col gap-3">
         <h2 className="text-left text-sm font-medium uppercase tracking-wide text-gray-500">
-          Sample problems (mock)
+          Problem
         </h2>
-        {SAMPLE_PROBLEMS.map((questionText, index) => (
-          <ProblemDisplay key={index} questionText={questionText} />
-        ))}
+        {loadingProblem && <p className="text-sm text-gray-500">Loading problem…</p>}
+        {problemError && <p className="text-sm text-red-600">{problemError}</p>}
+        {problem && <ProblemDisplay questionText={problem.question_text} />}
       </div>
 
-      <StepList steps={steps} results={results} onDelete={deleteStep} onStepChange={handleStepChange} />
+      <StepList
+        steps={steps}
+        results={results}
+        onDelete={deleteStep}
+        onStepChange={handleStepChange}
+      />
       {checkError && <p className="text-sm text-red-600">{checkError}</p>}
+      {saveError && <p className="text-sm text-amber-600">{saveError}</p>}
       <div className="flex items-center gap-3">
         <button
           type="button"
@@ -107,7 +142,7 @@ export default function Home() {
         <button
           type="button"
           onClick={checkWork}
-          disabled={checking}
+          disabled={checking || !problem}
           className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-40"
         >
           {checking ? "Checking…" : "Check my working"}
