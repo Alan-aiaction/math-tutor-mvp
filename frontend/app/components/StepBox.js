@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import InkCanvas from "./InkCanvas";
+import { apiFetch } from "../lib/apiFetch";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 const CANVAS_WIDTH = 400;
@@ -61,16 +62,11 @@ export default function StepBox({ index, status = "unanswered", recognizedLatex 
     setRecognizing(true);
     setRecognizeError(null);
     try {
-      const res = await fetch(`${BACKEND_URL}/recognize`, {
+      const data = await apiFetch(`${BACKEND_URL}/recognize`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ strokeGroups, width: CANVAS_WIDTH, height: CANVAS_HEIGHT }),
       });
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => ({}));
-        throw new Error(errBody.detail || `Recognition failed (${res.status})`);
-      }
-      const data = await res.json();
       setValue(data.latex);
       onChange?.(data.latex);
       setDrawing(false);

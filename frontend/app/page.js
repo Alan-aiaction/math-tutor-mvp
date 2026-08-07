@@ -4,6 +4,7 @@ import { useState } from "react";
 import StepList from "./components/StepList";
 import ProblemDisplay from "./components/ProblemDisplay";
 import StudentCode from "./components/StudentCode";
+import { apiFetch } from "./lib/apiFetch";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -54,7 +55,7 @@ export default function Home() {
     setChecking(true);
     setCheckError(null);
     try {
-      const res = await fetch(`${BACKEND_URL}/attempts/check`, {
+      const data = await apiFetch(`${BACKEND_URL}/attempts/check`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -62,11 +63,7 @@ export default function Home() {
           correct_answer: CORRECT_ANSWER,
         }),
       });
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => ({}));
-        throw new Error(errBody.detail || `Check failed (${res.status})`);
-      }
-      setResults(await res.json());
+      setResults(data);
     } catch (err) {
       setCheckError(err.message || "Check failed");
     } finally {
