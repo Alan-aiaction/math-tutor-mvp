@@ -129,6 +129,12 @@ convention and file format) — two new files can never collide.
   not user-visible yet, what it directly unblocks). AC bullets say what's true when it's
   done; this says why that's worth doing. Applies to every plan, not just ticket-specific
   ones.
+- **Label PR numbers and ticket numbers explicitly — never a bare `#N`.** GitHub PR numbers
+  and task-board ticket numbers are two independent sequences that overlap in value (PR #60
+  and ticket #60 are unrelated). A sentence like "merge #67, then #68, once #45/#46b merge"
+  mixes both without saying which is which, and the reader can't tell without
+  cross-referencing. Always write "PR #N" or "ticket #N" (or "task #N") explicitly, every
+  time either could appear — in chat, plan documents, and PR descriptions alike.
 - **Re-check live state right before reporting it — don't recite it from memory.** PR/merge
   status, branch state, and similar facts change during a session and can go stale between
   one message and the next, since the user or a teammate can change them outside the
