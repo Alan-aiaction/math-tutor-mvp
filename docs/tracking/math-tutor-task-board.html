@@ -316,12 +316,17 @@ const STAGES = [
               "grants) - applied a migration granting service_role full privileges, unblocking #14/#15 too. " +
               "Also fixed a pre-existing gap: pytest was used by all test_*.py files but never pinned in " +
               "requirements.txt. AC #2 is honestly scoped as connectivity, not seeded data (#8/#9 haven't run)." },
-      { id:"#14", owner:"richard", title:"Implement GET /problems/{id}", status:"Not started",
+      { id:"#14", owner:"richard", title:"Implement GET /problems/{id}", status:"Done",
         story:"As the frontend, I need to fetch a specific problem by ID, so the app can load real content instead of mocks.",
-        ac:["Endpoint returns a Problem object matching the agreed Pydantic model",
-            "Returns a clean 404 for a nonexistent ID",
-            "Manually tested against at least 3 seeded problems"],
-        deps:"Depends on: #12, #13, #8" },
+        ac:["Endpoint returns a Problem object matching the agreed Pydantic model - DONE, " +
+            "backend/problems.py + GET /problems/{problem_id} route in main.py",
+            "Returns a clean 404 for a nonexistent ID - DONE, verified live against a real " +
+            "nonexistent id (999999999)",
+            "Manually tested against at least 3 seeded problems - DONE, curled the local dev " +
+            "server against 3 real problem ids from #8's live seeded data (ids 12/13/14), all " +
+            "returned correct fields"],
+        deps:"Depends on: #12 (done), #13 (done), #8 (data live, PR #64 open) · Note: this is " +
+              "Richard's ticket, done at Alan's explicit direction/permission" },
       { id:"#15", owner:"alan", title:"Implement POST /attempts", status:"Done",
         story:"As the frontend, I need to save a student's attempt, so progress isn't lost after a session ends.",
         ac:["Endpoint accepts an Attempt object (with nested Steps) and persists it",

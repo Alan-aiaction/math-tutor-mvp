@@ -12,7 +12,8 @@ from pydantic import BaseModel
 
 from attempts import AttemptPersistenceError, create_attempt
 from db import DatabaseError
-from models import Attempt
+from models import Attempt, Problem
+from problems import ProblemNotFoundError, get_problem
 from recognition import RecognitionError, recognize_math
 
 load_dotenv()
@@ -143,5 +144,15 @@ def create_attempt_endpoint(payload: AttemptCreate):
         )
     except AttemptPersistenceError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except DatabaseError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@app.get("/problems/{problem_id}", response_model=Problem)
+def get_problem_endpoint(problem_id: int):
+    try:
+        return get_problem(problem_id)
+    except ProblemNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     except DatabaseError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
