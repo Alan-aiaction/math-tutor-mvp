@@ -226,12 +226,23 @@ const STAGES = [
             "Migration runs against the Supabase project with no errors",
             "Foreign key constraints verified with a manual test insert"],
         deps:"Depends on: #6 · Migration in supabase/migrations/20260803120000_initial_schema.sql, applied 2026-08-03 via the Supabase MCP server - all 5 tables live, confirmed via list_tables. FK verified: inserted a real problem + attempt referencing it (succeeded), then an attempt referencing a nonexistent problem_id (correctly rejected with a foreign key violation), then cleaned up both test rows - tables are empty again. Note for #10: Supabase enables RLS by default on new tables, so all 5 already have RLS on with zero policies yet - only service_role can currently read/write." },
-      { id:"#8", owner:"richard", title:"Seed problems table (~20-30 problems)", status:"Not started",
+      { id:"#8", owner:"richard", title:"Seed problems table (~20-30 problems)", status:"In progress",
         story:"As the content owner, I want a real starter set of problems sourced from school context, so the pilot has authentic material instead of placeholder text.",
-        ac:["At least 20-30 problems seeded into the problems table",
-            "Each problem tagged with topic and difficulty, matching the agreed schema",
-            "At least one batch reviewed against real school curriculum materials"],
-        deps:"Depends on: #6 · Leverages Richard's school access" },
+        ac:["At least 20-30 problems seeded into the problems table - DONE 2026-08-07, 47 " +
+            "rows seeded (exceeds the 20-30 target), sourced from docs/content/" +
+            "groep8_math_practice_en.csv (real school-context content, not placeholder)",
+            "Each problem tagged with topic and difficulty, matching the agreed schema - DONE, " +
+            "topic uses the CSV's own Category values (calculateInteger/calculateMoney), " +
+            "difficulty (1-5) derived from complexity signals in the data (multiplier size, " +
+            "closeness to round numbers, plain formula vs. word problem) since the CSV had no " +
+            "difficulty column - see supabase/migrations/20260807090000_seed_groep8_problems.sql " +
+            "for the full per-row mapping",
+            "At least one batch reviewed against real school curriculum materials - NOT done, " +
+            "needs Richard's actual sign-off, can't be self-certified"],
+        deps:"Depends on: #6 (done) · Leverages Richard's school access · 17 of the CSV's 64 " +
+              "rows are multiple-choice (options like A/B/C/D) and were deliberately excluded - " +
+              "the Problem model has no field for MC options and the app has no UI for picking " +
+              "from choices. Not lost, just parked until MC becomes a supported question type." },
       { id:"#9", owner:"jeff", title:"Seed misconception_rules and hints (first batch)", status:"Not started",
         story:"As the backend team, we need real misconception/hint content to test the detector against, not just placeholder rules.",
         ac:["At least 5-10 misconception rules seeded, each tied to a topic",
@@ -305,12 +316,17 @@ const STAGES = [
               "grants) - applied a migration granting service_role full privileges, unblocking #14/#15 too. " +
               "Also fixed a pre-existing gap: pytest was used by all test_*.py files but never pinned in " +
               "requirements.txt. AC #2 is honestly scoped as connectivity, not seeded data (#8/#9 haven't run)." },
-      { id:"#14", owner:"richard", title:"Implement GET /problems/{id}", status:"Not started",
+      { id:"#14", owner:"richard", title:"Implement GET /problems/{id}", status:"Done",
         story:"As the frontend, I need to fetch a specific problem by ID, so the app can load real content instead of mocks.",
-        ac:["Endpoint returns a Problem object matching the agreed Pydantic model",
-            "Returns a clean 404 for a nonexistent ID",
-            "Manually tested against at least 3 seeded problems"],
-        deps:"Depends on: #12, #13, #8" },
+        ac:["Endpoint returns a Problem object matching the agreed Pydantic model - DONE, " +
+            "backend/problems.py + GET /problems/{problem_id} route in main.py",
+            "Returns a clean 404 for a nonexistent ID - DONE, verified live against a real " +
+            "nonexistent id (999999999)",
+            "Manually tested against at least 3 seeded problems - DONE, curled the local dev " +
+            "server against 3 real problem ids from #8's live seeded data (ids 12/13/14), all " +
+            "returned correct fields"],
+        deps:"Depends on: #12 (done), #13 (done), #8 (data live, PR #64 open) · Note: this is " +
+              "Richard's ticket, done at Alan's explicit direction/permission" },
       { id:"#15", owner:"alan", title:"Implement POST /attempts", status:"Done",
         story:"As the frontend, I need to save a student's attempt, so progress isn't lost after a session ends.",
         ac:["Endpoint accepts an Attempt object (with nested Steps) and persists it",
@@ -853,11 +869,30 @@ const STAGES = [
         ac:["Full flow tested against the live production URLs",
             "No console errors, no broken network calls"],
         deps:"Depends on: #56, #57" },
-      { id:"#59", owner:"alan", title:"Set up monitoring / error logging (Sentry)", status:"Not started",
+      { id:"#59", owner:"alan", title:"Set up monitoring / error logging (Sentry)", status:"Done",
         story:"As the team, we want to know when something breaks in production, without waiting for a student to report it.",
         ac:["Sentry (or equivalent) wired into both frontend and backend",
             "A deliberately triggered test error appears in the dashboard within minutes"],
-        deps:"Depends on: real code existing in both frontend/backend" }
+        deps:"Depends on: real code existing in both frontend/backend · Backend done 2026-08-06: " +
+              "sentry_sdk.init() in main.py (send_default_pii=False - matches this project's " +
+              "GDPR-for-minors stance from #49), wired into the existing #16 catch-all exception " +
+              "handler via capture_exception(). Logging integration's event_level explicitly set " +
+              "to None so already-handled logger.error() calls (db.py credential errors, " +
+              "DatabaseError, etc.) don't also become Sentry events - only true unhandled " +
+              "exceptions do. Verified live: triggered a real captured exception against the real " +
+              "DSN, confirmed events were sent. Frontend done 2026-08-06: @sentry/nextjs wired " +
+              "via instrumentation-client.js (browser), sentry.server.config.js (Node), " +
+              "sentry.edge.config.js (Edge), instrumentation.js (runtime dispatch + " +
+              "onRequestError hook), and app/global-error.js (App Router root error boundary) - " +
+              "sendDefaultPii: false, matching the backend. Error Monitoring only, no Tracing/" +
+              "Replay/Logging - out of scope for this ticket and, for Replay specifically, a " +
+              "real privacy tradeoff for an app used by minors. next.config.js intentionally not " +
+              "wrapped with withSentryConfig() (source maps/tunnel route need a separate " +
+              "SENTRY_AUTH_TOKEN that doesn't exist yet - production stack-trace readability is " +
+              "a follow-up, not core wiring). Verified server-side live (temporary throw in " +
+              "layout.js, real 500, reverted after - see PR). Vercel production env vars " +
+              "(SENTRY_DSN/NEXT_PUBLIC_SENTRY_DSN) still need setting, same as Railway's for " +
+              "the backend - flagged as a deploy follow-up, not done here." }
     ]
   },
   {

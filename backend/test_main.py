@@ -12,13 +12,20 @@ client = TestClient(app, raise_server_exceptions=False)
 
 
 def test_unhandled_exception_returns_clean_500_not_a_crash():
-    with patch("main.recognize_math", side_effect=RuntimeError("boom")):
+    # main.capture_exception is mocked here so this unit test doesn't send a real event to
+    # the team's live Sentry dashboard on every run (#59) - Sentry delivery itself is a
+    # one-time manual check, not something to bake into the permanent suite.
+    with (
+        patch("main.recognize_math", side_effect=RuntimeError("boom")),
+        patch("main.sentry_sdk.capture_exception") as mock_capture,
+    ):
         response = client.post(
             "/recognize",
             json={"strokeGroups": [], "width": 100, "height": 100},
         )
     assert response.status_code == 500
     assert response.json() == {"detail": "Internal server error"}
+    mock_capture.assert_called_once()
 
 
 def test_recognition_error_still_maps_to_502_not_shadowed_by_global_handler():
