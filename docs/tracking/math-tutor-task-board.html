@@ -535,15 +535,24 @@ const STAGES = [
               "endpoint - #36 orchestration passes this into #28's build_evaluation_result(). NOTE: " +
               "implemented locally only (same branch as #26/#27/#28), not yet pushed/PR'd - held back " +
               "until PRs #46/#48/#49/#50/#51/#52 clear." },
-      { id:"#35", owner:"jeff", title:"Decide hint tone/language (Dutch, age-appropriate)", status:"Not started",
+      { id:"#35", owner:"jeff", title:"Decide hint tone/language (Dutch, age-appropriate)", status:"In progress",
         story:"As a student (10-12yo, Dutch-speaking), I want hints that sound like they're talking to me, not a textbook.",
-        ac:["Hint wording reviewed for age-appropriate Dutch phrasing",
-            "At least one review round with Dev C (school context) before finalizing"],
+        ac:["Hint wording reviewed for age-appropriate Dutch phrasing - DRAFT done 2026-08-08 " +
+            "in backend/generic_hint.py: \"Bijna goed! Kijk nog eens rustig naar je som, stap " +
+            "voor stap.\" (was: \"Dat is nog niet helemaal goed. Bekijk je berekening nog eens " +
+            "rustig, stap voor stap.\") - leads with encouragement (\"Bijna goed\") instead of " +
+            "a flat negative, uses \"som\" (kid-friendly word for a math problem) instead of " +
+            "the more formal/textbook \"berekening\". Verified live: real /attempts/check " +
+            "response returns the new text. Full suite 100 passed - no test hardcodes the old " +
+            "string, all compare against get_generic_hint() dynamically.",
+            "At least one review round with Dev C (school context) before finalizing - NOT " +
+            "done yet, this draft is proposed, not validated - needs Richard's real review as " +
+            "the native speaker with school context, per this ticket's own AC. Two other " +
+            "candidate phrasings considered and available if this one doesn't land: see PR."],
         deps:"Fixed 2026-08-05: was 'Depends on: #9' (stale - #9 is misconception rule seeding, deferred " +
               "to 2nd MVP, same issue #34 had before PR #43 decoupled it). This ticket reviews/refines the " +
               "GENERIC hint's wording (#34), not anything #9-specific - it only needs #34's hint text to " +
-              "exist to review. Depends on: #34 (done, held locally pending the PR merge gate) · Validated " +
-              "by Dev C" },
+              "exist to review. Depends on: #34 (done)" },
       { id:"#36", owner:"alan", title:"Implement pipeline: receive → recognize → parse → validate → detect → return", status:"Done",
         story:"As the backend, I need all pieces wired together in order, so a single request produces a full result.",
         ac:["Pipeline calls recognition, parser, evaluator, misconception detector, and hint service in sequence",
