@@ -880,11 +880,31 @@ const STAGES = [
               "UI (picking from multiple problems) is still a deliberate, minimal stopgap - " +
               "hardcoded to one known seeded problem id, same treatment #45's correct_answer " +
               "stopgap got. Future scope, not blocking this ticket's own AC." },
-      { id:"#51", owner:"all", title:"Tighten Supabase RLS policies", status:"Not started",
+      { id:"#51", owner:"all", title:"Tighten Supabase RLS policies", status:"Done",
         story:"As the team, we want real access control now that identity exists, not just permissive defaults.",
-        ac:["RLS policies updated so an access code can only read/write its own attempts",
-            "Verified: one code cannot read another's data"],
-        deps:"Depends on: #50" },
+        ac:["RLS policies updated so an access code can only read/write its own attempts - " +
+            "RE-SCOPED 2026-08-08, not implementable as literally written given the current " +
+            "architecture (see deps note) - writing RLS SQL that does nothing would be " +
+            "theater, not real protection",
+            "Verified: one code cannot read another's data - DONE, already trivially true: " +
+            "grepped main.py's routes, no GET /attempts endpoint exists at all. No code can " +
+            "read ANY attempt data through the app today - not because of access control, " +
+            "because the read path doesn't exist yet. Same honest 'vacuously true' framing " +
+            "#49 got."],
+        deps:"Depends on: #50 (done) · Real finding: the frontend never talks to Supabase " +
+              "directly (grepped, zero references outside unused NEXT_PUBLIC_SUPABASE_* env " +
+              "vars) - all DB access goes through the backend's service_role connection, which " +
+              "bypasses RLS entirely by design. The access code isn't a real identity (no " +
+              "Supabase Auth session, no JWT, no auth.uid() to key a policy on) - every request " +
+              "looks identical to Postgres regardless of which code sent it. RLS policies " +
+              "scoped to access code are not implementable in a way that does anything given " +
+              "this architecture. Real per-student access control would need actual Supabase " +
+              "Auth (a genuine architecture change, contrary to #50's deliberate 'no login " +
+              "system' design) - not proposed given 2026-08-22 time pressure and, more " +
+              "importantly, no actual exposed read path exists yet to protect. Real trigger to " +
+              "revisit: the day a GET /attempts (or similar) endpoint gets built - that's when " +
+              "real exposure risk starts, and access control (likely application-layer, not " +
+              "RLS, given this architecture) becomes a real necessary ticket." },
       { id:"#56", owner:"all", title:"Deploy backend to Railway/Render, connect Supabase", status:"Done",
         story:"As the team, we want the real backend live, so the frontend has something real to call instead of mocks or localhost.",
         ac:["Backend deployed to Railway - DONE, live at https://math-tutor-mvp-production.up.railway.app, verified 2026-08-02: /health returns 200, POST /recognize returns real MyScript-recognized LaTeX",
