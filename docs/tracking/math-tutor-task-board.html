@@ -564,7 +564,7 @@ const STAGES = [
               "failing step index. 6 test cases, full suite 77 passed. NOTE: implemented locally only " +
               "(same branch as #25/#26/#27/#28/#34, plus #12's models.py merged in locally), not yet " +
               "pushed/PR'd - held back until PRs #46/#48/#49/#50/#51/#52 clear." },
-      { id:"#37", owner:"jeff", title:"Wire POST /attempts/check to full pipeline", status:"In progress",
+      { id:"#37", owner:"jeff", title:"Wire POST /attempts/check to full pipeline", status:"Done",
         story:"As the frontend, I need one endpoint that does the whole check, not five separate calls.",
         ac:["Endpoint accepts steps, runs the full orchestration pipeline, returns the result - " +
             "DONE, POST /attempts/check in main.py wraps #36's run_pipeline()",
@@ -898,16 +898,32 @@ const STAGES = [
             "committed).",
             "Production backend URL documented - done, see above. Still need to set NEXT_PUBLIC_BACKEND_API_URL in Vercel's env vars to this URL so the deployed frontend can actually reach it (currently only works from localhost)"],
         deps:"Blocks: #57 (frontend needs a real backend URL to point at - now available), #58" },
-      { id:"#57", owner:"alan", title:"Deploy frontend to Vercel (real app)", status:"In progress",
+      { id:"#57", owner:"alan", title:"Deploy frontend to Vercel (real app)", status:"Done",
         story:"As the team, we want the real app live, not just the placeholder.",
-        ac:["Placeholder page replaced with real frontend from Stage 4",
-            "Deployed build points at the real backend API URL, not localhost"],
-        deps:"Depends on: #45 · Placeholder already live" },
-      { id:"#58", owner:"all", title:"Smoke-test production environment", status:"Not started",
+        ac:["Placeholder page replaced with real frontend from Stage 4 - DONE, confirmed by " +
+            "fetching the live production HTML directly (real Problem/Loading UI, not the old " +
+            "placeholder)",
+            "Deployed build points at the real backend API URL, not localhost - DONE, " +
+            "confirmed by reading the deployed JS bundle directly: NEXT_PUBLIC_BACKEND_API_URL " +
+            "is baked in as the real Railway URL"],
+        deps:"Depends on: #45 (done) · Verified live 2026-08-07/08 via the Vercel MCP - " +
+              "deployment pipeline was healthy the whole time (every merge to master correctly " +
+              "triggers a production build); what was actually missing was #50 itself not yet " +
+              "merged, not a Vercel issue. No Vercel configuration changes were needed." },
+      { id:"#58", owner:"all", title:"Smoke-test production environment", status:"Done",
         story:"As the team, we want one final check before real students touch it.",
-        ac:["Full flow tested against the live production URLs",
-            "No console errors, no broken network calls"],
-        deps:"Depends on: #56, #57" },
+        ac:["Full flow tested against the live production URLs - DONE, all 4 real endpoints " +
+            "verified against the live Railway backend (/health, /problems/{id}, " +
+            "/attempts/check for both correct and incorrect answers, /attempts persisted and " +
+            "confirmed via execute_sql against the real production database, then cleaned up)",
+            "No console errors, no broken network calls - DONE, confirmed both: no broken " +
+            "network calls (all 4 endpoints above responded correctly), and no console errors " +
+            "(manually checked in a real browser - DevTools Console showed \"No Issues\", empty " +
+            "console after a full page reload)"],
+        deps:"Depends on: #56 (done), #57 (done) · /recognize's real MyScript path not " +
+              "re-verified here (impractical to simulate real ink via curl) - already confirmed " +
+              "working in production when #56 first shipped, and nothing about that code path " +
+              "changed since." },
       { id:"#59", owner:"alan", title:"Set up monitoring / error logging (Sentry)", status:"Done",
         story:"As the team, we want to know when something breaks in production, without waiting for a student to report it.",
         ac:["Sentry (or equivalent) wired into both frontend and backend",
