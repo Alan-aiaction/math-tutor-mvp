@@ -818,11 +818,22 @@ const STAGES = [
         ac:["Unit tests exist for parser, evaluator, and misconception matcher",
             "All tests passing before merge"],
         deps:"Depends on: #22-31" },
-      { id:"#53", owner:"jeff", title:"Integration tests: full /attempts/check pipeline", status:"Not started",
+      { id:"#53", owner:"jeff", title:"Integration tests: full /attempts/check pipeline", status:"Done",
         story:"As the team, we want to know the whole pipeline works together, not just each piece alone.",
-        ac:["At least 3 end-to-end test cases (correct, incorrect-with-match, incorrect-no-match)",
-            "Tests runnable locally or in CI"],
-        deps:"Depends on: #37" },
+        ac:["At least 3 end-to-end test cases (correct, incorrect-with-match, incorrect-no-match) - " +
+            "DONE 2026-08-08, verified already covered: backend/test_main.py has 4 real " +
+            "integration-level tests added alongside #37 - test_check_attempt_correct_step, " +
+            "test_check_attempt_incorrect_step_gets_hint, " +
+            "test_check_attempt_multiple_steps_returns_one_result_each, " +
+            "test_check_attempt_malformed_correct_answer_returns_400. Real TestClient calls " +
+            "hitting the real endpoint -> real run_pipeline() -> real parser/evaluator/" +
+            "correctness-check/generic-hint, nothing mocked. 'incorrect-with-match' isn't " +
+            "testable (same gap #28/#51 already documented: misconception matching is 2nd-MVP " +
+            "scope, misconception_id is hardcoded None everywhere in 1st MVP) - the ticket's " +
+            "AC predates the 2026-08-03 deferral decision, not a real gap in the tests",
+            "Tests runnable locally or in CI - DONE, standard pytest suite, runs locally " +
+            "(no CI exists yet, but AC says 'locally or CI')"],
+        deps:"Depends on: #37 (done)" },
       { id:"#54", owner:"all", title:"Organize manual QA with real kids' handwriting via school", status:"Not started",
         story:"As the team, we want to know the app actually works for real students, not just our own test input.",
         ac:["At least 3 real students test the app via the bijles school connection",
