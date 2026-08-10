@@ -142,6 +142,7 @@ export default function Home() {
         results={results}
         onDelete={deleteStep}
         onStepChange={handleStepChange}
+        problemId={problem?.id}
       />
       {checkError && <p className="text-sm text-red-600">{checkError}</p>}
       {saveError && <p className="text-sm text-amber-600">{saveError}</p>}
