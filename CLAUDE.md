@@ -116,6 +116,18 @@ convention and file format) — two new files can never collide.
 - **Fix one problem at a time.** If an audit or investigation turns up more than one
   issue, don't bundle fixes for all of them into a single change. Check which problem,
   and which solution approach, the user wants to tackle before starting each one.
+- **A confirmed real bug gets fixed before other work, and gets planned first.** Once a
+  bug is confirmed (root cause identified, not just suspected), don't let it get pushed
+  down the queue by other requested work — docs, tracking, process changes — even when
+  that other work is also legitimately asked for. Surface the bug and fix it before
+  continuing anything else. Before writing the fix, give a short plan (root cause +
+  proposed change) and wait for explicit approval — a fix "looking small" isn't the same
+  as already having agreed both *what* and *how*. Name the saved plan file (per the rule
+  above) after the ticket/task that originally introduced the bug, not a fresh number, so
+  it's obvious at a glance which past work regressed — e.g. a bug in code shipped by
+  ticket #50 gets a plan named around #50. Got this wrong once: a KaTeX rendering bug was
+  found and the fix fully described, but three unrelated doc/process changes got done
+  first, before the user had to ask directly why the actual bug still wasn't fixed.
 - **Copy approved plans into the project before implementing.** Claude Code's plan mode
   writes to one auto-managed file outside the repo, and that same file gets overwritten the
   next time an unrelated plan is started — so anything meant to survive across sessions
