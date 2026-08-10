@@ -243,7 +243,7 @@ const STAGES = [
               "rows are multiple-choice (options like A/B/C/D) and were deliberately excluded - " +
               "the Problem model has no field for MC options and the app has no UI for picking " +
               "from choices. Not lost, just parked until MC becomes a supported question type." },
-      { id:"#9", owner:"jeff", title:"Seed misconception_rules and hints (first batch)", status:"Not started",
+      { id:"#9", owner:"alan", title:"Seed misconception_rules and hints (first batch)", status:"Not started",
         story:"As the backend team, we need real misconception/hint content to test the detector against, not just placeholder rules.",
         ac:["At least 5-10 misconception rules seeded, each tied to a topic",
             "Each misconception has one first-level hint and one escalation hint",
@@ -499,23 +499,23 @@ const STAGES = [
               "only (same branch as #26/#27, which also now has feature/12-scaffold-pydantic-models " +
               "merged in locally so backend/models.py is importable), not yet pushed/PR'd - held back " +
               "until PRs #46/#48/#49/#50/#51/#52 clear." },
-      { id:"#29", owner:"jeff", title:"Define rule format for misconception_rules", status:"In progress",
+      { id:"#29", owner:"alan", title:"Define rule format for misconception_rules", status:"In progress",
         story:"As the backend, I need an agreed rule structure, so content (Dev C/Richard) and matching logic speak the same format.",
         ac:["Rule format documented (pattern type, matching fields)",
             "Reviewed and agreed with Dev C before content seeding begins"],
         deps:"Coordinate with: #6, #9 · AC #1 done: proposal at docs/architecture/proposal_misconception_rule_format.md (declarative JSON format, AI scoped to offline rule authoring + shadow logging, not real-time per-check matching). AC #2 still needs real Jeff/Richard sign-off - see docs/tracking/decision-log.md. Scoping note: implementation (#30, real #9 seeding) deferred to 2nd MVP given 2026-08-22 time pressure; #25-28 and #34 still ship in 1st MVP, and shadow logging starts now via #13/#15's attempt_steps persistence, so 2nd MVP's rules get built from real usage data." },
-      { id:"#30", owner:"jeff", title:"Implement rule-matching engine", status:"Not started",
+      { id:"#30", owner:"alan", title:"Implement rule-matching engine", status:"Not started",
         story:"As the evaluator, given a wrong answer, I want to find which known misconception it matches, so the student gets a targeted hint.",
         ac:["Given a wrong step and expected step, returns a matching misconception_id if found",
             "Returns null when no rule matches",
             "Tested against the seeded rules from #9"],
         deps:"Depends on: #29, #9" },
-      { id:"#31", owner:"jeff", title:"Return misconception_id or null fallback", status:"Not started",
+      { id:"#31", owner:"alan", title:"Return misconception_id or null fallback", status:"Not started",
         story:"As downstream services, we need a consistent value even when nothing matches.",
         ac:["Explicit null (not empty string, not exception) returned on no match",
             "Covered by an explicit no-match test case"],
         deps:"Depends on: #30 · Blocks: #33" },
-      { id:"#33", owner:"jeff", title:"Map misconception_id to approved hint message", status:"Not started",
+      { id:"#33", owner:"alan", title:"Map misconception_id to approved hint message", status:"Not started",
         story:"As a student, I want a hint tied to my specific mistake, not a generic message.",
         ac:["Given a misconception_id, returns the matching hint from the hints table",
             "Falls back to #34 when no id or no matching hint exists"],
@@ -535,7 +535,7 @@ const STAGES = [
               "endpoint - #36 orchestration passes this into #28's build_evaluation_result(). NOTE: " +
               "implemented locally only (same branch as #26/#27/#28), not yet pushed/PR'd - held back " +
               "until PRs #46/#48/#49/#50/#51/#52 clear." },
-      { id:"#35", owner:"jeff", title:"Decide hint tone/language (Dutch, age-appropriate)", status:"In progress",
+      { id:"#35", owner:"alan", title:"Decide hint tone/language (Dutch, age-appropriate)", status:"In progress",
         story:"As a student (10-12yo, Dutch-speaking), I want hints that sound like they're talking to me, not a textbook.",
         ac:["Hint wording reviewed for age-appropriate Dutch phrasing - DRAFT done 2026-08-08 " +
             "in backend/generic_hint.py: \"Bijna goed! Kijk nog eens rustig naar je som, stap " +
@@ -876,10 +876,11 @@ const STAGES = [
               "pilot's problem set should be pure arithmetic expressions only, word " +
               "problems (verhaaltjessommen) only, or both kept as a labeled/separate split " +
               "- not just whatever the source CSV happened to contain.",
-        ac:["Decision documented: arithmetic-only, word-problems-only, or both kept as a " +
-            "labeled/filterable split",
-            "If split, seeded problems tagged so the app (or a future picker) can " +
-            "distinguish the two types"],
+        ac:["Decision documented: keep arithmetic-only and word-problem (verhaaltjessommen) " +
+            "content as two separate, labeled tracks (Alan's current leaning as of " +
+            "2026-08-10, not yet finalized - not the same as excluding word problems)",
+            "Seeded problems tagged so the two types can be told apart (and, later, " +
+            "filtered/offered separately) instead of mixed as one undifferentiated pool"],
         deps:"Found 2026-08-10 investigating a KaTeX rendering bug in ProblemDisplay.js - " +
               "question_text (plain English sentences) was being run through katex." +
               "renderToString(), which garbles word-problem text (italicized, spacing " +
@@ -888,7 +889,8 @@ const STAGES = [
               "must display correctly either way) - this ticket is the content-scope " +
               "question the garbled display surfaced: most of the 47 seeded rows " +
               "(calculateMoney/calculateInteger categories) are word-problem style, not " +
-              "bare expressions like \"6 x 199\". Design/content call, not yet decided." },
+              "bare expressions like \"6 x 199\". Leaning: keep both, but separated/labeled " +
+              "rather than mixed or excluded - not yet finalized." },
       { id:"#47", owner:"all", title:"Enforce HTTPS everywhere", status:"Done",
         story:"As the team, we want all traffic encrypted, so student data isn't exposed in transit.",
         ac:["No endpoint reachable over plain HTTP in production",
@@ -1064,11 +1066,11 @@ const STAGES = [
         story:"As the content owner, I'll eventually cover all groep 7/8 rekenen domains, not just the MVP subset.",
         ac:["Post-MVP — not relevant until after pilot feedback"],
         deps:"Blocked · Post-MVP" },
-      { id:"#61", owner:"jeff", title:"Expand misconception rule library from real usage data", status:"Blocked",
+      { id:"#61", owner:"alan", title:"Expand misconception rule library from real usage data", status:"Blocked",
         story:"As the backend, I'll grow the rule library once we have real student data to learn from.",
         ac:["Post-MVP — not relevant until after pilot feedback"],
         deps:"Blocked · Post-MVP" },
-      { id:"#62", owner:"jeff", title:"Iterate hint wording based on observed confusion", status:"Blocked",
+      { id:"#62", owner:"alan", title:"Iterate hint wording based on observed confusion", status:"Blocked",
         story:"As the backend, I'll refine hint wording once we've seen where real students get confused.",
         ac:["Post-MVP — not relevant until after pilot feedback"],
         deps:"Blocked · Post-MVP" }
