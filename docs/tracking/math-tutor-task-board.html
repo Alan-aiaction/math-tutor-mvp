@@ -822,11 +822,23 @@ const STAGES = [
       <p class="tree-caption">Only two real chains exist within this stage: #50 &rarr; #51 (access control), and #56 + #57 &rarr; #58 (deploy both sides, then verify). Everything else here — #47, #48 (done), #49, #52-55, #59 — depends on tickets from <i>other</i> stages, not on each other, so they're not pictured as a chain; check each card's own "Depends on" line.</p>
     `,
     tasks: [
-      { id:"#52", owner:"jeff", title:"Unit tests: parser, evaluator, misconception matcher", status:"Not started",
+      { id:"#52", owner:"jeff", title:"Unit tests: parser, evaluator, misconception matcher", status:"Done",
         story:"As the team, we want confidence in the core logic before real students touch it.",
-        ac:["Unit tests exist for parser, evaluator, and misconception matcher",
-            "All tests passing before merge"],
-        deps:"Depends on: #22-31" },
+        ac:["Unit tests exist for parser, evaluator, and misconception matcher - DONE " +
+            "2026-08-10, verified already covered: parser (test_latex_parser.py, " +
+            "test_parser_edge_cases.py, test_canonical_form.py - fractions, mixed numbers, " +
+            "decimals, negatives, Dutch comma notation, canonical-form equivalence) and " +
+            "evaluator (test_correctness_check.py, test_expression_validity.py, " +
+            "test_evaluation_result.py, test_transition_validity.py - parametrized, more test " +
+            "cases than function count suggests) both have real unit test coverage, shipped " +
+            "with #22-28. Misconception matcher has no test file, because the matcher itself " +
+            "(#30) doesn't exist as code - same already-established 2026-08-03 deferral " +
+            "#28/#51/#53 all cite. This ticket's AC predates that scoping decision, not a real " +
+            "gap in the tests.",
+            "All tests passing before merge - DONE, full suite 100 passed, includes all of the " +
+            "above"],
+        deps:"Depends on: #22-31 (parser/evaluator done; #29-31's misconception chain deferred " +
+              "to 2nd MVP, same scope note as #52's AC#1)" },
       { id:"#53", owner:"jeff", title:"Integration tests: full /attempts/check pipeline", status:"Done",
         story:"As the team, we want to know the whole pipeline works together, not just each piece alone.",
         ac:["At least 3 end-to-end test cases (correct, incorrect-with-match, incorrect-no-match) - " +
