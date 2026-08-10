@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Math Tutor MVP — 1st MVP Status</title>
+<style>
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal { animation: rise .5s ease both; }
+  }
+  @keyframes rise { from { opacity:0; transform: translateY(10px);} to { opacity:1; transform:none; } }
+
+  :root{
+    --paper:#EDF2F5;
+    --paper-line: rgba(20,32,46,.07);
+    --ink:#14202E;
+    --ink-soft:#4B5C6E;
+    --card:#FFFFFF;
+    --card-border: rgba(20,32,46,.09);
+    --accent:#2A7A63;
+    --accent-soft: rgba(42,122,99,.12);
+    --warm:#B9791E;
+    --warm-soft: rgba(185,121,30,.14);
+    --done:#2A7A63;
+    --progress:#B9791E;
+    --notstarted:#8A97A6;
+    --blocked:#B14432;
+    --shadow: 0 1px 2px rgba(20,32,46,.06), 0 12px 28px -14px rgba(20,32,46,.18);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#0F1620;
+      --paper-line: rgba(255,255,255,.07);
+      --ink:#E9EDF1;
+      --ink-soft:#9FADBB;
+      --card:#182231;
+      --card-border: rgba(255,255,255,.08);
+      --accent:#4FB897;
+      --accent-soft: rgba(79,184,151,.14);
+      --warm:#E0A752;
+      --warm-soft: rgba(224,167,82,.16);
+      --done:#4FB897;
+      --progress:#E0A752;
+      --notstarted:#71808F;
+      --blocked:#E17A64;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 20px 40px -20px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0F1620; --paper-line: rgba(255,255,255,.07); --ink:#E9EDF1; --ink-soft:#9FADBB;
+    --card:#182231; --card-border: rgba(255,255,255,.08);
+    --accent:#4FB897; --accent-soft: rgba(79,184,151,.14);
+    --warm:#E0A752; --warm-soft: rgba(224,167,82,.16);
+    --done:#4FB897; --progress:#E0A752; --notstarted:#71808F; --blocked:#E17A64;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 20px 40px -20px rgba(0,0,0,.6);
+  }
+  :root[data-theme="light"]{
+    --paper:#EDF2F5; --paper-line: rgba(20,32,46,.07); --ink:#14202E; --ink-soft:#4B5C6E;
+    --card:#FFFFFF; --card-border: rgba(20,32,46,.09);
+    --accent:#2A7A63; --accent-soft: rgba(42,122,99,.12);
+    --warm:#B9791E; --warm-soft: rgba(185,121,30,.14);
+    --done:#2A7A63; --progress:#B9791E; --notstarted:#8A97A6; --blocked:#B14432;
+    --shadow: 0 1px 2px rgba(20,32,46,.06), 0 12px 28px -14px rgba(20,32,46,.18);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    background:
+      linear-gradient(var(--paper-line) 1px, transparent 1px) 0 0/40px 40px,
+      linear-gradient(90deg, var(--paper-line) 1px, transparent 1px) 0 0/40px 40px,
+      var(--paper);
+    color:var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    scroll-behavior:smooth;
+  }
+  .deck{
+    height:100vh;
+    overflow-y:scroll;
+    scroll-snap-type:y mandatory;
+  }
+  @media (prefers-reduced-motion: reduce){ body{scroll-behavior:auto;} }
+
+  section.slide{
+    min-height:100vh;
+    scroll-snap-align:start;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    padding: 6vh 8vw 10vh;
+    position:relative;
+  }
+
+  .eyebrow{
+    font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    font-size:.78rem;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--accent);
+    margin:0 0 1.1rem;
+    display:flex;
+    align-items:center;
+    gap:.6em;
+  }
+  .eyebrow::before{
+    content:"";
+    width:1.4em;height:1px;
+    background:var(--accent);
+    display:inline-block;
+  }
+
+  h1,h2{
+    font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+    font-weight:400;
+    text-wrap:balance;
+    letter-spacing:-.01em;
+    margin:0 0 .5rem;
+    color:var(--ink);
+  }
+  h1{ font-size: clamp(2.4rem, 5.2vw, 4.4rem); line-height:1.04; }
+  h2{ font-size: clamp(1.9rem, 3.6vw, 2.9rem); line-height:1.08; margin-bottom:1.1rem; }
+
+  .sub{
+    font-size: clamp(1.05rem, 1.6vw, 1.3rem);
+    color:var(--ink-soft);
+    max-width:44ch;
+    line-height:1.5;
+    margin: 0 0 1.6rem;
+  }
+
+  .wrap{ max-width:1180px; width:100%; margin:0 auto; }
+
+  .grid{ display:grid; gap:1.1rem; }
+  .grid.cols-3{ grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 860px){ .grid.cols-3{ grid-template-columns:1fr; } }
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--card-border);
+    border-radius:10px;
+    padding:1.5rem 1.6rem;
+    box-shadow:var(--shadow);
+  }
+  .card h3{
+    font-family: Georgia, serif;
+    font-weight:400;
+    font-size:1.25rem;
+    margin:0 0 .4rem;
+    color:var(--ink);
+  }
+  .card p{ margin:0; color:var(--ink-soft); font-size:.98rem; line-height:1.55; }
+  .card .role{
+    font-family: ui-monospace, monospace;
+    font-size:.78rem;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--accent);
+    margin-bottom:.55rem;
+    display:block;
+  }
+
+  ul.list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.65rem; }
+  ul.list li{
+    padding-left:1.35em;
+    position:relative;
+    line-height:1.5;
+    color:var(--ink);
+    font-size:1.02rem;
+  }
+  ul.list li::before{
+    content:"—";
+    position:absolute; left:0; color:var(--accent);
+  }
+  ul.list.warm li::before{ color:var(--warm); }
+  ul.list li b{ font-weight:600; }
+  ul.list li .mut{ color:var(--ink-soft); }
+
+  .two-col{ display:grid; grid-template-columns:1fr 1fr; gap:2.4rem; }
+  @media (max-width: 860px){ .two-col{ grid-template-columns:1fr; } }
+  .col-head{
+    font-family: ui-monospace, monospace;
+    font-size:.82rem;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    margin:0 0 .9rem;
+    padding-bottom:.6rem;
+    border-bottom:1px solid var(--card-border);
+  }
+  .col-head.in{ color:var(--accent); }
+  .col-head.out{ color:var(--ink-soft); }
+
+  .stat-row{ display:flex; gap:2.4rem; flex-wrap:wrap; margin: .4rem 0 2rem; }
+  .stat{ display:flex; flex-direction:column; gap:.15rem; }
+  .stat .num{
+    font-family: ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size:clamp(2.1rem,4vw,3.1rem);
+    font-weight:600;
+    line-height:1;
+  }
+  .stat .num.done{ color:var(--done); }
+  .stat .label{ font-size:.82rem; color:var(--ink-soft); letter-spacing:.03em; }
+
+  .bar{
+    height:10px; border-radius:6px; overflow:hidden;
+    display:flex; width:100%; max-width:620px;
+    border:1px solid var(--card-border);
+  }
+  .bar span{ height:100%; }
+  .bar .b-done{ background:var(--done); }
+  .bar .b-prog{ background:var(--progress); }
+  .bar .b-not{ background:var(--notstarted); opacity:.55; }
+  .bar .b-block{ background:var(--blocked); }
+  .bar-legend{ display:flex; gap:1.4rem; flex-wrap:wrap; margin-top:.7rem; font-size:.82rem; color:var(--ink-soft); }
+  .bar-legend span{ display:inline-flex; align-items:center; gap:.4em; }
+  .dot{ width:9px;height:9px;border-radius:50%; display:inline-block; }
+
+  .pill{
+    font-family: ui-monospace, monospace;
+    font-size:.72rem;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    padding:.22em .6em;
+    border-radius:999px;
+    display:inline-block;
+  }
+  .pill.done{ background:var(--accent-soft); color:var(--accent); }
+  .pill.warm{ background:var(--warm-soft); color:var(--warm); }
+
+  .owner-row{ display:flex; align-items:baseline; gap:.7rem; margin-bottom:.3rem; }
+  .owner-name{ font-family:Georgia, serif; font-size:1.15rem; }
+
+  .live-row{ display:flex; gap:1.6rem; flex-wrap:wrap; margin-top:2rem; }
+  .live-row .card{ flex:1 1 220px; }
+
+  .ticket{
+    font-family: ui-monospace, monospace;
+    font-size:.86rem;
+    color:var(--accent);
+  }
+
+  footer.slide-note{
+    position:absolute; bottom:6vh; left:8vw; right:8vw;
+    display:flex; justify-content:space-between;
+    font-family: ui-monospace, monospace;
+    font-size:.75rem; color:var(--ink-soft); letter-spacing:.04em;
+  }
+
+  /* title slide */
+  .title-slide{ justify-content:center; align-items:flex-start; }
+  .title-mark{
+    font-family: ui-monospace, monospace;
+    font-size:.85rem; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--ink-soft); margin-bottom:2.2rem;
+  }
+  .title-meta{
+    margin-top:2.4rem; display:flex; gap:2.4rem; flex-wrap:wrap;
+    font-family: ui-monospace, monospace; font-size:.85rem; color:var(--ink-soft);
+  }
+  .title-meta b{ color:var(--ink); }
+  .demo-link{
+    display:inline-flex; align-items:center; gap:.5em;
+    margin-top:2.2rem;
+    font-family: ui-monospace, monospace;
+    font-size:.92rem; letter-spacing:.02em;
+    color:var(--accent);
+    background:var(--accent-soft);
+    border:1px solid var(--accent);
+    border-radius:8px;
+    padding:.65em 1.1em;
+    text-decoration:none;
+    transition: transform .15s, background .15s;
+  }
+  .demo-link:hover{ transform:translateX(2px); background:var(--accent); color:var(--card); }
+  .demo-link:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+
+  /* nav */
+  .nav{
+    position:fixed; right:2.2vw; top:50%; transform:translateY(-50%);
+    display:flex; flex-direction:column; gap:.55rem; z-index:10;
+  }
+  .nav button{
+    width:9px; height:9px; border-radius:50%;
+    background:transparent; border:1px solid var(--ink-soft);
+    padding:0; cursor:pointer; opacity:.55;
+    transition: opacity .15s, background .15s, transform .15s;
+  }
+  .nav button:hover{ opacity:1; transform:scale(1.2); }
+  .nav button.active{ background:var(--accent); border-color:var(--accent); opacity:1; }
+  .nav button:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+
+  .arrows{
+    position:fixed; bottom:3vh; left:50%; transform:translateX(-50%);
+    display:flex; gap:.8rem; z-index:10;
+    font-family: ui-monospace, monospace; font-size:.78rem; color:var(--ink-soft);
+    align-items:center;
+  }
+  .arrows button{
+    background:var(--card); border:1px solid var(--card-border); color:var(--ink);
+    border-radius:7px; padding:.4em .8em; cursor:pointer; font-size:.9rem;
+    box-shadow:var(--shadow);
+  }
+  .arrows button:hover{ color:var(--accent); }
+  .arrows button:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .arrows .count{ font-variant-numeric: tabular-nums; min-width:3.4em; text-align:center; }
+
+  @media (max-width: 640px){
+    .nav{ display:none; }
+    section.slide{ padding: 5vh 6vw 12vh; }
+  }
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+  <section class="slide title-slide">
+    <div class="wrap reveal">
+      <div class="title-mark">AIAction · after-school education products</div>
+      <h1>Math Tutor MVP</h1>
+      <div class="sub" style="max-width:52ch;">Status of the 1st MVP, and what carries into the 2nd — prepared for Monday's team review.</div>
+      <div class="title-meta">
+        <span><b>Prepared by</b> Alan</span>
+        <span><b>Date</b> 2026-08-10</span>
+        <span><b>Board</b> 60 tickets tracked</span>
+      </div>
+      <a class="demo-link" href="https://math-tutor-mvp.vercel.app" target="_blank" rel="noopener">
+        Try the live demo <span aria-hidden="true">&rarr;</span>
+      </a>
+    </div>
+    <footer class="slide-note"><span>math-tutor-mvp</span><span>01 / 09</span></footer>
+  </section>
+
+  <section class="slide">
+    <div class="wrap reveal">
+      <div class="eyebrow">Project goal</div>
+      <h2>A Socratic tutor, not an answer key.</h2>
+      <p class="sub" style="max-width:58ch; font-size:1.15rem;">
+        An AI-powered math tutor for <b style="color:var(--ink);">groep 7-8 (HAVO-track)</b> students,
+        built to help them practice independently after school.
+      </p>
+      <ul class="list" style="max-width:60ch;">
+        <li>Diagnose <b>where</b> a student's reasoning breaks down, step by step — not just whether the final answer is right.</li>
+        <li>Respond with <b>guiding hints</b>, never the direct answer.</li>
+        <li>Read real handwritten work: ink strokes in, recognized LaTeX steps out.</li>
+        <li><span class="mut">Status: trial / experiment — free-tier tooling and minimal cost prioritized everywhere unless a decision says otherwise.</span></li>
+      </ul>
+    </div>
+    <footer class="slide-note"><span>Goal</span><span>02 / 09</span></footer>
+  </section>
+
+  <section class="slide">
+    <div class="wrap reveal">
+      <div class="eyebrow">Team</div>
+      <h2>Three people, three layers of the stack.</h2>
+      <div class="grid cols-3" style="margin-top:1.4rem;">
+        <div class="card">
+          <span class="role">Frontend · Recognition</span>
+          <h3>Alan</h3>
+          <p>Next.js client, ink capture, MyScript recognition/parser integration. Also Data/Content/Platform lead — deploys, Supabase, seeding.</p>
+        </div>
+        <div class="card">
+          <span class="role">Backend logic</span>
+          <h3>Jeff</h3>
+          <p>Evaluator, misconception detector, hint service, pipeline orchestration on FastAPI.</p>
+        </div>
+        <div class="card">
+          <span class="role">Content · Curriculum</span>
+          <h3>Richard</h3>
+          <p>Endpoints, problem content, curriculum accuracy against groep 7/8 standards.</p>
+        </div>
+      </div>
+    </div>
+    <footer class="slide-note"><span>Team</span><span>03 / 09</span></footer>
+  </section>
+
+  <section class="slide">
+    <div class="wrap reveal">
+      <div class="eyebrow">Scope</div>
+      <h2>What "1st MVP" actually means.</h2>
+      <div class="two-col" style="margin-top:1rem;">
+        <div>
+          <div class="col-head in">In scope</div>
+          <ul class="list">
+            <li>Handwritten step input → recognized LaTeX, with Confirm/Edit before checking</li>
+            <li>Real problem bank — <span class="ticket">47</span> seeded groep 8 problems</li>
+            <li>Per-step correctness checking (parser + canonical-form evaluator)</li>
+            <li>Generic Dutch-language hint on any wrong step</li>
+            <li>Attempt persistence, deployed live end-to-end</li>
+          </ul>
+        </div>
+        <div>
+          <div class="col-head out">Deferred to 2nd MVP</div>
+          <ul class="list warm">
+            <li><span class="mut">Misconception-<i>specific</i> rule matching</span> — every wrong answer gets the same generic hint for now</li>
+            <li><span class="mut">LLM-generated hints</span> — static Dutch text only</li>
+            <li><span class="mut">Full rekenen-domain coverage</span> — problem bank is groep 8 only so far</li>
+          </ul>
+          <p style="margin-top:1rem; font-size:.85rem;">Decided deliberately on 2026-08-03 — not a gap, a sequencing call.</p>
+        </div>
+      </div>
+    </div>
+    <footer class="slide-note"><span>Scope · MVP1</span><span>04 / 09</span></footer>
+  </section>
+
+  <section class="slide">
+    <div class="wrap reveal">
+      <div class="eyebrow">Status</div>
+      <h2>Live, working, end to end.</h2>
+      <p class="sub" style="font-size:1.1rem; max-width:58ch;">
+        A student can load a real problem, write a full solution by hand, get real per-step
+        feedback, and have the attempt saved — today, in production.
+        <a href="https://math-tutor-mvp.vercel.app" target="_blank" rel="noopener" style="color:var(--accent);">Try it live &rarr;</a>
+      </p>
+
+      <div class="stat-row">
+        <div class="stat"><span class="num done">46<span style="color:var(--ink-soft); font-size:.5em;"> / 60</span></span><span class="label">tickets done</span></div>
+        <div class="stat"><span class="num" style="color:var(--progress);">3</span><span class="label">in progress</span></div>
+        <div class="stat"><span class="num" style="color:var(--notstarted);">7</span><span class="label">not started</span></div>
+        <div class="stat"><span class="num" style="color:var(--blocked);">3</span><span class="label">blocked (2nd MVP)</span></div>
+      </div>
+
+      <div class="bar" role="img" aria-label="46 of 60 tickets done, 3 in progress, 7 not started, 3 blocked">
+        <span class="b-done" style="width:76.7%"></span>
+        <span class="b-prog" style="width:5%"></span>
+        <span class="b-not" style="width:11.7%"></span>
+        <span class="b-block" style="width:5%"></span>
+      </div>
+      <div class="bar-legend">
+        <span><i class="dot" style="background:var(--done)"></i>Done</span>
+        <span><i class="dot" style="background:var(--progress)"></i>In progress</span>
+        <span><i class="dot" style="background:var(--notstarted)"></i>Not started</span>
+        <span><i class="dot" style="background:var(--blocked)"></i>Blocked</span>
+      </div>
+
+      <div class="live-row">
+        <div class="card"><h3 style="font-size:1.05rem;">Frontend</h3><p>Vercel, redeploys on every push to <span class="ticket">master</span></p></div>
+        <div class="card"><h3 style="font-size:1.05rem;">Backend</h3><p>Railway (FastAPI), + Sentry error monitoring on both sides</p></div>
+        <div class="card"><h3 style="font-size:1.05rem;">Data</h3><p>Supabase — problems, attempts, and shadow-logged wrong answers</p></div>
+      </div>
+    </div>
+    <footer class="slide-note"><span>Status · MVP1</span><span>05 / 09</span></footer>
+  </section>
+
+  <section class="slide">
+    <div class="wrap reveal">
+      <div class="eyebrow">Status, in detail</div>
+      <h2>What the remaining 14 tickets actually are.</h2>
+      <div class="two-col" style="margin-top:1rem;">
+        <div>
+          <div class="col-head in">1st MVP — 5 items left, all review or scheduling</div>
+          <ul class="list remaining">
+            <li><span class="ticket">#8 · #35 · #55</span><br><b>Richard:</b> sign off seeded content against real curriculum, verify SLO groep 7/8 coverage, review Dutch hint wording <span class="mut">— 3 tickets, one review pass</span></li>
+            <li><span class="ticket">#46</span><br><b>Jeff + Alan:</b> live joint test session — 3 full attempts run together (correct / incorrect-with-hint / edge case), mismatches logged</li>
+            <li><span class="ticket">#54</span><br><b>Alan:</b> schedule real-student handwriting QA via the school connection (NL) — real lead time, start soonest</li>
+          </ul>
+          <p style="margin-top:1.1rem; font-size:.85rem; color:var(--ink-soft);"><span class="ticket" style="color:var(--done);">#5</span> confirmed Done 2026-08-10 — Alan's Platform-track ownership signed off by the team.</p>
+        </div>
+        <div>
+          <div class="col-head out">Not counted — 2nd MVP scope (9 tickets)</div>
+          <ul class="list warm">
+            <li><span class="ticket">#9 #29 #30 #31 #33</span> <span class="mut">— misconception rule-matching chain, deliberately deferred 2026-08-03</span></li>
+            <li><span class="ticket">#60 #61 #62</span> <span class="mut">— tagged "Post-MVP" on the board itself: expand problem bank, expand rule library, iterate wording from pilot data</span></li>
+          </ul>
+          <p style="margin-top:1.1rem; font-size:.85rem;">These were never in scope for "1st MVP done" — excluding them, engineering is finished; what's left is people, not code.</p>
+        </div>
+      </div>
+    </div>
+    <footer class="slide-note"><span>Status · detail</span><span>06 / 09</span></footer>
+  </section>
+
+  <section class="slide">
+    <div class="wrap reveal">
+      <div class="eyebrow">Open items</div>
+      <h2>What still needs a person, not code.</h2>
+      <div class="grid cols-3" style="margin-top:1rem;">
+        <div class="card">
+          <div class="owner-row"><span class="owner-name">Richard</span></div>
+          <p>Sign off that seeded content matches real curriculum standards, and review the Dutch hint wording (draft proposed) with native-speaker judgment.</p>
+        </div>
+        <div class="card" style="border-color:var(--warm);">
+          <div class="owner-row"><span class="owner-name">Alan</span> <span class="pill warm">real lead time</span></div>
+          <p>Schedule manual QA with real students' handwriting via the school connection — NL-based access, worth starting soon.</p>
+        </div>
+        <div class="card">
+          <div class="owner-row"><span class="owner-name">Jeff</span></div>
+          <p>Sign off on the misconception rule-format proposal — drafted, not yet reviewed.</p>
+        </div>
+      </div>
+    </div>
+    <footer class="slide-note"><span>Open items</span><span>07 / 09</span></footer>
+  </section>
+
+  <section class="slide">
+    <div class="wrap reveal">
+      <div class="eyebrow">What's next</div>
+      <h2>2nd MVP: from generic to specific.</h2>
+      <p class="sub" style="font-size:1.1rem; max-width:60ch;">
+        Everything below waits on the same thing: real student data. Shadow-logging of
+        unmatched wrong answers (<span class="ticket">#63</span>) is already live — so the
+        2nd MVP is built from actual usage, not guesswork.
+      </p>
+      <ul class="list">
+        <li><b>Build the rule-matching engine</b> <span class="mut">(#30)</span> — turn logged wrong answers into a real misconception detector</li>
+        <li><b>Seed the first rule + hint batch</b> <span class="mut">(#9, #33)</span> — targeted hints instead of the generic fallback</li>
+        <li><b>Expand the problem bank</b> <span class="mut">(#60)</span> — beyond groep 8, across all rekenen domains</li>
+        <li><b>Iterate hint wording</b> <span class="mut">(#62)</span> — from observed student confusion, not first-draft guesses</li>
+        <li><b>Move hints from static to LLM-generated</b> — flagged in #34, revisit before pilot</li>
+      </ul>
+    </div>
+    <footer class="slide-note"><span>2nd MVP</span><span>08 / 09</span></footer>
+  </section>
+
+  <section class="slide">
+    <div class="wrap reveal" style="max-width:900px;">
+      <div class="eyebrow">Thank you</div>
+      <h2>Questions, and where to push back.</h2>
+      <p class="sub" style="font-size:1.1rem; max-width:60ch;">
+        1st MVP is live and usable today. The open items on slide 6 are the real gate on
+        starting real-student testing — the rest of the 2nd MVP list depends on what that
+        testing (plus shadow-logged data) actually shows.
+      </p>
+      <a class="demo-link" href="https://math-tutor-mvp.vercel.app" target="_blank" rel="noopener">
+        math-tutor-mvp.vercel.app <span aria-hidden="true">&rarr;</span>
+      </a>
+    </div>
+    <footer class="slide-note"><span>math-tutor-mvp</span><span>09 / 09</span></footer>
+  </section>
+
+</div>
+
+<div class="nav" id="nav" aria-hidden="false"></div>
+<div class="arrows">
+  <button id="prev" aria-label="Previous slide">&larr;</button>
+  <span class="count" id="count">1 / 9</span>
+  <button id="next" aria-label="Next slide">&rarr;</button>
+</div>
+
+<script>
+  const deck = document.getElementById('deck');
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const navEl = document.getElementById('nav');
+  const countEl = document.getElementById('count');
+
+  slides.forEach((s, i) => {
+    const b = document.createElement('button');
+    b.setAttribute('aria-label', 'Go to slide ' + (i+1));
+    b.addEventListener('click', () => s.scrollIntoView({ behavior: 'smooth' }));
+    navEl.appendChild(b);
+  });
+  const dots = Array.from(navEl.children);
+
+  function setActive(i){
+    dots.forEach((d, di) => d.classList.toggle('active', di === i));
+    countEl.textContent = (i+1) + ' / ' + slides.length;
+  }
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) setActive(slides.indexOf(e.target));
+    });
+  }, { root: deck, threshold: 0.6 });
+  slides.forEach(s => io.observe(s));
+
+  function currentIndex(){
+    const mid = deck.scrollTop + deck.clientHeight / 2;
+    let idx = 0, best = Infinity;
+    slides.forEach((s, i) => {
+      const d = Math.abs(s.offsetTop + s.clientHeight/2 - mid);
+      if (d < best){ best = d; idx = i; }
+    });
+    return idx;
+  }
+  document.getElementById('prev').addEventListener('click', () => {
+    const i = Math.max(0, currentIndex() - 1);
+    slides[i].scrollIntoView({ behavior: 'smooth' });
+  });
+  document.getElementById('next').addEventListener('click', () => {
+    const i = Math.min(slides.length - 1, currentIndex() + 1);
+    slides[i].scrollIntoView({ behavior: 'smooth' });
+  });
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === 'PageDown'){
+      e.preventDefault();
+      const i = Math.min(slides.length - 1, currentIndex() + 1);
+      slides[i].scrollIntoView({ behavior: 'smooth' });
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft' || e.key === 'PageUp'){
+      e.preventDefault();
+      const i = Math.max(0, currentIndex() - 1);
+      slides[i].scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+  setActive(0);
+</script>
+</body>
+</html>
