@@ -183,7 +183,9 @@ Drive, not this repo. Only commit content here once it's finalized.
 
 - Frontend + Recognition/Parser: Alan
 - Backend logic (Evaluator, Misconception Detector, Hint Service, Orchestration): Jeff
-- Endpoints, content, curriculum: Richard
+- Endpoints: Richard
+- Content + curriculum: Alan (owner, as of 2026-08-10) — Richard has moved to a reviewer
+  role for this track, not primary owner, given limited bandwidth
 - Data/Content/Platform lead: Alan
 
 See `docs/architecture/api_contract_draft_20260728.md` for the agreed data models before touching
