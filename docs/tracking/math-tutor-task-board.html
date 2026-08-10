@@ -226,7 +226,7 @@ const STAGES = [
             "Migration runs against the Supabase project with no errors",
             "Foreign key constraints verified with a manual test insert"],
         deps:"Depends on: #6 · Migration in supabase/migrations/20260803120000_initial_schema.sql, applied 2026-08-03 via the Supabase MCP server - all 5 tables live, confirmed via list_tables. FK verified: inserted a real problem + attempt referencing it (succeeded), then an attempt referencing a nonexistent problem_id (correctly rejected with a foreign key violation), then cleaned up both test rows - tables are empty again. Note for #10: Supabase enables RLS by default on new tables, so all 5 already have RLS on with zero policies yet - only service_role can currently read/write." },
-      { id:"#8", owner:"richard", title:"Seed problems table (~20-30 problems)", status:"In progress",
+      { id:"#8", owner:"alan", title:"Seed problems table (~20-30 problems)", status:"In progress",
         story:"As the content owner, I want a real starter set of problems sourced from school context, so the pilot has authentic material instead of placeholder text.",
         ac:["At least 20-30 problems seeded into the problems table - DONE 2026-08-07, 47 " +
             "rows seeded (exceeds the 20-30 target), sourced from docs/content/" +
@@ -864,11 +864,31 @@ const STAGES = [
             "Handwriting samples collected and reviewed against recognition accuracy",
             "Findings documented and fed back into #21 if needed"],
         deps:"Depends on: #45 and school access" },
-      { id:"#55", owner:"richard", title:"Verify curriculum coverage vs SLO tussendoelen groep 7/8", status:"Not started",
+      { id:"#55", owner:"alan", title:"Verify curriculum coverage vs SLO tussendoelen groep 7/8", status:"Not started",
         story:"As the content owner, I want confidence the problem set actually matches official Dutch standards, not just intuition.",
         ac:["Seeded problems cross-checked against SLO tussendoelen groep 7/8 targets",
             "Gaps documented (topics in the standard not yet covered)"],
-        deps:"Depends on: #8" },
+        deps:"Depends on: #8 · Owner moved richard -> alan 2026-08-10 (Alan is now content " +
+              "owner, Richard reviews rather than owns - see CLAUDE.md); Richard's review " +
+              "still needed before this counts as verified, just not as the driver." },
+      { id:"#66", owner:"alan", title:"Decide: arithmetic-only vs word-problem (verhaaltjessommen) content split", status:"Not started",
+        story:"As the content owner, I want a deliberate decision on whether the 1st MVP " +
+              "pilot's problem set should be pure arithmetic expressions only, word " +
+              "problems (verhaaltjessommen) only, or both kept as a labeled/separate split " +
+              "- not just whatever the source CSV happened to contain.",
+        ac:["Decision documented: arithmetic-only, word-problems-only, or both kept as a " +
+            "labeled/filterable split",
+            "If split, seeded problems tagged so the app (or a future picker) can " +
+            "distinguish the two types"],
+        deps:"Found 2026-08-10 investigating a KaTeX rendering bug in ProblemDisplay.js - " +
+              "question_text (plain English sentences) was being run through katex." +
+              "renderToString(), which garbles word-problem text (italicized, spacing " +
+              "collapsed) since KaTeX assumes math-mode input. That's a real, separate " +
+              "rendering bug that needs fixing regardless of this decision (word problems " +
+              "must display correctly either way) - this ticket is the content-scope " +
+              "question the garbled display surfaced: most of the 47 seeded rows " +
+              "(calculateMoney/calculateInteger categories) are word-problem style, not " +
+              "bare expressions like \"6 x 199\". Design/content call, not yet decided." },
       { id:"#47", owner:"all", title:"Enforce HTTPS everywhere", status:"Done",
         story:"As the team, we want all traffic encrypted, so student data isn't exposed in transit.",
         ac:["No endpoint reachable over plain HTTP in production",
@@ -1040,7 +1060,7 @@ const STAGES = [
     intro: "Explicitly out of scope for the pilot — not being worked on now, kept here so nothing's forgotten.",
     tree: null,
     tasks: [
-      { id:"#60", owner:"richard", title:"Expand problem bank across all rekenen domains", status:"Blocked",
+      { id:"#60", owner:"alan", title:"Expand problem bank across all rekenen domains", status:"Blocked",
         story:"As the content owner, I'll eventually cover all groep 7/8 rekenen domains, not just the MVP subset.",
         ac:["Post-MVP — not relevant until after pilot feedback"],
         deps:"Blocked · Post-MVP" },
