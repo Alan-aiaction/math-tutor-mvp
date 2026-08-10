@@ -21,11 +21,13 @@ export default function Home() {
   const [problemError, setProblemError] = useState(null);
   const [studentCode, setStudentCode] = useState("");
 
+  const fetchRandomProblem = () => apiFetch(`${BACKEND_URL}/problems/random`);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const data = await apiFetch(`${BACKEND_URL}/problems/random`);
+        const data = await fetchRandomProblem();
         if (!cancelled) setProblem(data);
       } catch (err) {
         if (!cancelled) setProblemError(err.message || "Could not load the problem");
@@ -37,6 +39,23 @@ export default function Home() {
       cancelled = true;
     };
   }, []);
+
+  const loadNextProblem = async () => {
+    setLoadingProblem(true);
+    setProblemError(null);
+    setSteps(INITIAL_STEPS);
+    setResults(null);
+    setCheckError(null);
+    setSaveError(null);
+    try {
+      const data = await fetchRandomProblem();
+      setProblem(data);
+    } catch (err) {
+      setProblemError(err.message || "Could not load the problem");
+    } finally {
+      setLoadingProblem(false);
+    }
+  };
 
   const addStep = () => {
     setSteps((prev) => [...prev, { status: "unanswered", recognizedLatex: "" }]);
@@ -148,6 +167,14 @@ export default function Home() {
           className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
         >
           Clear
+        </button>
+        <button
+          type="button"
+          onClick={loadNextProblem}
+          disabled={checking || loadingProblem}
+          className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+        >
+          Next problem
         </button>
       </div>
     </main>
