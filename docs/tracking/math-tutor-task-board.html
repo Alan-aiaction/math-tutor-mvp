@@ -915,13 +915,19 @@ const STAGES = [
               "UI (picking from multiple problems) is still a deliberate, minimal stopgap - " +
               "hardcoded to one known seeded problem id, same treatment #45's correct_answer " +
               "stopgap got. Future scope, not blocking this ticket's own AC. Closed by #64." },
-      { id:"#65", owner:"alan", title:"\"Next problem\" button after checking work", status:"Not started",
+      { id:"#65", owner:"alan", title:"\"Next problem\" button after checking work", status:"Done",
         story:"As a student, once I've checked my answer, I want to move straight to a new problem without refreshing the page, so practicing multiple problems feels continuous.",
-        ac:["A visible action fetches a new random problem and resets the step list/results, without a full page reload",
-            "Works whether the previous attempt was correct, incorrect, or never checked"],
+        ac:["A visible action fetches a new random problem and resets the step list/results, " +
+            "without a full page reload - DONE 2026-08-10: page.js's new \"Next problem\" " +
+            "button calls the same GET /problems/random from #64 (via a shared " +
+            "fetchRandomProblem() helper) and resets steps/results/checkError/saveError",
+            "Works whether the previous attempt was correct, incorrect, or never checked - " +
+            "DONE, the reset always runs the same way regardless of prior state"],
         deps:"Depends on: #64 (done) - #64 only randomizes the problem shown on initial page " +
               "load; there's currently no in-app way to get a different problem afterward " +
-              "(only a manual browser refresh). Found via live testing 2026-08-10." },
+              "(only a manual browser refresh). Found via live testing 2026-08-10. Frontend " +
+              "production build verified clean; click-through itself verified live by Alan " +
+              "(no browser automation tool available this session to verify directly)." },
       { id:"#64", owner:"alan", title:"Random problem per page load", status:"Done",
         story:"As a student, I want to see a different problem each time I load the app, not the same one every time, so the pilot doesn't feel stuck on one question.",
         ac:["A page load fetches a real, randomly-chosen problem instead of a hardcoded id - " +
