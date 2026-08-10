@@ -8,11 +8,6 @@ import { apiFetch } from "./lib/apiFetch";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
-// No real problem-selection UX exists yet (picking from multiple problems is a separate,
-// future ticket) - hardcoding a known real seeded problem (#8) is a deliberate, minimal
-// stopgap so the app works against real backend data end to end, not a permanent design.
-const PROBLEM_ID = 12;
-
 const INITIAL_STEPS = [{ status: "unanswered", recognizedLatex: "" }];
 
 export default function Home() {
@@ -30,7 +25,7 @@ export default function Home() {
     let cancelled = false;
     (async () => {
       try {
-        const data = await apiFetch(`${BACKEND_URL}/problems/${PROBLEM_ID}`);
+        const data = await apiFetch(`${BACKEND_URL}/problems/random`);
         if (!cancelled) setProblem(data);
       } catch (err) {
         if (!cancelled) setProblemError(err.message || "Could not load the problem");

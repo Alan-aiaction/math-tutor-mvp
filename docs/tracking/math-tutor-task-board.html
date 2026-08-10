@@ -914,7 +914,24 @@ const STAGES = [
         deps:"Depends on: #11 (done), #12 (done), #13 (done), #15 (done) · Real problem-selection " +
               "UI (picking from multiple problems) is still a deliberate, minimal stopgap - " +
               "hardcoded to one known seeded problem id, same treatment #45's correct_answer " +
-              "stopgap got. Future scope, not blocking this ticket's own AC." },
+              "stopgap got. Future scope, not blocking this ticket's own AC. Closed by #64." },
+      { id:"#64", owner:"alan", title:"Random problem per page load", status:"Done",
+        story:"As a student, I want to see a different problem each time I load the app, not the same one every time, so the pilot doesn't feel stuck on one question.",
+        ac:["A page load fetches a real, randomly-chosen problem instead of a hardcoded id - " +
+            "DONE 2026-08-10: backend/problems.py's get_random_problem() selects a random id " +
+            "from the problems table then delegates to the existing get_problem(); new " +
+            "GET /problems/random route in main.py (registered before /problems/{problem_id} " +
+            "so Starlette doesn't try to int-coerce the literal path segment \"random\" first)",
+            "Frontend uses the new endpoint - DONE, page.js's PROBLEM_ID=12 stopgap removed, " +
+            "load-on-mount fetch now hits /problems/random",
+            "No problem picker/browser UI - explicitly out of scope, confirmed with the team"],
+        deps:"Depends on: #14 (done), #8 (done, 47 real problems seeded) · Closes the " +
+              "problem-selection stopgap #45/#50 both flagged as future scope. Verified live: " +
+              "hit /problems/random four times against the real backend, got four different " +
+              "real problems back (ids 18/46/32/39). Full backend suite 103 passed, including " +
+              "a new real-Supabase integration test (no mocking) and mocked unit tests for the " +
+              "not-found (empty table) case. Frontend production build verified clean after " +
+              "removing PROBLEM_ID." },
       { id:"#51", owner:"all", title:"Tighten Supabase RLS policies", status:"Done",
         story:"As the team, we want real access control now that identity exists, not just permissive defaults.",
         ac:["RLS policies updated so an access code can only read/write its own attempts - " +
