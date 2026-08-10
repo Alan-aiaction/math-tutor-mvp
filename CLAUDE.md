@@ -128,6 +128,13 @@ convention and file format) — two new files can never collide.
   ticket #50 gets a plan named around #50. Got this wrong once: a KaTeX rendering bug was
   found and the fix fully described, but three unrelated doc/process changes got done
   first, before the user had to ask directly why the actual bug still wasn't fixed.
+  When the fix plan itself is presented, weigh pros/cons of the approach, not just
+  describe it — a fix that resolves the reported symptom can still trade away something
+  real (lost functionality, a narrower/wrong-shaped fix, dead weight left behind). If more
+  than one real approach exists, lay them out as a decision table (options as rows, the
+  tradeoffs that actually differ as columns) rather than picking one silently — let the
+  user decide, same spirit as the tradeoffs-get-prose rule above, just tabular when the
+  comparison itself is the useful part.
 - **Copy approved plans into the project before implementing.** Claude Code's plan mode
   writes to one auto-managed file outside the repo, and that same file gets overwritten the
   next time an unrelated plan is started — so anything meant to survive across sessions
