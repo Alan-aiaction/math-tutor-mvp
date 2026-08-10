@@ -15,7 +15,7 @@ from db import DatabaseError
 from latex_parser import LatexParseError
 from models import Attempt, EvaluationResult, Problem, Step
 from orchestration import run_pipeline
-from problems import ProblemNotFoundError, get_problem
+from problems import ProblemNotFoundError, get_problem, get_random_problem
 from recognition import RecognitionError, recognize_math
 
 load_dotenv()
@@ -175,6 +175,19 @@ def check_attempt(payload: CheckRequest):
     # PipelineError is deliberately not caught here - it signals a genuine unexpected bug
     # (per orchestration.py's own docstring), not bad input, so it falls through to the
     # global unhandled_exception_handler (#16) for logging, Sentry capture, and a clean 500.
+
+
+# Must be registered before /problems/{problem_id} - otherwise Starlette matches
+# "random" against that route's path pattern first and fails int coercion (422)
+# before this handler is ever reached.
+@app.get("/problems/random", response_model=Problem)
+def get_random_problem_endpoint():
+    try:
+        return get_random_problem()
+    except ProblemNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except DatabaseError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
 @app.get("/problems/{problem_id}", response_model=Problem)

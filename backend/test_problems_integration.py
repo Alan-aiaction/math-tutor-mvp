@@ -11,7 +11,7 @@ import pytest
 from dotenv import load_dotenv
 
 from db import get_client
-from problems import ProblemNotFoundError, get_problem
+from problems import ProblemNotFoundError, get_problem, get_random_problem
 
 load_dotenv()
 
@@ -45,3 +45,11 @@ def test_get_problem_returns_real_seeded_row(throwaway_problem):
 def test_get_problem_raises_not_found_for_real_nonexistent_id():
     with pytest.raises(ProblemNotFoundError):
         get_problem(999999999)
+
+
+def test_get_random_problem_returns_a_real_seeded_row(throwaway_problem):
+    real_ids = {row["id"] for row in get_client().table("problems").select("id").execute().data}
+
+    result = get_random_problem()
+
+    assert result.id in real_ids
