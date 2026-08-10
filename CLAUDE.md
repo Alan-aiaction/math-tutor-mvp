@@ -181,12 +181,17 @@ Drive, not this repo. Only commit content here once it's finalized.
 
 ## Current team
 
-- Frontend + Recognition/Parser: Alan
-- Backend logic (Evaluator, Misconception Detector, Hint Service, Orchestration): Jeff
-- Endpoints: Richard
-- Content + curriculum: Alan (owner, as of 2026-08-10) — Richard has moved to a reviewer
-  role for this track, not primary owner, given limited bandwidth
-- Data/Content/Platform lead: Alan
+As of 2026-08-10, Alan is the main person driving this project across all topics — Jeff and
+Richard have moved to reviewer/consultant roles given limited bandwidth, not primary owners
+of a track. Historical specialty areas (useful context for who to loop in on review, less so
+for "who decides"):
+
+- Alan: owns and drives everything — frontend + recognition/parser, backend logic
+  (evaluator, misconception detector, hint service, orchestration), endpoints, content +
+  curriculum, data/platform
+- Jeff: reviewer/consultant — backend logic specialty (evaluator, misconception detector,
+  hint service, orchestration)
+- Richard: reviewer/consultant — content/curriculum + endpoints specialty
 
 See `docs/architecture/api_contract_draft_20260728.md` for the agreed data models before touching
 `backend/models.py`.
