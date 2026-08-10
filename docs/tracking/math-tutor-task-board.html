@@ -170,10 +170,10 @@ const STAGES = [
       <p class="tree-caption">Stage 4 (frontend, Alan) runs independently and in parallel — it doesn't wait on Stages 1–3. Stage 5 is the convergence point: it needs Stage 3's real backend <i>and</i> Stage 4's real frontend before it can start. A separate Post-MVP tab holds the Blocked, not-yet-relevant items.</p>
     `,
     tasks: [
-      { id:"#5", owner:"alan", title:"C - Data/Content/Platform", status:"In progress",
+      { id:"#5", owner:"alan", title:"C - Data/Content/Platform", status:"Done",
         story:"Establish/confirm Data/Content/Platform track ownership (Alan), so the team has a clear owner for schema, seed content coordination, and hosting/infra decisions.",
-        ac:["Track ownership confirmed with the team",
-            "Scope agreed: Supabase schema, seed content coordination, hosting/infra (Vercel, Railway)"],
+        ac:["Track ownership confirmed with the team - DONE 2026-08-10, team confirmed",
+            "Scope agreed: Supabase schema, seed content coordination, hosting/infra (Vercel, Railway) - DONE, agreed scope"],
         deps:"Coordinate with: #11 · Recovered from the original planning spreadsheet (docs/tracking/math-tutor-task-tracker.xlsx) — title kept as-is from source" },
       { id:"#11", owner:"all", title:"Agree API contract / Pydantic schema across all 3 tracks", status:"Done",
         story:"As the team, we need one agreed data contract, so frontend, backend, and content work can proceed independently without guessing each other's shapes.",
