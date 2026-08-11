@@ -7,8 +7,9 @@ diagnosing misconceptions and guiding with hints rather than giving direct answe
 **Status: Trial / experiment.** Prioritize free-tier tooling and minimal cost everywhere
 (hosting, database, recognition API) unless a decision explicitly says otherwise.
 
-See `/docs` for the full product spec, architecture diagram, and sprint task board
-(`docs/tracking/math-tutor-task-board.html`).
+See `/docs` for the full product spec, architecture diagram, and sprint task boards —
+1st MVP (`docs/tracking/math-tutor-task-board-1st-mvp.html`) and 2nd MVP
+(`docs/tracking/math-tutor-task-board-2nd-mvp.html`).
 
 ## Repo structure
 

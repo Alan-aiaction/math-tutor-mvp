@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Math Tutor MVP — 2nd MVP Task Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1c2b27; --paper:#eef1ee; --card:#ffffff; --line:#d7ddd8;
+    --chalk:#1f4d43; --chalk-soft:#e4efec; --amber:#b8792f; --amber-soft:#f6ead9; --muted:#5c6d67;
+    --jeff:#2c5f8a; --jeff-soft:#dde8f0; --richard:#7a4a8a; --richard-soft:#ecdff0; --all-soft:#ececeb;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans', sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1080px;margin:0 auto;padding:56px 28px 100px;}
+  header{margin-bottom:32px;}
+  .eyebrow{font-family:'IBM Plex Mono', monospace;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--chalk);margin-bottom:10px;}
+  h1{font-family:'Fraunces', serif;font-weight:600;font-size:clamp(28px,4vw,40px);line-height:1.08;margin:0 0 10px;letter-spacing:-0.01em;}
+  header p{color:var(--muted);font-size:15.5px;max-width:620px;margin:0;line-height:1.5;}
+
+  .dod-band{background:var(--chalk);color:#eef4f1;border-radius:14px;padding:24px 26px;margin-bottom:36px;position:relative;overflow:hidden;}
+  .dod-band::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(180deg, transparent 0 27px, rgba(255,255,255,.045) 27px 28px);pointer-events:none;}
+  .dod-title{font-family:'Fraunces', serif;font-weight:600;font-size:18px;margin:0 0 4px;}
+  .dod-sub{font-size:13px;color:#b9d3ca;margin:0 0 16px;}
+  .dod-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:9px 20px;list-style:none;margin:0;padding:0;position:relative;}
+  .dod-list li{font-size:13.5px;display:flex;gap:9px;align-items:flex-start;line-height:1.4;}
+  .dod-list li::before{content:"";width:14px;height:14px;margin-top:2px;flex:0 0 auto;border:1.5px solid #9fc3b8;border-radius:4px;}
+
+  .owner-legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:24px;font-size:12.5px;color:var(--muted);align-items:center;}
+  .owner-legend .owner{margin:0;}
+
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin-bottom:28px;}
+  .tab-btn{font-family:'IBM Plex Mono', monospace;font-size:12.5px;letter-spacing:.04em;background:none;border:none;padding:11px 16px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .12s ease, border-color .12s ease;white-space:nowrap;}
+  .tab-btn:hover{color:var(--chalk);}
+  .tab-btn.active{color:var(--chalk);border-bottom-color:var(--chalk);font-weight:500;}
+
+  .stage-panel{display:none;}
+  .stage-panel.active{display:block;animation:fade .15s ease;}
+  @keyframes fade{from{opacity:0;}to{opacity:1;}}
+  .stage-intro{font-size:14px;color:var(--muted);margin:0 0 22px;max-width:660px;line-height:1.5;}
+
+  .tree-box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:24px;margin-bottom:32px;overflow-x:auto;}
+  .tree-caption{font-size:12px;color:var(--muted);margin:8px 0 0;}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px 22px 20px;display:flex;flex-direction:column;transition:box-shadow .15s ease, transform .15s ease;}
+  .card:hover{box-shadow:0 6px 20px rgba(31,77,67,.08);transform:translateY(-1px);}
+  .card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:14px;}
+  .card-top-left{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+  .ticket-id{font-family:'IBM Plex Mono', monospace;font-size:12px;color:var(--chalk);background:var(--chalk-soft);padding:3px 8px;border-radius:6px;font-weight:500;white-space:nowrap;}
+  .status{font-family:'IBM Plex Mono', monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:20px;background:var(--amber-soft);color:var(--amber);white-space:nowrap;}
+  .owner{font-family:'IBM Plex Mono', monospace;font-size:10px;letter-spacing:.03em;padding:3px 8px;border-radius:20px;font-weight:500;white-space:nowrap;}
+  .owner-alan{background:var(--chalk-soft);color:var(--chalk);}
+  .owner-jeff{background:var(--jeff-soft);color:var(--jeff);}
+  .owner-richard{background:var(--richard-soft);color:var(--richard);}
+  .owner-all{background:var(--all-soft);color:var(--muted);}
+  .card h3{font-family:'Fraunces', serif;font-weight:600;font-size:17px;margin:0 0 10px;line-height:1.3;}
+  .story{font-size:13.5px;color:var(--muted);line-height:1.5;margin:0 0 16px;padding-left:12px;border-left:2px solid var(--line);}
+  .story b{color:var(--ink);font-weight:600;}
+  .ac-label{font-family:'IBM Plex Mono', monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;}
+  .ac-list{list-style:none;margin:0 0 16px;padding:0;display:flex;flex-direction:column;gap:8px;}
+  .ac-list li{font-size:13.5px;line-height:1.45;display:flex;gap:9px;align-items:flex-start;}
+  .ac-list li input[type="checkbox"]{appearance:none;-webkit-appearance:none;width:14px;height:14px;margin:2px 0 0;flex:0 0 auto;border:1.5px solid var(--chalk);border-radius:4px;cursor:pointer;position:relative;}
+  .ac-list li input[type="checkbox"]:checked{background:var(--chalk);}
+  .ac-list li input[type="checkbox"]:checked::after{content:"";position:absolute;left:3.5px;top:0.5px;width:4px;height:8px;border:solid #fff;border-width:0 1.5px 1.5px 0;transform:rotate(45deg);}
+  .card-footer{margin-top:auto;padding-top:14px;border-top:1px dashed var(--line);font-size:12px;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+  .card-footer b{color:var(--ink);}
+  code{font-family:'IBM Plex Mono',monospace;background:var(--chalk-soft);padding:1px 5px;border-radius:4px;font-size:.92em;}
+  footer.note{margin-top:48px;font-size:12.5px;color:var(--muted);text-align:center;}
+  @media (max-width:520px){ .wrap{padding:36px 18px 70px;} }
+
+  .decision-table{width:100%;border-collapse:collapse;font-size:13px;margin:0 0 10px;}
+  .decision-table th,.decision-table td{border:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top;line-height:1.45;}
+  .decision-table th{font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);background:#f5f7f5;}
+  .decision-table td.chosen{background:var(--chalk-soft);}
+  .decision-table td.chosen b{color:var(--chalk);}
+  .plain-list{margin:0 0 18px;padding-left:20px;font-size:13.5px;line-height:1.6;color:var(--ink);}
+  .plain-list li{margin-bottom:6px;}
+  .sub-h{font-family:'Fraunces',serif;font-weight:600;font-size:16px;margin:22px 0 10px;color:var(--chalk);}
+  .sub-h:first-child{margin-top:0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Sprint Board · 2nd MVP</div>
+    <h1>Math Tutor MVP — 2nd MVP Task Board</h1>
+    <p>Misconception detection and hint quality — the deferred half of the tutor's core promise. 1st MVP's board (frontend, recognition, deploy, everything already shipped) lives separately: <a href="math-tutor-task-board-1st-mvp.html">math-tutor-task-board-1st-mvp.html</a>.</p>
+  </header>
+
+  <div class="dod-band">
+    <p class="dod-title">Definition of Done — applies to every ticket, every stage</p>
+    <p class="dod-sub">Same checklist as 1st MVP, not repeated per ticket.</p>
+    <ul class="dod-list">
+      <li>Code pushed to a branch, PR opened</li>
+      <li>At least one review pass on the PR</li>
+      <li>No console errors / unhandled exceptions</li>
+      <li>Deploys successfully (Vercel preview or Railway)</li>
+      <li>Merged to <code style="background:rgba(255,255,255,.12);color:#eef4f1;">main</code></li>
+    </ul>
+  </div>
+
+  <div class="owner-legend">
+    <span>Owner:</span>
+    <span class="owner owner-all">Unassigned — situational, see CLAUDE.md</span>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+  <div id="panels"></div>
+
+  <footer class="note">Scope, decisions, and out-of-scope items agreed <code>2026-08-10</code> — see the Overview tab and <code>docs/tracking/decision-log.md</code> for the full reasoning.</footer>
+
+</div>
+
+<script>
+const STAGES = [
+  {
+    id: "overview", label: "Overview & Decisions",
+    intro: "What 2nd MVP actually is, the one real architecture decision behind it, and what's explicitly not in scope. Read this tab before any ticket below.",
+    tree: `
+      <p class="sub-h">Why this exists</p>
+      <p style="font-size:13.5px;line-height:1.6;color:var(--ink);margin:0 0 18px;">1st MVP ships exactly one hint, ever — a static Dutch sentence shown for any wrong
+      answer, regardless of what the student actually got wrong. 2nd MVP turns the
+      already-accumulating shadow log and the already-designed-but-deferred misconception
+      chain (#9/#29/#30/#31/#33) into a real diagnosis-and-hint loop — the product's actual
+      promise ("diagnosing misconceptions and guiding with hints"), not just "some guidance
+      beats silence."</p>
+
+      <p class="sub-h">Already decided, not reopened here</p>
+      <ul class="plain-list">
+        <li><b>Misconception matching stays 100% deterministic</b> — a structured JSON rule matched against the parsed expression, never an LLM classifying an answer live. Considered and explicitly rejected once already: breaks hint escalation, risks unreviewed content reaching a child, adds cost/latency to the hot path, isn't testable.</li>
+        <li><b>AI's approved role is two offline loops</b>: rule authoring (human describes → LLM drafts → human approves) and shadow-log-driven pattern mining. Both already designed in <code>docs/architecture/proposal_misconception_rule_format.md</code>.</li>
+        <li><b><code>Hint.level</code></b> already exists in <code>backend/models.py</code> (1 = first hint, 2 = escalated) but nothing populates it yet.</li>
+      </ul>
+
+      <p class="sub-h">Decision: how LLM connects to hint generation</p>
+      <table class="decision-table">
+        <tr><th></th><th>A — Offline pool only</th><th>B — Live LLM phrasing</th><th>C — Hybrid</th></tr>
+        <tr>
+          <th>How it works</th>
+          <td>LLM drafts several hint variants per misconception offline; human approves; app rotates among approved variants at runtime</td>
+          <td>Classification stays deterministic; once matched, a live LLM call generates that hint's phrasing on the spot, validated before showing</td>
+          <td class="chosen">A is the default for every first wrong answer. On a repeated wrong answer at the same step, escalate to a live, validated LLM call (<code>Hint.level=2</code>)</td>
+        </tr>
+        <tr>
+          <th>Pro</th>
+          <td>Zero live cost/latency; every word human-reviewed before reaching a child; fully testable</td>
+          <td>Genuinely tailored to the exact wrong step, never stale</td>
+          <td class="chosen">Common case stays cheap/fast/fully-reviewed; the costlier path is reserved for the rarer "student is actually stuck" case; gives <code>Hint.level</code> real purpose — escalation is the Socratic method</td>
+        </tr>
+        <tr>
+          <th>Con</th>
+          <td>Tailored to the misconception category, not the exact step; limited variety</td>
+          <td>Reintroduces the exact cost/latency/no-review tradeoff already rejected once for classification, now for content</td>
+          <td class="chosen">More moving parts than A alone</td>
+        </tr>
+      </table>
+      <p style="font-size:13px;color:var(--muted);margin:0 0 18px;"><b>Decision: C.</b> Answers "make the Socratic tutor meaningful" directly, contains live-LLM risk to the minority case.</p>
+
+      <p class="sub-h">LLM-independence requirement</p>
+      <p style="font-size:13.5px;line-height:1.6;color:var(--ink);margin:0 0 18px;">Every LLM-touching ticket is built against a thin provider-abstraction interface
+      (#67) — prompt/context in, structured or text output out — never against one
+      vendor's SDK directly. Model/provider is a config choice, so switching to a cheaper
+      or different model later doesn't touch the tickets that use it.</p>
+
+      <p class="sub-h">Testing</p>
+      <ul class="plain-list">
+        <li>Deterministic logic (#30's matching engine, #71's escalation trigger) gets real unit tests, no mocking — same convention as 1st MVP's evaluator chain.</li>
+        <li>LLM calls aren't unit-testable for exact output — don't try. What must be tested: #67's abstraction interface and #72's output-validation guardrails, both with a mocked provider response, covering accept <i>and</i> reject cases.</li>
+        <li>Anything touching Supabase (#68, #9, #69/#70's approved content) gets an integration test against a real instance, not a mock.</li>
+      </ul>
+
+      <p class="sub-h">Out of scope, explicitly</p>
+      <ul class="plain-list">
+        <li><b>GUI/UI improvements</b> — no frontend redesign. Escalation (#71) surfaces a second hint through the same existing hint display, not new UI.</li>
+        <li><b>Login / real authentication</b> — the plain-text student code stays exactly as-is.</li>
+        <li><b>Expanding the problem/question database</b> — uses the current seeded question set as-is. Growing the problem bank into new domains is cut from this scope entirely, not just deferred further.</li>
+        <li>Reopening live-LLM classification — Stage 1 stays deterministic.</li>
+      </ul>
+    `,
+    tasks: []
+  },
+  {
+    id: "s1", label: "Stage 1 · Foundation",
+    intro: "The deterministic misconception-matching chain, carried over unchanged in scope from 1st MVP's deferral.",
+    tree: null,
+    tasks: [
+      { id:"#29", owner:"all", title:"Finalize misconception rule format sign-off", status:"In progress",
+        story:"As the team, we need the rule format proposal formally reviewed and approved, so seeding and matching work build on a settled shape, not a draft.",
+        ac:["Proposal at docs/architecture/proposal_misconception_rule_format.md reviewed",
+            "Sign-off recorded in decision-log.md - status moved from Proposed to Confirmed"],
+        deps:"Proposal already drafted (1st MVP, PR #42) · Blocks: #30, #9" },
+      { id:"#30", owner:"all", title:"Implement deterministic rule-matching engine", status:"Not started",
+        story:"As the evaluator, given a wrong answer, I want to find which known misconception it matches, so the student gets a targeted hint instead of the generic fallback.",
+        ac:["Given a wrong step and expected step, returns a matching misconception_id if found, per the proposal's Fig. 1 shape (operation/error_transform/check.type)",
+            "Returns explicit null when no rule matches",
+            "Unit tested against seeded rules from #9, no mocking"],
+        deps:"Depends on: #29, #9 · Blocks: #31, #33" },
+      { id:"#31", owner:"all", title:"Return misconception_id or null fallback", status:"Not started",
+        story:"As downstream services, we need a consistent value even when nothing matches.",
+        ac:["Explicit null (not empty string, not exception) returned on no match",
+            "Covered by an explicit no-match unit test case"],
+        deps:"Depends on: #30" },
+      { id:"#9", owner:"all", title:"Seed first real misconception_rules batch", status:"Not started",
+        story:"As the team, we need real rule content to test the matching engine against, sourced from actual student mistakes, not guesswork.",
+        ac:["At least 5-10 misconception rules seeded, each tied to a topic, in the Fig. 1 JSON shape",
+            "Sourced from #68's shadow-log review + #69's drafting tool, not authored blind"],
+        deps:"Depends on: #29, #68, #69" }
+    ]
+  },
+  {
+    id: "s2", label: "Stage 2 · Rule + Hint Authoring",
+    intro: "The approved, offline LLM loop — drafting rule and hint content from real shadow-log patterns, always with human approval before anything is seeded.",
+    tree: null,
+    tasks: [
+      { id:"#67", owner:"all", title:"LLM provider-abstraction layer", status:"Not started",
+        story:"As the team, we want every LLM-touching feature built against one thin interface, so switching model/provider later (cost, quality, availability) is a config change, not a rewrite.",
+        ac:["A single interface (prompt/context in, structured or text output out) used by every LLM-touching ticket below - none call a vendor SDK directly",
+            "Provider/model selection is config-driven, not hardcoded",
+            "Unit tested with a mocked provider - the interface contract, not any real model's output"],
+        deps:"Depends on: nothing · Blocks: #69, #70, #72" },
+      { id:"#68", owner:"all", title:"Shadow-log review workflow", status:"Not started",
+        story:"As the team, we want a real, repeatable way to review unmatched wrong answers, so #9's rule seeding is based on actual patterns, not one-off guesses.",
+        ac:["A documented (or tooled) process for periodically reviewing #63's queryable shadow-log view",
+            "Output feeds directly into #69's drafting tool"],
+        deps:"Depends on: #63 (done, 1st MVP) · Blocks: #9, #69" },
+      { id:"#69", owner:"all", title:"LLM-assisted rule-drafting tool", status:"Not started",
+        story:"As the person authoring misconception rules, I want an LLM to draft the structured JSON rule from a plain-language description, so I'm reviewing and approving instead of hand-writing JSON from scratch.",
+        ac:["Given a plain-language description of a misconception (informed by #68's review), drafts a rule in the Fig. 1 shape (operation/error_transform/check)",
+            "Every draft requires explicit human approval before reaching misconception_rules - no auto-seeding",
+            "Uses #67's provider abstraction, not a direct vendor call"],
+        deps:"Depends on: #67, #68 · Feeds: #9" },
+      { id:"#70", owner:"all", title:"Author hint-variant pool per misconception", status:"Not started",
+        story:"As a student, I want the hint I see to feel specific and varied, not the exact same sentence every time the same mistake happens.",
+        ac:["For each seeded misconception, an LLM drafts several hint-text variants offline, using #67's abstraction",
+            "Every variant requires human approval before it's usable at runtime",
+            "At least 2-3 approved variants per misconception before #33 can select from them"],
+        deps:"Depends on: #67, #9 · Feeds: #33" },
+      { id:"#61", owner:"all", title:"Expand misconception rule library from real usage data", status:"Blocked",
+        story:"As the team, we'll grow the rule library on an ongoing basis once real student data exists to learn from - not a one-time task.",
+        ac:["Ongoing: new rules added via #68/#69's tooling as shadow-log patterns emerge",
+            "Library growth tracked, not ad hoc"],
+        deps:"Depends on: #68, #69 · Blocked until real pilot usage data exists · Ongoing, not a one-time close" }
+    ]
+  },
+  {
+    id: "s3", label: "Stage 3 · Hint Quality & Escalation",
+    intro: "Option C from the Overview tab, built out: a pool-based default hint, escalating to a live, validated LLM call only when a student is genuinely stuck.",
+    tree: null,
+    tasks: [
+      { id:"#33", owner:"all", title:"Map misconception_id to an approved hint", status:"Not started",
+        story:"As a student, I want a hint tied to my specific mistake, not a generic message.",
+        ac:["Given a misconception_id, selects one approved hint from #70's variant pool",
+            "Falls back to the existing generic hint (#34, 1st MVP) when no id or no approved variant exists"],
+        deps:"Depends on: #9, #31, #70" },
+      { id:"#71", owner:"all", title:"Implement hint escalation (Hint.level 1 to 2)", status:"Not started",
+        story:"As a student who's still stuck after the first hint, I want a more specific nudge on my second wrong try at the same step, not the identical hint again.",
+        ac:["Detects when the same step is answered wrong 2+ times in the same attempt",
+            "Triggers the level-2 path (#72) instead of repeating the level-1 hint",
+            "Populates and returns Hint.level correctly (1 vs 2)",
+            "Unit tested - the detection/trigger logic, no mocking, since it's pure logic over attempt state"],
+        deps:"Depends on: #33 · Blocks: #72's trigger point" },
+      { id:"#72", owner:"all", title:"Live LLM hint-phrasing service (level-2 escalation only)", status:"Not started",
+        story:"As a student still stuck after the first hint, I want a genuinely tailored follow-up nudge, not the same static sentence.",
+        ac:["Only invoked via #71's escalation trigger - never on a first wrong answer",
+            "Uses #67's provider abstraction",
+            "Output passes validation guardrails before reaching the student: length cap, no answer leakage, Dutch, age-appropriate - falls back to a static hint if validation fails",
+            "Validation logic unit tested with mocked LLM responses covering both accept and reject cases"],
+        deps:"Depends on: #67, #71, #73 (review checklist informs validation rules)" },
+      { id:"#62", owner:"all", title:"Iterate hint wording based on observed confusion", status:"Blocked",
+        story:"As the team, we'll refine hint wording (both #70's pool and #72's live prompts) once we've seen where real students get confused.",
+        ac:["Ongoing: hint pool and live-phrasing prompts revised based on real pilot observation"],
+        deps:"Depends on: #70, #72 · Blocked until pilot feedback exists · Ongoing, not a one-time close" }
+    ]
+  },
+  {
+    id: "s4", label: "Stage 4 · Safety & Review",
+    intro: "One documented bar for anything an LLM drafts before it can reach a real student - covers both the offline pools and the live-escalation path.",
+    tree: null,
+    tasks: [
+      { id:"#73", owner:"all", title:"Define human-review/approval checklist for LLM-drafted content", status:"Not started",
+        story:"As the team, we want one documented bar for anything an LLM drafts before it reaches a real student, so review is consistent across offline pools and live generation, not two different ad hoc standards.",
+        ac:["Checklist covers: no answer-revealing content, age-appropriate Dutch phrasing, factual/mathematical correctness, encouraging tone (consistent with the existing generic-hint wording decision)",
+            "Applies to both #69/#70's offline-approved content and informs #72's automated output-validation rules",
+            "Documented durably (this card + decision-log.md), not just tribal knowledge"],
+        deps:"Depends on: nothing new · Informs: #69, #70, #72" }
+    ]
+  }
+];
+
+const tabsEl = document.getElementById('tabs');
+const panelsEl = document.getElementById('panels');
+
+STAGES.forEach((stage, i) => {
+  const btn = document.createElement('button');
+  btn.className = 'tab-btn' + (i===0 ? ' active' : '');
+  btn.textContent = stage.label;
+  btn.onclick = () => showStage(stage.id);
+  tabsEl.appendChild(btn);
+
+  const panel = document.createElement('div');
+  panel.className = 'stage-panel' + (i===0 ? ' active' : '');
+  panel.id = stage.id;
+
+  let html = `<p class="stage-intro">${stage.intro}</p>`;
+  if(stage.tree){ html += `<div class="tree-box">${stage.tree}</div>`; }
+  if(stage.tasks.length){
+    html += `<div class="cards">`;
+    stage.tasks.forEach(t => {
+      html += `
+        <div class="card">
+          <div class="card-top">
+            <div class="card-top-left">
+              <span class="ticket-id">${t.id}</span>
+              <span class="owner owner-${t.owner}">${t.owner.charAt(0).toUpperCase()+t.owner.slice(1)}</span>
+            </div>
+            <span class="status">${t.status}</span>
+          </div>
+          <h3>${t.title}</h3>
+          <p class="story"><b>Story —</b> ${t.story}</p>
+          <p class="ac-label">Acceptance Criteria</p>
+          <ul class="ac-list">
+            ${t.ac.map(a => `<li><input type="checkbox">${a}</li>`).join('')}
+          </ul>
+          <div class="card-footer">${t.deps}</div>
+        </div>`;
+    });
+    html += `</div>`;
+  }
+  panel.innerHTML = html;
+  panelsEl.appendChild(panel);
+});
+
+function showStage(id){
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', STAGES[i].id===id));
+  document.querySelectorAll('.stage-panel').forEach(p => p.classList.toggle('active', p.id===id));
+}
+</script>
+</body>
+</html>
