@@ -106,7 +106,10 @@ step once #13/#15 ship, joinable back to `problems.correct_answer`. Making that 
 actually queryable for review is real, separate work, tracked as **#63**. This feeds #61
 ("Expand misconception rule library from real usage data," already Post-MVP-backlogged)
 instead of competing with it — 2nd MVP's rule set gets built from real groep 7/8 mistakes,
-not guesswork made under this MVP's time pressure.
+not guesswork made under this MVP's time pressure. **#68** turns this loop from raw
+queryable rows into real clustered, tracked review (grouped by mathematical equivalence,
+excludes already-reviewed patterns) — see `docs/architecture/shadow-log-review.md` for the
+detailed flow; not duplicated here.
 
 **Deliberately not proposed:** calling an LLM on every single answer check in real time.
 Considered and rejected — it breaks hint escalation (no stable `misconception_id` without
