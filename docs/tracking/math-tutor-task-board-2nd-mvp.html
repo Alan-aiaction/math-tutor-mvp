@@ -175,7 +175,7 @@ const STAGES = [
 
       <p class="sub-h">Out of scope, explicitly</p>
       <ul class="plain-list">
-        <li><b>GUI/UI improvements</b> — no frontend redesign. Escalation (#71) surfaces a second hint through the same existing hint display, not new UI.</li>
+        <li><b>GUI/UI improvements</b> — no frontend redesign. Escalation (#71) surfaces a second hint through the same existing hint display, not new UI. <b>One named exception, approved 2026-08-12 by Jeff and Richard: #74's tablet scratch pad</b> — not a reopening of this boundary generally.</li>
         <li><b>Login / real authentication</b> — the plain-text student code stays exactly as-is.</li>
         <li><b>Expanding the problem/question database</b> — uses the current seeded question set as-is. Growing the problem bank into new domains is cut from this scope entirely, not just deferred further.</li>
         <li>Reopening live-LLM classification — Stage 1 stays deterministic.</li>
@@ -315,6 +315,34 @@ const STAGES = [
             "Applies to both #69/#70's offline-approved content and informs #72's automated output-validation rules",
             "Documented durably (this card + decision-log.md), not just tribal knowledge"],
         deps:"Depends on: nothing new · Informs: #69, #70, #72" }
+    ]
+  },
+  {
+    id: "s5", label: "Stage 5 · Tablet Scratch Pad (GUI exception)",
+    intro: "The one named, approved exception to this board's otherwise backend-only scope - not a reopening of the \"no GUI work\" boundary generally. See docs/architecture/tablet_scratch_pad_design.md for the full design.",
+    tree: null,
+    tasks: [
+      { id:"#74", owner:"all", title:"Tablet scratch pad (left/right margins)", status:"Done",
+        story:"As a student on a tablet/iPad, I want a free area to write or draw scratch notes and side calculations, separate from my graded answer steps, so I can use the screen the way I'd use paper.",
+        ac:["Two independent scratch areas, fixed to the left and right page margins, " +
+            "shown on tablet-and-up viewports only - DONE, frontend/app/components/" +
+            "ScratchPad.js wraps the existing InkCanvas (already touch/stylus-ready), " +
+            "hidden below the xl breakpoint",
+            "Zero recognition/evaluation/persistence - purely client-side ink, never sent " +
+            "anywhere - DONE, onStrokesChange deliberately left unwired, no backend call, " +
+            "no new table",
+            "Clears automatically when Next Problem fires, and can also be cleared " +
+            "manually at any time (Option C, see decision-log.md) - DONE: auto-clear via " +
+            "the same key-remount pattern already shipped for StepBox's #65 bugfix (keyed " +
+            "on problem?.id); manual clear needed zero new code - InkCanvas already has " +
+            "its own built-in \"Clear drawing\" button"],
+        deps:"Depends on: nothing (frontend-only, independent of every other 2nd MVP " +
+              "ticket) · Approved 2026-08-12 by Jeff and Richard in a review meeting - see " +
+              "docs/architecture/tablet_scratch_pad_design.md and decision-log.md for the " +
+              "full design (4 decisions: side-margin placement vs. below-steps, two panels " +
+              "vs. one, no persistence vs. persisted, and the clear-behavior options). " +
+              "npm run build verified clean. No browser tool available this session to " +
+              "click-test directly - needs live verification, same as #64/#65/#46b." }
     ]
   }
 ];
