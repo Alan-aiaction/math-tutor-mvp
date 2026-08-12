@@ -175,7 +175,7 @@ const STAGES = [
 
       <p class="sub-h">Out of scope, explicitly</p>
       <ul class="plain-list">
-        <li><b>GUI/UI improvements</b> — no frontend redesign. Escalation (#71) surfaces a second hint through the same existing hint display, not new UI.</li>
+        <li><b>GUI/UI improvements</b> — no frontend redesign. Escalation (#71) surfaces a second hint through the same existing hint display, not new UI. <b>One named exception, approved 2026-08-12 by Jeff and Richard: #74's tablet scratch pad</b> — not a reopening of this boundary generally.</li>
         <li><b>Login / real authentication</b> — the plain-text student code stays exactly as-is.</li>
         <li><b>Expanding the problem/question database</b> — uses the current seeded question set as-is. Growing the problem bank into new domains is cut from this scope entirely, not just deferred further.</li>
         <li>Reopening live-LLM classification — Stage 1 stays deterministic.</li>
@@ -335,6 +335,60 @@ const STAGES = [
             "Applies to both #69/#70's offline-approved content and informs #72's automated output-validation rules",
             "Documented durably (this card + decision-log.md), not just tribal knowledge"],
         deps:"Depends on: nothing new · Informs: #69, #70, #72" }
+    ]
+  },
+  {
+    id: "s5", label: "Stage 5 · Tablet Scratch Pad (GUI exception)",
+    intro: "The one named, approved exception to this board's otherwise backend-only scope - not a reopening of the \"no GUI work\" boundary generally. See docs/architecture/tablet_scratch_pad_design.md for the full design.",
+    tree: null,
+    tasks: [
+      { id:"#74", owner:"all", title:"Tablet scratch pad (left/right margins)", status:"Done",
+        story:"As a student on a tablet/iPad, I want a free area to write or draw scratch notes and side calculations, separate from my graded answer steps, so I can use the screen the way I'd use paper.",
+        ac:["Two independent scratch areas, fixed to the left and right page margins, " +
+            "shown on tablet-and-up viewports only - DONE, frontend/app/components/" +
+            "ScratchPad.js wraps the existing InkCanvas (already touch/stylus-ready), " +
+            "hidden below the lg breakpoint (corrected from xl - see 2026-08-13 update below)",
+            "Zero recognition/evaluation/persistence - purely client-side ink, never sent " +
+            "anywhere - DONE, onStrokesChange deliberately left unwired, no backend call, " +
+            "no new table",
+            "Clears automatically when Next Problem fires, and can also be cleared " +
+            "manually at any time (Option C, see decision-log.md) - DONE: auto-clear via " +
+            "the same key-remount pattern already shipped for StepBox's #65 bugfix (keyed " +
+            "on problem?.id); manual clear needed zero new code - InkCanvas already has " +
+            "its own built-in \"Clear drawing\" button"],
+        deps:"Depends on: nothing (frontend-only, independent of every other 2nd MVP " +
+              "ticket) · Approved 2026-08-12 by Jeff and Richard in a review meeting - see " +
+              "docs/architecture/tablet_scratch_pad_design.md and decision-log.md for the " +
+              "full design (4 decisions: side-margin placement vs. below-steps, two panels " +
+              "vs. one, no persistence vs. persisted, and the clear-behavior options). " +
+              "Live-tested 2026-08-12: both panels render, independent touch/pointer " +
+              "drawing confirmed working on each side, per-side manual clear confirmed - " +
+              "real, positive live verification, not just a build check. Panels bumped " +
+              "220x520 -> 320x640 same day after live testing showed real unused margin " +
+              "space beyond the original size. " +
+              "UPDATE 2026-08-13: that same live test also flagged the panels felt too " +
+              "small; checking whether sizing would adapt to device size found the real " +
+              "problem - the xl breakpoint (1280px) and fixed 320x640 size were picked " +
+              "from one screenshot, not real device dimensions, and real iPad viewport " +
+              "widths are mostly under 1280px, so the panels would rarely show on the " +
+              "actual target device. DONE: switched to true responsive sizing - " +
+              "InkCanvas.js gained an opt-in `responsive` prop (default false; StepBox.js " +
+              "confirmed as the only other caller, untouched) that measures its container " +
+              "via ResizeObserver and redraws stored strokes after every resize instead of " +
+              "losing them (a plain canvas width/height change clears its pixels - drawings " +
+              "now survive a resize, e.g. an iPad rotation, instead of being silently " +
+              "wiped). ScratchPad.js sized via clamp() and the breakpoint corrected to lg " +
+              "(1024px, the real smallest iPad landscape width) - landscape-only by design, " +
+              "iPad portrait doesn't have room. See decision-log.md's status update on this " +
+              "ticket's entry and tablet_scratch_pad_design.md's \"Sizing (revised)\" " +
+              "section for full reasoning. " +
+              "UPDATE 2026-08-13 (2nd live test, resizing mid-drawing): confirmed strokes " +
+              "redraw at fixed absolute coordinates, not scaled - a stroke drawn near the " +
+              "bottom of a tall panel got clipped after shrinking the window. Decided to " +
+              "accept this for 2nd MVP rather than fix now (real but narrow edge case; " +
+              "proportional scaling would add real complexity for shrink-mid-drawing " +
+              "only). Recorded as a revisit-later item with the full option comparison in " +
+              "decision-log.md's status update and the design doc, not forgotten." }
     ]
   }
 ];

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import StepList from "./components/StepList";
 import ProblemDisplay from "./components/ProblemDisplay";
 import StudentCode from "./components/StudentCode";
+import ScratchPad from "./components/ScratchPad";
 import { apiFetch } from "./lib/apiFetch";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
@@ -121,6 +122,8 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center gap-8 p-16 text-center font-sans">
+      <ScratchPad side="left" key={`scratch-left-${problem?.id}`} />
+      <ScratchPad side="right" key={`scratch-right-${problem?.id}`} />
       <div>
         <h1 className="text-3xl font-semibold">Math Tutor MVP</h1>
         <p className="text-gray-600">Placeholder deployment — real UI coming in Phase 9.</p>
