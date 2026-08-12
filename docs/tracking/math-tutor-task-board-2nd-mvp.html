@@ -216,11 +216,23 @@ const STAGES = [
     intro: "The approved, offline LLM loop — drafting rule and hint content from real shadow-log patterns, always with human approval before anything is seeded.",
     tree: null,
     tasks: [
-      { id:"#67", owner:"all", title:"LLM provider-abstraction layer", status:"Not started",
+      { id:"#67", owner:"all", title:"LLM provider-abstraction layer", status:"Done",
         story:"As the team, we want every LLM-touching feature built against one thin interface, so switching model/provider later (cost, quality, availability) is a config change, not a rewrite.",
-        ac:["A single interface (prompt/context in, structured or text output out) used by every LLM-touching ticket below - none call a vendor SDK directly",
-            "Provider/model selection is config-driven, not hardcoded",
-            "Unit tested with a mocked provider - the interface contract, not any real model's output"],
+        ac:["A single interface (prompt/context in, structured or text output out) used by every LLM-touching ticket below - none call a vendor SDK directly - " +
+            "DONE, backend/llm.py's generate_text(prompt, max_tokens, temperature)",
+            "Provider/model selection is config-driven, not hardcoded - " +
+            "DONE, LLM_PROVIDER/LLM_API_KEY/LLM_MODEL/LLM_BASE_URL env vars, see .env.example. " +
+            "Two real providers implemented (not just designed for one): anthropic (native " +
+            "Messages API) and openai_compatible (generic OpenAI Chat Completions wire format " +
+            "with configurable LLM_BASE_URL) - the latter covers OpenAI itself plus OpenRouter, " +
+            "Hugging Face's router, Together.ai, Groq, DeepSeek, Moonshot/Kimi, and self-hosted " +
+            "vLLM/Ollama servers with zero new code, since they all speak the same wire format",
+            "Unit tested with a mocked provider - the interface contract, not any real model's " +
+            "output - DONE, backend/test_llm.py, 9 cases (missing config, unknown provider, " +
+            "non-200, timeout, success for each provider, custom LLM_BASE_URL proving the " +
+            "OpenRouter-style swap works), no real network calls or API keys needed to pass. " +
+            "No real-API integration test, deliberately - matches recognition.py's existing " +
+            "precedent for paid third-party APIs"],
         deps:"Depends on: nothing · Blocks: #69, #70, #72" },
       { id:"#68", owner:"all", title:"Shadow-log review workflow", status:"Not started",
         story:"As the team, we want a real, repeatable way to review unmatched wrong answers, so #9's rule seeding is based on actual patterns, not one-off guesses.",
