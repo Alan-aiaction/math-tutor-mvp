@@ -315,11 +315,12 @@ classDiagram
 
   <section class="figure" id="schema">
     <p class="fig-label">Fig. 3</p>
-    <h2>Database schema — five tables, two real chains</h2>
+    <h2>Database schema — five tables, two real chains, plus the shadow-log loop</h2>
     <p class="fig-intro">
       Direct mapping from the agreed API contract to Postgres tables. Two integer-keyed
       tables (app-generated data) and two string-keyed tables (content authored by
-      Richard/Jeff) — the id type follows who creates the row.
+      Richard/Jeff) — the id type follows who creates the row. Two more entities feed the
+      2nd MVP's misconception-rule pipeline from real usage data (tasks #63, #68).
     </p>
     <div class="sheet">
 <pre class="mermaid">
@@ -327,6 +328,8 @@ erDiagram
     PROBLEMS ||--o{ ATTEMPTS : "attempted in"
     ATTEMPTS ||--o{ ATTEMPT_STEPS : "contains"
     MISCONCEPTION_RULES ||--o{ HINTS : "explained by"
+    PROBLEMS ||--o{ SHADOW_LOG_WRONG_ANSWERS : "surfaces wrong answers to"
+    PROBLEMS ||--o{ SHADOW_LOG_REVIEW_NOTES : "reviewed pattern for"
 
     PROBLEMS {
         bigint id PK
@@ -361,7 +364,29 @@ erDiagram
         text text
         integer level
     }
+    SHADOW_LOG_WRONG_ANSWERS {
+        bigint attempt_step_id "VIEW, not a table - task #63"
+        text student_answer
+        bigint problem_id FK
+        text question_text
+        text correct_answer
+    }
+    SHADOW_LOG_REVIEW_NOTES {
+        bigint id PK
+        bigint problem_id FK
+        text representative_answer "task #68"
+        text status "no fixed value list yet"
+        text note "feeds ticket #69 directly"
+    }
 </pre>
+    </div>
+    <div class="caption">
+      <span class="dot"></span>
+      <span><code>shadow_log_wrong_answers</code> is a Postgres <b>view</b> over
+      <code>attempt_steps</code>/<code>attempts</code>/<code>problems</code> (where
+      <code>is_correct = false</code>), not a base table — shown here for completeness
+      since it's part of the real schema surface, not because it's stored separately. See
+      <code>docs/architecture/shadow-log-review.md</code> for the full review workflow.</span>
     </div>
     <div class="caption">
       <span class="dot"></span>
