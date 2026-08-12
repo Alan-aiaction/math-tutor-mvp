@@ -330,11 +330,20 @@ const STAGES = [
     intro: "One documented bar for anything an LLM drafts before it can reach a real student - covers both the offline pools and the live-escalation path.",
     tree: null,
     tasks: [
-      { id:"#73", owner:"all", title:"Define human-review/approval checklist for LLM-drafted content", status:"Not started",
+      { id:"#73", owner:"all", title:"Define human-review/approval checklist for LLM-drafted content", status:"Done",
         story:"As the team, we want one documented bar for anything an LLM drafts before it reaches a real student, so review is consistent across offline pools and live generation, not two different ad hoc standards.",
-        ac:["Checklist covers: no answer-revealing content, age-appropriate Dutch phrasing, factual/mathematical correctness, encouraging tone (consistent with the existing generic-hint wording decision)",
-            "Applies to both #69/#70's offline-approved content and informs #72's automated output-validation rules",
-            "Documented durably (this card + decision-log.md), not just tribal knowledge"],
+        ac:["Checklist covers: no answer-revealing content, age-appropriate Dutch phrasing, " +
+            "factual/mathematical correctness, encouraging tone (consistent with the " +
+            "existing generic-hint wording decision) - DONE, all four criteria " +
+            "consolidated from existing decisions (#35's tone/language wording), not " +
+            "invented - see docs/architecture/llm_content_review_checklist.md",
+            "Applies to both #69/#70's offline-approved content and informs #72's " +
+            "automated output-validation rules - DONE: offline path (#69/#70) is a human " +
+            "checklist before approval; live path (#72) gets an explicit criterion -> " +
+            "automatable-check mapping, honestly marking mathematical correctness as not " +
+            "fully automatable rather than overclaiming",
+            "Documented durably (this card + decision-log.md), not just tribal knowledge " +
+            "- DONE"],
         deps:"Depends on: nothing new · Informs: #69, #70, #72" }
     ]
   },
