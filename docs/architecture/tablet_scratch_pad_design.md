@@ -36,9 +36,52 @@ Two independent scratch panels, fixed to the page's left and right margins:
 - **Fixed position, not in normal document flow** — the central step list grows as steps
   are added ("+ Add next step"), which would push a below-steps panel around; the side
   margins don't have that problem.
-- **Shown only on wide/tablet viewports** (`xl:` breakpoint and up) — there's no room for
-  this on a phone-sized screen, and the request was specifically about tablet/iPad use.
-  Below the breakpoint, the panels simply don't render.
+- **Shown only on wide/tablet viewports** (`lg:` breakpoint, 1024px, and up) — there's no
+  room for this on a phone-sized screen, and the request was specifically about
+  tablet/iPad use. Below the breakpoint, the panels simply don't render.
+
+## Sizing (revised - responsive, not fixed pixels)
+
+The original implementation (live-tested 2026-08-12) used a fixed 320×640px panel gated
+behind Tailwind's `xl:` (1280px) breakpoint. Checking real iPad CSS viewport widths after
+that test surfaced two real problems with those numbers, not just a "could be tuned"
+tuning gap:
+
+- **The breakpoint itself was wrong for the target device.** Every iPad in portrait
+  orientation, and most models even in landscape, are under 1280px wide (iPad Mini/Air
+  landscape ≈1080–1180px; iPad Pro 11"/12.9" landscape ≈1194–1366px). At `xl:`, the
+  panels would never show on the actual device this ticket is for, except the single
+  largest iPad Pro model in landscape.
+- **Fixed pixels can't fit the real range of tablet widths** even where the panels did
+  show — 320px per side plus centered step content doesn't consistently fit realistic
+  iPad viewport widths.
+
+**Revised to true responsive sizing:**
+
+- The panel's box uses `clamp(140px, 14vw, 340px)` for width, and is anchored between
+  `top-20`/`bottom-6` for height (real available viewport height, not a guessed `vh`
+  percentage) — both driven by the actual viewport, not a fixed guess from one
+  screenshot.
+- `InkCanvas.js` gained an **opt-in** `responsive` prop. When absent/false (unchanged
+  default — `StepBox.js`'s exact existing usage), it renders identically to before:
+  fixed `width`/`height` attributes, byte-for-byte the same code path. Only `ScratchPad`
+  passes `responsive`. This is what makes the change zero-regression for `StepBox`'s
+  graded recognition-drawing flow: confirmed via `grep -rn "InkCanvas" frontend/app` that
+  `ScratchPad` and `StepBox` are the only two callers, and `StepBox` never opts in.
+- In responsive mode, a `ResizeObserver` (native browser API, no new dependency;
+  supported Safari 13.1+/iOS 13.4+) watches the canvas's wrapper element and updates the
+  canvas's `width`/`height` attributes to match its real measured size on every resize
+  (e.g. an iPad rotation).
+- **Resize no longer silently erases a student's drawing.** Changing a `<canvas>`
+  element's `width`/`height` attributes clears its drawing buffer — standard browser
+  behavior. `InkCanvas` already tracks raw stroke point-data (`strokesRef`) separately
+  from the rendered pixels, so every resize is followed by a redraw of every stored
+  stroke onto the resized canvas, at its original absolute pixel coordinates (no
+  proportional scaling — a v1 simplification: a larger canvas just shows more blank space
+  around existing work, a smaller one can clip strokes at the new edge).
+- **Known limitation, by design, not an oversight:** stays landscape-only. Real iPad
+  portrait widths (all models ≤1024px) don't leave room for two side panels plus the
+  centered step content at any reasonable size, so portrait is not supported.
 
 ## Clear behavior
 
@@ -69,5 +112,8 @@ manual-only / both — see `docs/tracking/decision-log.md` for the full comparis
 
 - `frontend/app/components/ScratchPad.js` — thin wrapper around the existing
   `InkCanvas.js` (already touch/stylus-ready by original design, task #48), just
-  repositioned and relabeled. `onStrokesChange` deliberately left unwired.
+  repositioned, relabeled, and (as of the sizing revision above) sized responsively.
+  `onStrokesChange` deliberately left unwired.
+- `frontend/app/components/InkCanvas.js` — opt-in `responsive` prop (default `false`),
+  used only by `ScratchPad`; `StepBox.js` is unaffected.
 - `frontend/app/page.js` — renders two `ScratchPad`s, keyed by `problem?.id`.

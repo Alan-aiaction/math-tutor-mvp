@@ -327,7 +327,7 @@ const STAGES = [
         ac:["Two independent scratch areas, fixed to the left and right page margins, " +
             "shown on tablet-and-up viewports only - DONE, frontend/app/components/" +
             "ScratchPad.js wraps the existing InkCanvas (already touch/stylus-ready), " +
-            "hidden below the xl breakpoint",
+            "hidden below the lg breakpoint (corrected from xl - see 2026-08-13 update below)",
             "Zero recognition/evaluation/persistence - purely client-side ink, never sent " +
             "anywhere - DONE, onStrokesChange deliberately left unwired, no backend call, " +
             "no new table",
@@ -345,7 +345,23 @@ const STAGES = [
               "drawing confirmed working on each side, per-side manual clear confirmed - " +
               "real, positive live verification, not just a build check. Panels bumped " +
               "220x520 -> 320x640 same day after live testing showed real unused margin " +
-              "space beyond the original size." }
+              "space beyond the original size. " +
+              "UPDATE 2026-08-13: that same live test also flagged the panels felt too " +
+              "small; checking whether sizing would adapt to device size found the real " +
+              "problem - the xl breakpoint (1280px) and fixed 320x640 size were picked " +
+              "from one screenshot, not real device dimensions, and real iPad viewport " +
+              "widths are mostly under 1280px, so the panels would rarely show on the " +
+              "actual target device. DONE: switched to true responsive sizing - " +
+              "InkCanvas.js gained an opt-in `responsive` prop (default false; StepBox.js " +
+              "confirmed as the only other caller, untouched) that measures its container " +
+              "via ResizeObserver and redraws stored strokes after every resize instead of " +
+              "losing them (a plain canvas width/height change clears its pixels - drawings " +
+              "now survive a resize, e.g. an iPad rotation, instead of being silently " +
+              "wiped). ScratchPad.js sized via clamp() and the breakpoint corrected to lg " +
+              "(1024px, the real smallest iPad landscape width) - landscape-only by design, " +
+              "iPad portrait doesn't have room. See decision-log.md's status update on this " +
+              "ticket's entry and tablet_scratch_pad_design.md's \"Sizing (revised)\" " +
+              "section for full reasoning." }
     ]
   }
 ];

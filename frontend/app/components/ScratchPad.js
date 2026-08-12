@@ -8,22 +8,27 @@ import InkCanvas from "./InkCanvas";
 // button) repositioned into the page's left/right margins. onStrokesChange is
 // deliberately not wired to anything - nothing needs to know what gets drawn here.
 //
-// Fixed pixel size, not CSS-responsive (InkCanvas's stroke coordinates are computed
-// directly from the canvas's own pixel rect - scaling the element via CSS without
-// scaling those coordinates would misalign drawn strokes from the pointer). 320x640
-// sized up from an initial 220x520 after live tablet-width testing showed real unused
-// margin space beyond that - see ticket #74's board card.
+// Responsive sizing (follow-up to the original fixed 320x640): the panel's box is sized
+// by real viewport space (clamped width, top/bottom-anchored height) and InkCanvas's
+// opt-in `responsive` mode measures that box and resizes its own canvas to match,
+// redrawing existing strokes rather than losing them - see InkCanvas.js and
+// docs/architecture/tablet_scratch_pad_design.md for why. `lg:` (1024px), not the
+// original `xl:` (1280px) - real iPad landscape widths (~1080-1366px depending on model)
+// sit below 1280px, so `xl:` meant these panels never actually showed on the target
+// device. iPad portrait (all models <=1024px) still has no room for two panels plus the
+// centered step content, so this stays landscape-only by design.
 export default function ScratchPad({ side }) {
   return (
     <div
-      className={`hidden xl:flex fixed top-20 flex-col gap-1 ${
+      className={`hidden lg:flex fixed top-20 bottom-6 flex-col gap-1 ${
         side === "left" ? "left-6" : "right-6"
       }`}
+      style={{ width: "clamp(140px, 14vw, 340px)" }}
     >
       <span className="text-xs font-medium uppercase tracking-wide text-gray-400">
         Kladblok
       </span>
-      <InkCanvas width={320} height={640} />
+      <InkCanvas responsive />
     </div>
   );
 }
