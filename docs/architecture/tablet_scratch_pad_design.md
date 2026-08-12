@@ -83,6 +83,21 @@ tuning gap:
   portrait widths (all models ≤1024px) don't leave room for two side panels plus the
   centered step content at any reasonable size, so portrait is not supported.
 
+**Live-verified 2026-08-13** (desktop browser, resizing the window mid-drawing): confirmed
+the clip-on-shrink behavior above is real in practice, not just theoretical — a stroke
+drawn near the bottom of a tall panel got cut off after shrinking the window. Decided to
+accept this for 2nd MVP rather than fix now — recorded as a **revisit-later item**, not
+forgotten:
+
+| | **Keep as-is (clip on shrink) — current, 2nd MVP** | **Add proportional scaling** |
+|---|---|---|
+| **How it works** | No change — strokes stay at fixed pixel coordinates; shrinking loses whatever falls outside the new bounds | On every resize, remap each stroke's `x`/`y` by the ratio of new size to old size before redrawing, so drawings shrink/grow with the canvas instead of clipping |
+| **Pro** | Simpler, already shipped, zero added risk | No data loss ever — resizing/rotating never drops part of a drawing |
+| **Con** | A student who draws near the bottom then shrinks/rotates loses part of their drawing | Real added complexity (rescale every point on every stroke, on every resize); can distort aspect ratio if width/height don't shrink by the same proportion |
+
+Decision: keep as-is for 2nd MVP. If this becomes a real complaint in practice, come back
+to proportional scaling rather than re-deriving this comparison from scratch.
+
 ## Clear behavior
 
 Two ways a scratch panel clears, chosen after weighing three options (auto-only /

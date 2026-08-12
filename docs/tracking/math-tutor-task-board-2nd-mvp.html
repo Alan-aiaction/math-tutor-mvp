@@ -361,7 +361,14 @@ const STAGES = [
               "(1024px, the real smallest iPad landscape width) - landscape-only by design, " +
               "iPad portrait doesn't have room. See decision-log.md's status update on this " +
               "ticket's entry and tablet_scratch_pad_design.md's \"Sizing (revised)\" " +
-              "section for full reasoning." }
+              "section for full reasoning. " +
+              "UPDATE 2026-08-13 (2nd live test, resizing mid-drawing): confirmed strokes " +
+              "redraw at fixed absolute coordinates, not scaled - a stroke drawn near the " +
+              "bottom of a tall panel got clipped after shrinking the window. Decided to " +
+              "accept this for 2nd MVP rather than fix now (real but narrow edge case; " +
+              "proportional scaling would add real complexity for shrink-mid-drawing " +
+              "only). Recorded as a revisit-later item with the full option comparison in " +
+              "decision-log.md's status update and the design doc, not forgotten." }
     ]
   }
 ];
