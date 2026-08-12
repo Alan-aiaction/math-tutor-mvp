@@ -188,10 +188,12 @@ const STAGES = [
     intro: "The deterministic misconception-matching chain, carried over unchanged in scope from 1st MVP's deferral.",
     tree: null,
     tasks: [
-      { id:"#29", owner:"all", title:"Finalize misconception rule format sign-off", status:"In progress",
+      { id:"#29", owner:"all", title:"Finalize misconception rule format sign-off", status:"Done",
         story:"As the team, we need the rule format proposal formally reviewed and approved, so seeding and matching work build on a settled shape, not a draft.",
-        ac:["Proposal at docs/architecture/proposal_misconception_rule_format.md reviewed",
-            "Sign-off recorded in decision-log.md - status moved from Proposed to Confirmed"],
+        ac:["Proposal at docs/architecture/proposal_misconception_rule_format.md reviewed - DONE",
+            "Sign-off recorded in decision-log.md - status moved from Proposed to Confirmed - " +
+            "DONE 2026-08-13: approved by Jeff and Richard in the 2026-08-12 review meeting " +
+            "(same meeting that approved #74), confirmed directly by the project lead"],
         deps:"Proposal already drafted (1st MVP, PR #42) · Blocks: #30, #9" },
       { id:"#30", owner:"all", title:"Implement deterministic rule-matching engine", status:"Not started",
         story:"As the evaluator, given a wrong answer, I want to find which known misconception it matches, so the student gets a targeted hint instead of the generic fallback.",
@@ -234,7 +236,7 @@ const STAGES = [
             "No real-API integration test, deliberately - matches recognition.py's existing " +
             "precedent for paid third-party APIs"],
         deps:"Depends on: nothing · Blocks: #69, #70, #72" },
-      { id:"#68", owner:"all", title:"Shadow-log review workflow", status:"In progress",
+      { id:"#68", owner:"all", title:"Shadow-log review workflow", status:"Done",
         story:"As the team, we want a real, repeatable way to review unmatched wrong answers, so #9's rule seeding is based on actual patterns, not one-off guesses.",
         ac:["A documented (or tooled) process for periodically reviewing #63's queryable " +
             "shadow-log view - DONE, backend/shadow_log_review.py's " +
@@ -247,14 +249,13 @@ const STAGES = [
             "writes a plain-language note per cluster to the new shadow_log_review_notes " +
             "table (migration: supabase/migrations/20260812140000_shadow_log_review_notes.sql) " +
             "- that note is #69's literal input"],
-        deps:"Depends on: #63 (done, 1st MVP) · Blocks: #9, #69 · NOT DONE: the migration " +
-              "hasn't been applied to the live Supabase project yet - Supabase MCP wasn't " +
-              "available this session and there's no local CLI, so this couldn't be " +
-              "verified end-to-end. 6 unit tests pass (mocked, no DB needed). 2 " +
-              "integration tests are written but fail today with a real, expected error " +
-              "(table doesn't exist yet) - confirmed the real Supabase connection itself " +
-              "works, only the missing migration blocks them. Needs someone with live " +
-              "Supabase access to apply the migration before this can close." },
+        deps:"Depends on: #63 (done, 1st MVP) · Blocks: #9, #69 · UPDATE 2026-08-13: " +
+              "card previously said the migration hadn't been applied (Supabase MCP was " +
+              "unavailable in that earlier session) - re-checked live via list_tables: " +
+              "shadow_log_review_notes exists in the real project (with #69's drafted_rule " +
+              "column too), migration applied and verified. Both unit and integration " +
+              "tests pass against the live table. Closing as Done - the stale note above " +
+              "was corrected, not carried forward." },
       { id:"#69", owner:"all", title:"LLM-assisted rule-drafting tool", status:"Done",
         story:"As the person authoring misconception rules, I want an LLM to draft the structured JSON rule from a plain-language description, so I'm reviewing and approving instead of hand-writing JSON from scratch.",
         ac:["Given a plain-language description of a misconception (informed by #68's " +
