@@ -255,12 +255,32 @@ const STAGES = [
               "(table doesn't exist yet) - confirmed the real Supabase connection itself " +
               "works, only the missing migration blocks them. Needs someone with live " +
               "Supabase access to apply the migration before this can close." },
-      { id:"#69", owner:"all", title:"LLM-assisted rule-drafting tool", status:"Not started",
+      { id:"#69", owner:"all", title:"LLM-assisted rule-drafting tool", status:"Done",
         story:"As the person authoring misconception rules, I want an LLM to draft the structured JSON rule from a plain-language description, so I'm reviewing and approving instead of hand-writing JSON from scratch.",
-        ac:["Given a plain-language description of a misconception (informed by #68's review), drafts a rule in the Fig. 1 shape (operation/error_transform/check)",
-            "Every draft requires explicit human approval before reaching misconception_rules - no auto-seeding",
-            "Uses #67's provider abstraction, not a direct vendor call"],
-        deps:"Depends on: #67, #68 · Feeds: #9" },
+        ac:["Given a plain-language description of a misconception (informed by #68's " +
+            "review), drafts a rule in the Fig. 1 shape (operation/error_transform/check) " +
+            "- DONE, backend/rule_drafting.py's draft_rule_from_note() reads the review " +
+            "note (#68), builds a prompt with the problem context + the proposal doc's own " +
+            "two worked examples as few-shot guidance, calls the LLM, validates the JSON " +
+            "shape (raises RuleDraftError on malformed/incomplete output)",
+            "Every draft requires explicit human approval before reaching " +
+            "misconception_rules - no auto-seeding - DONE: draft_rule_from_note() only " +
+            "ever writes to shadow_log_review_notes.drafted_rule (status -> 'drafted'). " +
+            "A separate approve_and_seed_rule() call is required to actually insert into " +
+            "misconception_rules (status -> 'seeded') - two distinct function calls, not " +
+            "one, so approval can't be skipped by accident",
+            "Uses #67's provider abstraction, not a direct vendor call - DONE, only calls " +
+            "llm.generate_text()"],
+        deps:"Depends on: #67 (done), #68 (done) · Feeds: #9 · New drafted_rule jsonb " +
+              "column on shadow_log_review_notes (migration " +
+              "20260812170000_shadow_log_review_notes_add_drafted_rule.sql), applied live " +
+              "via Supabase MCP and verified via list_tables. 7 unit tests (mocked LLM) + " +
+              "1 integration test (real Supabase, LLM call itself still mocked - this repo " +
+              "never calls a real paid LLM/API in the test suite) - full draft-then-approve " +
+              "flow verified end to end against the live project, zero residue after " +
+              "cleanup. Full backend suite 128 passed. Also found and cleaned up 2 leftover " +
+              "test rows from #68's own earlier integration test runs that hadn't been " +
+              "cleaned up." },
       { id:"#70", owner:"all", title:"Author hint-variant pool per misconception", status:"Not started",
         story:"As a student, I want the hint I see to feel specific and varied, not the exact same sentence every time the same mistake happens.",
         ac:["For each seeded misconception, an LLM drafts several hint-text variants offline, using #67's abstraction",
