@@ -222,7 +222,7 @@ const STAGES = [
             "Provider/model selection is config-driven, not hardcoded",
             "Unit tested with a mocked provider - the interface contract, not any real model's output"],
         deps:"Depends on: nothing · Blocks: #69, #70, #72" },
-      { id:"#68", owner:"all", title:"Shadow-log review workflow", status:"In progress",
+      { id:"#68", owner:"all", title:"Shadow-log review workflow", status:"Done",
         story:"As the team, we want a real, repeatable way to review unmatched wrong answers, so #9's rule seeding is based on actual patterns, not one-off guesses.",
         ac:["A documented (or tooled) process for periodically reviewing #63's queryable " +
             "shadow-log view - DONE, backend/shadow_log_review.py's " +
@@ -235,14 +235,14 @@ const STAGES = [
             "writes a plain-language note per cluster to the new shadow_log_review_notes " +
             "table (migration: supabase/migrations/20260812140000_shadow_log_review_notes.sql) " +
             "- that note is #69's literal input"],
-        deps:"Depends on: #63 (done, 1st MVP) · Blocks: #9, #69 · NOT DONE: the migration " +
-              "hasn't been applied to the live Supabase project yet - Supabase MCP wasn't " +
-              "available this session and there's no local CLI, so this couldn't be " +
-              "verified end-to-end. 6 unit tests pass (mocked, no DB needed). 2 " +
-              "integration tests are written but fail today with a real, expected error " +
-              "(table doesn't exist yet) - confirmed the real Supabase connection itself " +
-              "works, only the missing migration blocks them. Needs someone with live " +
-              "Supabase access to apply the migration before this can close." },
+        deps:"Depends on: #63 (done, 1st MVP) · Blocks: #9, #69 · Migration applied live via " +
+              "Supabase MCP (apply_migration) 2026-08-12 after reconnecting it mid-session - " +
+              "verified via list_tables: shadow_log_review_notes exists, RLS enabled, FK to " +
+              "problems, matching the migration exactly. All 8 tests pass for real: 6 unit " +
+              "(mocked, no DB) + 2 integration (real Supabase, throwaway rows, zero residue " +
+              "after). Full backend suite 111 passed, no regressions. Real usage data already " +
+              "exists live (49 problems, 30 attempts, 46 attempt_steps) - #69 has real shadow " +
+              "log content to work from, not just an empty table." },
       { id:"#69", owner:"all", title:"LLM-assisted rule-drafting tool", status:"Not started",
         story:"As the person authoring misconception rules, I want an LLM to draft the structured JSON rule from a plain-language description, so I'm reviewing and approving instead of hand-writing JSON from scratch.",
         ac:["Given a plain-language description of a misconception (informed by #68's review), drafts a rule in the Fig. 1 shape (operation/error_transform/check)",
