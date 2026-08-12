@@ -1,7 +1,8 @@
 # Proposal: Misconception rule format (Task #29)
 
-**Status:** Proposed — awaiting review from Jeff and Richard before content seeding (#9)
-begins, per #29's own AC. See `docs/tracking/decision-log.md` for the full decision record.
+**Status:** Confirmed — approved by Jeff and Richard in the 2026-08-12 review meeting; #9
+(content seeding) unblocked on this front. See `docs/tracking/decision-log.md` for the full
+decision record.
 
 **Already decided, not re-opened here** (see `decision-log.md`): `matching_rule` is
 structured comparison against the parsed SymPy expression tree — not regex, not plain
