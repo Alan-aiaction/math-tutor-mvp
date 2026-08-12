@@ -341,8 +341,11 @@ const STAGES = [
               "docs/architecture/tablet_scratch_pad_design.md and decision-log.md for the " +
               "full design (4 decisions: side-margin placement vs. below-steps, two panels " +
               "vs. one, no persistence vs. persisted, and the clear-behavior options). " +
-              "npm run build verified clean. No browser tool available this session to " +
-              "click-test directly - needs live verification, same as #64/#65/#46b." }
+              "Live-tested 2026-08-12: both panels render, independent touch/pointer " +
+              "drawing confirmed working on each side, per-side manual clear confirmed - " +
+              "real, positive live verification, not just a build check. Panels bumped " +
+              "220x520 -> 320x640 same day after live testing showed real unused margin " +
+              "space beyond the original size." }
     ]
   }
 ];
