@@ -164,6 +164,21 @@ convention and file format) — two new files can never collide.
   doesn't apply to things done earlier in the same turn (a file just written, a commit just
   made isn't "stale"). Got this wrong once this session — reported a PR as still open
   several turns after it had actually merged.
+- **A confirmed missing tool/capability gets surfaced immediately, not built around.** If a
+  needed integration (MCP server, credential, access) is confirmed unavailable mid-task —
+  not suspected, actually confirmed — stop and tell the user specifically what's missing,
+  before continuing to work around it. Ask two things, not one: *that* it's broken, and
+  *how* they'd fix it — don't assume a generic reconnection mechanism (e.g. a settings-panel
+  toggle) when the real fix might be something only the user knows (e.g. a CLI command in
+  their own terminal session). Only fall back to "note the gap and keep going" if the user
+  says they can't fix it right now, or it's genuinely outside their control. Also: a status
+  panel showing a server as "Connected" is account/project-level authorization, not proof
+  that *this specific session's* tool list currently includes it — these can disagree; say
+  so explicitly rather than implying the user's information is stale when a tool-search
+  comes back empty. Got this wrong on ticket #68: Supabase MCP was unavailable when a
+  migration needed applying, and instead of asking Alan to reconnect it, the migration got
+  written and everything else built around its absence, with the gap only flagged in the
+  PR description at the end. Alan had to ask directly why I hadn't just asked him to fix it.
 
 ## Test Pyramid
 
