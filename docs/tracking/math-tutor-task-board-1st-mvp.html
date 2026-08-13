@@ -864,13 +864,22 @@ const STAGES = [
             "Handwriting samples collected and reviewed against recognition accuracy",
             "Findings documented and fed back into #21 if needed"],
         deps:"Depends on: #45 and school access" },
-      { id:"#55", owner:"alan", title:"Verify curriculum coverage vs SLO tussendoelen groep 7/8", status:"Not started",
+      { id:"#55", owner:"alan", title:"Verify curriculum coverage vs SLO tussendoelen groep 7/8", status:"Done",
         story:"As the content owner, I want confidence the problem set actually matches official Dutch standards, not just intuition.",
-        ac:["Seeded problems cross-checked against SLO tussendoelen groep 7/8 targets",
-            "Gaps documented (topics in the standard not yet covered)"],
+        ac:["Seeded problems cross-checked against SLO tussendoelen groep 7/8 targets - " +
+            "DONE 2026-08-13, all 47 rows checked against the real SLO tussendoelen doc " +
+            "(the project lead's own copy) - see " +
+            "docs/architecture/slo_curriculum_coverage_groep78.md",
+            "Gaps documented (topics in the standard not yet covered) - DONE: strong " +
+            "coverage of one skill (multiplication with compensation strategy, whole-" +
+            "number and money contexts, 45/47 problems); zero or near-zero coverage of " +
+            "addition/subtraction, fractions, ratios/percentages, most of meten, all of " +
+            "meetkunde, and verbanden - full table in the design doc"],
         deps:"Depends on: #8 · Owner moved richard -> alan 2026-08-10 (Alan is now content " +
               "owner, Richard reviews rather than owns - see CLAUDE.md); Richard's review " +
-              "still needed before this counts as verified, just not as the driver." },
+              "still needed before this counts as verified, just not as the driver. " +
+              "Unblocked 2026-08-13 once the real SLO document was available - see " +
+              "decision-log.md." },
       { id:"#66", owner:"alan", title:"Decide: arithmetic-only vs word-problem (verhaaltjessommen) content split", status:"Not started",
         story:"As the content owner, I want a deliberate decision on whether the 1st MVP " +
               "pilot's problem set should be pure arithmetic expressions only, word " +
