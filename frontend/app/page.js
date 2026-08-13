@@ -11,6 +11,8 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
 const INITIAL_STEPS = [{ status: "unanswered", recognizedLatex: "" }];
 
+const ALL_CORRECT_MESSAGE = "Goed zo! Je hebt de hele som goed opgelost.";
+
 export default function Home() {
   const [steps, setSteps] = useState(INITIAL_STEPS);
   const [results, setResults] = useState(null);
@@ -120,6 +122,8 @@ export default function Home() {
     setResults(null);
   };
 
+  const allStepsCorrect = results && results.length > 0 && results.every((r) => r.valid);
+
   return (
     <main className="flex min-h-screen flex-col items-center gap-8 p-16 text-center font-sans">
       <ScratchPad side="left" key={`scratch-left-${problem?.id}`} />
@@ -147,6 +151,9 @@ export default function Home() {
         onStepChange={handleStepChange}
         problemId={problem?.id}
       />
+      {allStepsCorrect && (
+        <p className="text-sm font-medium text-emerald-700">{ALL_CORRECT_MESSAGE}</p>
+      )}
       {checkError && <p className="text-sm text-red-600">{checkError}</p>}
       {saveError && <p className="text-sm text-amber-600">{saveError}</p>}
       <div className="flex items-center gap-3">

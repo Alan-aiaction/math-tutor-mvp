@@ -175,7 +175,7 @@ const STAGES = [
 
       <p class="sub-h">Out of scope, explicitly</p>
       <ul class="plain-list">
-        <li><b>GUI/UI improvements</b> — no frontend redesign. Escalation (#71) surfaces a second hint through the same existing hint display, not new UI. <b>One named exception, approved 2026-08-12 by Jeff and Richard: #74's tablet scratch pad</b> — not a reopening of this boundary generally.</li>
+        <li><b>GUI/UI improvements</b> — no frontend redesign. Escalation (#71) surfaces a second hint through the same existing hint display, not new UI. <b>Two named exceptions:</b> #74's tablet scratch pad (approved 2026-08-12 by Jeff and Richard) and #75's positive-feedback message on a fully-correct check (decided directly by the project lead, 2026-08-13, now that 1st MVP is closed and new work routes through this board) — neither is a reopening of this boundary generally.</li>
         <li><b>Login / real authentication</b> — the plain-text student code stays exactly as-is.</li>
         <li><b>Expanding the problem/question database</b> — uses the current seeded question set as-is. Growing the problem bank into new domains is cut from this scope entirely, not just deferred further.</li>
         <li>Reopening live-LLM classification — Stage 1 stays deterministic.</li>
@@ -348,8 +348,8 @@ const STAGES = [
     ]
   },
   {
-    id: "s5", label: "Stage 5 · Tablet Scratch Pad (GUI exception)",
-    intro: "The one named, approved exception to this board's otherwise backend-only scope - not a reopening of the \"no GUI work\" boundary generally. See docs/architecture/tablet_scratch_pad_design.md for the full design.",
+    id: "s5", label: "Stage 5 · GUI Exceptions (named, one-off)",
+    intro: "Named, one-off exceptions to this board's otherwise backend-only scope - not a reopening of the \"no GUI work\" boundary generally. #74: see docs/architecture/tablet_scratch_pad_design.md for the full design.",
     tree: null,
     tasks: [
       { id:"#74", owner:"all", title:"Tablet scratch pad (left/right margins)", status:"Done",
@@ -398,7 +398,25 @@ const STAGES = [
               "accept this for 2nd MVP rather than fix now (real but narrow edge case; " +
               "proportional scaling would add real complexity for shrink-mid-drawing " +
               "only). Recorded as a revisit-later item with the full option comparison in " +
-              "decision-log.md's status update and the design doc, not forgotten." }
+              "decision-log.md's status update and the design doc, not forgotten." },
+      { id:"#75", owner:"alan", title:"Positive feedback message on a fully-correct check", status:"Done",
+        story:"As a student who gets their working checked, I want an encouraging message when everything's correct, so correct work feels rewarded, not just silently marked.",
+        ac:["One aggregate message shown after checkWork() resolves, reflecting the " +
+            "overall result - not per-step (the existing green checkmark badge in " +
+            "StepBox already handles per-step correctness, this doesn't duplicate that) " +
+            "- DONE, frontend/app/page.js: allStepsCorrect derived from existing results " +
+            "state, no new state shape",
+            "Only fires when every step in the attempt is correct - a real payoff " +
+            "moment, not routine noise on partial results - DONE, " +
+            "results.every((r) => r.valid) gates the message",
+            "Dutch, groep 7-8 appropriate wording, calibrated to the same register as " +
+            "#35's confirmed generic-hint phrasing (encouraging opener, kid-friendly " +
+            "word choice) - DONE (draft): \"Goed zo! Je hebt de hele som goed opgelost.\" " +
+            "- not self-certified, same review-before-final caveat #35 carries"],
+        deps:"Depends on: nothing (frontend-only; result.valid per step is already " +
+              "returned by POST /attempts/check, no backend change needed) · Named GUI " +
+              "exception (see Stage intro above) - decided directly by the project lead " +
+              "2026-08-13, not a reopening of the general \"no GUI work\" boundary." }
     ]
   }
 ];
