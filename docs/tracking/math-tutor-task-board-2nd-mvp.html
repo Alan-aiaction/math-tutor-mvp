@@ -195,16 +195,38 @@ const STAGES = [
             "DONE 2026-08-13: approved by Jeff and Richard in the 2026-08-12 review meeting " +
             "(same meeting that approved #74), confirmed directly by the project lead"],
         deps:"Proposal already drafted (1st MVP, PR #42) · Blocks: #30, #9" },
-      { id:"#30", owner:"all", title:"Implement deterministic rule-matching engine", status:"Not started",
+      { id:"#30", owner:"all", title:"Implement deterministic rule-matching engine", status:"Done",
         story:"As the evaluator, given a wrong answer, I want to find which known misconception it matches, so the student gets a targeted hint instead of the generic fallback.",
-        ac:["Given a wrong step and expected step, returns a matching misconception_id if found, per the proposal's Fig. 1 shape (operation/error_transform/check.type)",
-            "Returns explicit null when no rule matches",
-            "Unit tested against seeded rules from #9, no mocking"],
-        deps:"Depends on: #29, #9 · Blocks: #31, #33" },
-      { id:"#31", owner:"all", title:"Return misconception_id or null fallback", status:"Not started",
+        ac:["Given a wrong step and expected step, returns a matching misconception_id " +
+            "if found, per the proposal's Fig. 1 shape (operation/error_transform/" +
+            "check.type) - DONE, backend/misconception_matching.py's " +
+            "match_misconception(question_text, wrong_expr): parses question_text for " +
+            "operands (correct_answer is already-simplified, operands aren't recoverable " +
+            "from it - see decision-log.md), tries each stored rule's operation-specific " +
+            "extractor, substitutes into wrong_result_template, checks symbolic " +
+            "equivalence via the existing canonical_form.are_equivalent",
+            "Returns explicit null when no rule matches - DONE (see #31 below, same " +
+            "implementation covers both)",
+            "Unit tested against seeded rules from #9, no mocking - DEVIATION, " +
+            "documented: #9 isn't seeded yet (misconception_rules has 0 rows), tested " +
+            "against the rule-format proposal's own two worked examples instead " +
+            "(fraction_addition, fraction_subtraction) - backend/" +
+            "test_misconception_matching.py (6 unit tests, mocked Supabase client) + " +
+            "backend/test_misconception_matching_integration.py (2 tests, real Supabase, " +
+            "throwaway rule inserted/deleted). Full 136-test backend suite green, zero " +
+            "regression on evaluation_result.py's pinned misconception_id=None."],
+        deps:"Depends on: #29 (done), #9 (not done - see deviation above) · Blocks: #31 " +
+              "(implemented together), #33" },
+      { id:"#31", owner:"all", title:"Return misconception_id or null fallback", status:"Done",
         story:"As downstream services, we need a consistent value even when nothing matches.",
-        ac:["Explicit null (not empty string, not exception) returned on no match",
-            "Covered by an explicit no-match unit test case"],
+        ac:["Explicit null (not empty string, not exception) returned on no match - " +
+            "DONE, folded into #30's own implementation (match_misconception returns " +
+            "Python None, not raised/empty-string) rather than needing separate code - " +
+            "same pattern as #20 turning out to be covered by #41",
+            "Covered by an explicit no-match unit test case - DONE, " +
+            "test_no_match_returns_explicit_none_not_exception plus 3 more no-match " +
+            "cases (no rules seeded, unparseable question_text, unrecognized rule " +
+            "operation) - all return None cleanly, none raise"],
         deps:"Depends on: #30" },
       { id:"#9", owner:"all", title:"Seed first real misconception_rules batch", status:"Not started",
         story:"As the team, we need real rule content to test the matching engine against, sourced from actual student mistakes, not guesswork.",
