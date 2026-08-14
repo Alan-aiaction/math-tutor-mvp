@@ -228,11 +228,21 @@ const STAGES = [
             "cases (no rules seeded, unparseable question_text, unrecognized rule " +
             "operation) - all return None cleanly, none raise"],
         deps:"Depends on: #30" },
-      { id:"#9", owner:"all", title:"Seed first real misconception_rules batch", status:"Not started",
+      { id:"#9", owner:"all", title:"Seed first real misconception_rules batch", status:"In progress",
         story:"As the team, we need real rule content to test the matching engine against, sourced from actual student mistakes, not guesswork.",
-        ac:["At least 5-10 misconception rules seeded, each tied to a topic, in the Fig. 1 JSON shape",
-            "Sourced from #68's shadow-log review + #69's drafting tool, not authored blind"],
-        deps:"Depends on: #29, #68, #69" }
+        ac:["At least 5-10 misconception rules seeded, each tied to a topic, in the Fig. " +
+            "1 JSON shape - PARTIAL: 3 rules DRAFTED (not yet seeded - see docs/" +
+            "architecture/misconception_rules_bootstrap_batch_1.md), awaiting approval; " +
+            "under the 5-10 target, more can follow once these are reviewed",
+            "Sourced from #68's shadow-log review + #69's drafting tool, not authored " +
+            "blind - DEVIATION, documented not hidden: attempts/attempt_steps were " +
+            "confirmed to be test data (Alan/Jeff, not real students) and cleared 2026-" +
+            "08-14 - no real shadow-log data exists yet, so this batch is hand-authored " +
+            "from known common groep 7/8 mistakes instead. #61 exists to revisit/correct " +
+            "once real pilot data comes in. Also found and fixed a real prerequisite bug " +
+            "along the way: latex_parser.py couldn't parse any real seeded problem's " +
+            "question_text (Unicode × and € not handled) - see decision-log.md."],
+        deps:"Depends on: #29 (done), #68 (done), #69 (done)" }
     ]
   },
   {

@@ -1,10 +1,12 @@
-"""Unit tests for misconception_matching.py (tickets #30, #31).
+"""Unit tests for misconception_matching.py (tickets #30, #31, #9-bootstrap).
 
 Mocked Supabase client, no real DB - covers: a real match against both worked
 examples from the rule-format proposal (fraction_addition, fraction_subtraction),
 an explicit no-match returning None (#31's own AC), question_text that isn't
-parseable math (word problems), no rules seeded at all, and a rule whose
-operation isn't recognized.
+parseable math (word problems), no rules seeded at all, a rule whose operation
+isn't recognized, and the two bootstrap-batch rule types (multiplication_near_round,
+money_decimal_multiplication) matched against real seeded problems' actual
+question_text - including the double-compensation exclusion case.
 """
 from unittest.mock import MagicMock, patch
 
@@ -109,4 +111,107 @@ def test_unrecognized_rule_operation_is_skipped_not_crashed():
     ):
         wrong = parse_math_latex(r"\frac{2}{7}")
         result = match_misconception(r"\frac{1}{3} + \frac{1}{4}", wrong)
+    assert result is None
+
+
+# --- Bootstrap batch (ticket #9): multiplication_near_round, money_decimal_multiplication ---
+
+FORGOT_ADJUSTMENT_RULE = {
+    "id": "multiplication_near_round_forgot_adjustment",
+    "topic": "multiplication",
+    "description": "Rounds the messy factor to a round number and multiplies, but forgets to compensate back.",
+    "matching_rule": {
+        "operation": "multiplication_near_round",
+        "error_transform": "forgot_compensation_adjustment",
+        "check": {"type": "symbolic_equivalence", "wrong_result_template": "a*c"},
+    },
+    "escalation_hint_id": None,
+}
+
+WRONG_ADJUSTMENT_AMOUNT_RULE = {
+    "id": "multiplication_near_round_wrong_adjustment_amount",
+    "topic": "multiplication",
+    "description": "Compensates by the raw rounding difference instead of that difference times the other factor.",
+    "matching_rule": {
+        "operation": "multiplication_near_round",
+        "error_transform": "compensated_by_raw_diff_not_scaled_diff",
+        "check": {"type": "symbolic_equivalence", "wrong_result_template": "a*c - d"},
+    },
+    "escalation_hint_id": None,
+}
+
+MONEY_IGNORES_DECIMAL_RULE = {
+    "id": "money_multiplication_ignores_decimal_part",
+    "topic": "money",
+    "description": "Multiplies only the whole-euro part of a decimal amount, drops the cents.",
+    "matching_rule": {
+        "operation": "money_decimal_multiplication",
+        "error_transform": "dropped_decimal_part",
+        "check": {"type": "symbolic_equivalence", "wrong_result_template": "a*floor(b)"},
+    },
+    "escalation_hint_id": None,
+}
+
+
+def test_matches_forgot_adjustment_against_a_real_seeded_problem():
+    # Problem id 12: "6 × 199", correct answer 1194
+    with patch(
+        "misconception_matching.get_client",
+        return_value=_mock_client_with_rules([FORGOT_ADJUSTMENT_RULE]),
+    ):
+        wrong = parse_math_latex("1200")
+        result = match_misconception("6 × 199", wrong)
+    assert result == "multiplication_near_round_forgot_adjustment"
+
+
+def test_matches_wrong_adjustment_amount_against_a_real_seeded_problem():
+    with patch(
+        "misconception_matching.get_client",
+        return_value=_mock_client_with_rules([WRONG_ADJUSTMENT_AMOUNT_RULE]),
+    ):
+        wrong = parse_math_latex("1199")
+        result = match_misconception("6 × 199", wrong)
+    assert result == "multiplication_near_round_wrong_adjustment_amount"
+
+
+def test_no_match_for_multiplication_near_round_when_answer_is_actually_correct():
+    with patch(
+        "misconception_matching.get_client",
+        return_value=_mock_client_with_rules([FORGOT_ADJUSTMENT_RULE, WRONG_ADJUSTMENT_AMOUNT_RULE]),
+    ):
+        correct = parse_math_latex("1194")
+        result = match_misconception("6 × 199", correct)
+    assert result is None
+
+
+def test_double_compensation_problem_correctly_excluded_not_matched():
+    """101 x 99: both factors are near-round - the extractor requires exactly
+    one, so this must not match, not pick a factor arbitrarily."""
+    with patch(
+        "misconception_matching.get_client",
+        return_value=_mock_client_with_rules([FORGOT_ADJUSTMENT_RULE]),
+    ):
+        wrong = parse_math_latex("9999")  # some wrong answer, doesn't matter which
+        result = match_misconception("101 × 99", wrong)
+    assert result is None
+
+
+def test_matches_money_ignores_decimal_against_a_real_seeded_problem():
+    # Problem id 33: "3 × €19.50", correct answer 58.50
+    with patch(
+        "misconception_matching.get_client",
+        return_value=_mock_client_with_rules([MONEY_IGNORES_DECIMAL_RULE]),
+    ):
+        wrong = parse_math_latex("57")
+        result = match_misconception("3 × €19.50", wrong)
+    assert result == "money_multiplication_ignores_decimal_part"
+
+
+def test_no_match_for_money_rule_when_answer_is_actually_correct():
+    with patch(
+        "misconception_matching.get_client",
+        return_value=_mock_client_with_rules([MONEY_IGNORES_DECIMAL_RULE]),
+    ):
+        correct = parse_math_latex("58.50")
+        result = match_misconception("3 × €19.50", correct)
     assert result is None
