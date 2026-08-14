@@ -14,15 +14,23 @@ in the already-simplified "7/12" answer. This module parses Problem.question_tex
 for that reason.
 
 Real, current limitation, not hidden: this only works when question_text is
-itself a parseable math expression (true for the proposal doc's fraction-addition
-/fraction-subtraction examples). Word problems and non-LaTeX text (like "6 x 199"
-with a plain multiplication sign, not \\times) fail to parse and this module
-correctly, safely returns None rather than guessing - see #55's curriculum
-coverage check (docs/architecture/slo_curriculum_coverage_groep78.md): none of
-the 47 problems seeded so far are fraction problems, and misconception_rules has
-0 rows until #9 seeds real content. This module is built and tested against the
-proposal doc's own worked examples, ready for when #9 exists, not proven against
-real production data yet.
+itself a parseable math expression. Word problems still fail to parse and this
+module correctly, safely returns None rather than guessing. Non-LaTeX notation
+like "x" for multiplication or a "$" currency sign is NOT handled (latex_parser
+only fixes "x"/"E" - the two symbols actually present in the 47 seeded problems,
+found and fixed alongside this ticket - not every possible non-LaTeX variant).
+
+Extractors below fall into two groups: `fraction_addition`/`fraction_subtraction`
+match the rule-format proposal doc's own worked examples but, per #55's curriculum
+coverage check (docs/architecture/slo_curriculum_coverage_groep78.md), zero of
+the 47 seeded problems are fraction problems - these two never match real content
+today. `multiplication_near_round`/`money_decimal_multiplication` target what's
+actually seeded (compensation-strategy multiplication, money multiplication) and
+back the bootstrap misconception_rules batch drafted for ticket #9 (see
+docs/architecture/misconception_rules_bootstrap_batch_1.md) - hand-authored from
+known common groep 7/8 mistakes rather than from real shadow-log data, since no
+real student usage exists yet (the live attempts/attempt_steps tables were
+confirmed to be test residue, not real student data, and were cleared).
 
 Deliberately does NOT wire into orchestration.py's pipeline - mapping a matched
 misconception_id to an actual hint is #33's job ("map misconception_id to an
@@ -69,9 +77,94 @@ def _extract_two_fraction_operands(expr):
     return None
 
 
+def _nearest_round_and_diff(n: int):
+    """For an integer n, find the nearest round number (a multiple of 10, 100,
+    1000, ...) it's close to, and how far off it is.
+
+    Returns (rounded, diff) where diff = rounded - n, or None if n isn't close
+    to any round number (e.g. single-digit numbers, or a number already exactly
+    round). "Close" here is calibrated against the real seeded factors (199,
+    98, 101, 403, ... down to diffs as small as 1 and as large as 3) rather
+    than a theoretical definition: within 5, or within 2% of n, whichever is
+    more lenient.
+    """
+    n = int(n)
+    if n == 0:
+        return None
+    best = None
+    digits = len(str(abs(n)))
+    for exponent in range(1, digits):
+        base = 10**exponent
+        rounded = round(n / base) * base
+        diff = rounded - n
+        if diff == 0:
+            continue
+        if best is None or abs(diff) < abs(best[1]):
+            best = (rounded, diff)
+    if best is None:
+        return None
+    rounded, diff = best
+    if abs(diff) <= 5 or abs(diff) <= 0.02 * abs(n):
+        return rounded, diff
+    return None
+
+
+def _extract_multiplication_near_round_operands(expr):
+    """From an unevaluated two-factor product (a x b), find the factor that's
+    near a round number and treat the other as the 'clean' multiplier.
+
+    Returns (a, b, c, d) = (clean factor, messy factor, nearest round number,
+    diff = rounded - messy), or None if the shape doesn't fit: not a two-factor
+    product of integers, neither factor is near-round, or - a real, explicit
+    gap, not silently mishandled - BOTH factors are near-round (a "double
+    compensation" problem like 101 x 99 or 99 x 1001; 2 of the 20 seeded
+    calculateInteger problems are shaped this way and are correctly excluded
+    here rather than picking one factor to round arbitrarily).
+    """
+    if not isinstance(expr, sympy.Mul) or len(expr.args) != 2:
+        return None
+    factors = [sympy.nsimplify(f) for f in expr.args]
+    if not all(f.is_Integer for f in factors):
+        return None
+
+    near_round = [(i, _nearest_round_and_diff(int(f))) for i, f in enumerate(factors)]
+    near_round = [(i, result) for i, result in near_round if result is not None]
+    if len(near_round) != 1:
+        return None
+
+    messy_index, (rounded, diff) = near_round[0]
+    clean_index = 1 - messy_index
+    a = int(factors[clean_index])
+    b = int(factors[messy_index])
+    return a, b, rounded, diff
+
+
+def _extract_integer_times_decimal_operands(expr):
+    """From an unevaluated two-factor product where one factor is a whole
+    number and the other has a fractional part (e.g. 3 x 19.50), return
+    (a, b, a, b) = (integer factor, decimal factor, ...) - the trailing pair
+    duplicates a/b since this shape only ever needs two named operands, but
+    match_misconception always unpacks a 4-tuple. Returns None if the shape
+    doesn't fit (not a two-factor product, or neither/both factors are
+    non-integer).
+    """
+    if not isinstance(expr, sympy.Mul) or len(expr.args) != 2:
+        return None
+    factors = [sympy.nsimplify(f, rational=True) for f in expr.args]
+    integer_factors = [f for f in factors if f.is_Integer]
+    decimal_factors = [f for f in factors if f.is_Rational and not f.is_Integer]
+    if len(integer_factors) != 1 or len(decimal_factors) != 1:
+        return None
+    a = integer_factors[0]
+    b = decimal_factors[0]
+    return a, b, a, b
+
+
 _OPERAND_EXTRACTORS = {
     "fraction_addition": _extract_two_fraction_operands,
     "fraction_subtraction": _extract_two_fraction_operands,
+    "multiplication_near_round": _extract_multiplication_near_round_operands,
+    "money_decimal_multiplication": _extract_integer_times_decimal_operands,
 }
 
 
