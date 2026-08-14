@@ -4,9 +4,10 @@ Mocked Supabase client, no real DB - covers: a real match against both worked
 examples from the rule-format proposal (fraction_addition, fraction_subtraction),
 an explicit no-match returning None (#31's own AC), question_text that isn't
 parseable math (word problems), no rules seeded at all, a rule whose operation
-isn't recognized, and the two bootstrap-batch rule types (multiplication_near_round,
-money_decimal_multiplication) matched against real seeded problems' actual
-question_text - including the double-compensation exclusion case.
+isn't recognized, and the bootstrap-batch rule types (multiplication_near_round,
+money_decimal_multiplication, multiplication_double_near_round) matched against
+real seeded problems' actual question_text - including batch 1's double-
+compensation exclusion case and batch 2's double-compensation match case.
 """
 from unittest.mock import MagicMock, patch
 
@@ -214,4 +215,182 @@ def test_no_match_for_money_rule_when_answer_is_actually_correct():
     ):
         correct = parse_math_latex("58.50")
         result = match_misconception("3 × €19.50", correct)
+    assert result is None
+
+
+# --- Bootstrap batch 2 (ticket #9): 4 more rules on the same 2 operations, plus
+# a new multiplication_double_near_round operation for the double-compensation case ---
+
+WRONG_COMPENSATION_DIRECTION_RULE = {
+    "id": "multiplication_near_round_wrong_compensation_direction",
+    "topic": "multiplication",
+    "description": "Scales the compensation correctly but adds it instead of subtracting it (or vice versa).",
+    "matching_rule": {
+        "operation": "multiplication_near_round",
+        "error_transform": "wrong_compensation_sign",
+        "check": {"type": "symbolic_equivalence", "wrong_result_template": "a*c + a*d"},
+    },
+    "escalation_hint_id": None,
+}
+
+DOUBLE_FORGOT_BOTH_RULE = {
+    "id": "multiplication_double_near_round_forgot_both_adjustments",
+    "topic": "multiplication",
+    "description": "Rounds both factors to round numbers and multiplies, forgetting both compensations.",
+    "matching_rule": {
+        "operation": "multiplication_double_near_round",
+        "error_transform": "forgot_both_compensation_adjustments",
+        "check": {"type": "symbolic_equivalence", "wrong_result_template": "a*c"},
+    },
+    "escalation_hint_id": None,
+}
+
+MONEY_MISPLACED_DECIMAL_RULE = {
+    "id": "money_multiplication_misplaced_decimal_point",
+    "topic": "money",
+    "description": "Multiplies as if the price were whole cents, but doesn't shift the decimal point back.",
+    "matching_rule": {
+        "operation": "money_decimal_multiplication",
+        "error_transform": "misplaced_decimal_point",
+        "check": {"type": "symbolic_equivalence", "wrong_result_template": "a*b*100"},
+    },
+    "escalation_hint_id": None,
+}
+
+MONEY_ROUNDS_PRICE_FIRST_RULE = {
+    "id": "money_multiplication_rounds_price_before_multiplying",
+    "topic": "money",
+    "description": "Rounds the price to the nearest euro first, then multiplies, instead of using the exact decimal value.",
+    "matching_rule": {
+        "operation": "money_decimal_multiplication",
+        "error_transform": "rounded_price_before_multiplying",
+        "check": {"type": "symbolic_equivalence", "wrong_result_template": "a*floor(b + 1/2)"},
+    },
+    "escalation_hint_id": None,
+}
+
+
+def test_matches_wrong_compensation_direction_against_a_real_seeded_problem():
+    # Problem id 12: "6 × 199", correct answer 1194
+    with patch(
+        "misconception_matching.get_client",
+        return_value=_mock_client_with_rules([WRONG_COMPENSATION_DIRECTION_RULE]),
+    ):
+        wrong = parse_math_latex("1206")
+        result = match_misconception("6 × 199", wrong)
+    assert result == "multiplication_near_round_wrong_compensation_direction"
+
+
+def test_no_match_for_wrong_compensation_direction_when_answer_is_actually_correct():
+    with patch(
+        "misconception_matching.get_client",
+        return_value=_mock_client_with_rules([WRONG_COMPENSATION_DIRECTION_RULE]),
+    ):
+        correct = parse_math_latex("1194")
+        result = match_misconception("6 × 199", correct)
+    assert result is None
+
+
+def test_matches_double_compensation_forgot_both_against_a_real_seeded_problem():
+    # Problem id 30: "101 × 99", correct answer 9999
+    with patch(
+        "misconception_matching.get_client",
+        return_value=_mock_client_with_rules([DOUBLE_FORGOT_BOTH_RULE]),
+    ):
+        wrong = parse_math_latex("10000")
+        result = match_misconception("101 × 99", wrong)
+    assert result == "multiplication_double_near_round_forgot_both_adjustments"
+
+
+def test_matches_double_compensation_forgot_both_against_the_other_seeded_problem():
+    # Problem id 31: "99 × 1001", correct answer 99099
+    with patch(
+        "misconception_matching.get_client",
+        return_value=_mock_client_with_rules([DOUBLE_FORGOT_BOTH_RULE]),
+    ):
+        wrong = parse_math_latex("100000")
+        result = match_misconception("99 × 1001", wrong)
+    assert result == "multiplication_double_near_round_forgot_both_adjustments"
+
+
+def test_no_match_for_double_compensation_rule_when_answer_is_actually_correct():
+    with patch(
+        "misconception_matching.get_client",
+        return_value=_mock_client_with_rules([DOUBLE_FORGOT_BOTH_RULE]),
+    ):
+        correct = parse_math_latex("9999")
+        result = match_misconception("101 × 99", correct)
+    assert result is None
+
+
+def test_single_near_round_rules_still_dont_fire_on_double_compensation_problems():
+    """Adding the new double-compensation operation must not change the
+    existing single-factor extractor's behavior on these 2 problems."""
+    with patch(
+        "misconception_matching.get_client",
+        return_value=_mock_client_with_rules([FORGOT_ADJUSTMENT_RULE, WRONG_ADJUSTMENT_AMOUNT_RULE]),
+    ):
+        wrong = parse_math_latex("10000")
+        result = match_misconception("101 × 99", wrong)
+    assert result is None
+
+
+def test_matches_money_misplaced_decimal_against_a_real_seeded_problem():
+    # Problem id 33: "3 × €19.50", correct answer 58.50
+    with patch(
+        "misconception_matching.get_client",
+        return_value=_mock_client_with_rules([MONEY_MISPLACED_DECIMAL_RULE]),
+    ):
+        wrong = parse_math_latex("5850")
+        result = match_misconception("3 × €19.50", wrong)
+    assert result == "money_multiplication_misplaced_decimal_point"
+
+
+def test_no_match_for_money_misplaced_decimal_when_answer_is_actually_correct():
+    with patch(
+        "misconception_matching.get_client",
+        return_value=_mock_client_with_rules([MONEY_MISPLACED_DECIMAL_RULE]),
+    ):
+        correct = parse_math_latex("58.50")
+        result = match_misconception("3 × €19.50", correct)
+    assert result is None
+
+
+def test_matches_money_rounds_price_first_against_a_real_seeded_problem():
+    # Problem id 33: "3 × €19.50", correct answer 58.50
+    with patch(
+        "misconception_matching.get_client",
+        return_value=_mock_client_with_rules([MONEY_ROUNDS_PRICE_FIRST_RULE]),
+    ):
+        wrong = parse_math_latex("60")
+        result = match_misconception("3 × €19.50", wrong)
+    assert result == "money_multiplication_rounds_price_before_multiplying"
+
+
+def test_no_match_for_money_rounds_price_first_when_answer_is_actually_correct():
+    with patch(
+        "misconception_matching.get_client",
+        return_value=_mock_client_with_rules([MONEY_ROUNDS_PRICE_FIRST_RULE]),
+    ):
+        correct = parse_math_latex("58.50")
+        result = match_misconception("3 × €19.50", correct)
+    assert result is None
+
+
+def test_word_problems_still_return_none_with_batch_2_rules_registered():
+    """Confirms the 2 seeded word problems (division-with-remainder,
+    price-per-kg) still correctly fall through to None - no extractor targets
+    them, by design (see module docstring)."""
+    with patch(
+        "misconception_matching.get_client",
+        return_value=_mock_client_with_rules(
+            [FORGOT_ADJUSTMENT_RULE, DOUBLE_FORGOT_BOTH_RULE, MONEY_MISPLACED_DECIMAL_RULE]
+        ),
+    ):
+        wrong = parse_math_latex("4")
+        result = match_misconception(
+            "Julia has a bag with 37 licorice candies. She shares the candies with 7 friends. "
+            "Julia and her 7 friends all get the same number of candies. How many candies are left over?",
+            wrong,
+        )
     assert result is None

@@ -24,13 +24,21 @@ Extractors below fall into two groups: `fraction_addition`/`fraction_subtraction
 match the rule-format proposal doc's own worked examples but, per #55's curriculum
 coverage check (docs/architecture/slo_curriculum_coverage_groep78.md), zero of
 the 47 seeded problems are fraction problems - these two never match real content
-today. `multiplication_near_round`/`money_decimal_multiplication` target what's
-actually seeded (compensation-strategy multiplication, money multiplication) and
-back the bootstrap misconception_rules batch drafted for ticket #9 (see
-docs/architecture/misconception_rules_bootstrap_batch_1.md) - hand-authored from
+today. `multiplication_near_round`/`money_decimal_multiplication`/
+`multiplication_double_near_round` target what's actually seeded (compensation-
+strategy multiplication, money multiplication) and back the bootstrap
+misconception_rules batches drafted for ticket #9 (see docs/architecture/
+misconception_rules_bootstrap_batch_1.md and _batch_2.md) - hand-authored from
 known common groep 7/8 mistakes rather than from real shadow-log data, since no
 real student usage exists yet (the live attempts/attempt_steps tables were
 confirmed to be test residue, not real student data, and were cleared).
+
+Still a real, current limitation, per batch 2's own investigation: the 2 seeded
+word problems (division-with-remainder, price-per-kg) have no extractor at all,
+by design - their operands aren't recoverable from question_text alone (the
+"how many people share" or "grams per kilogram" facts live in the sentence's
+meaning, not in the numbers), and neither a regex-per-sentence hack nor a schema
+change was judged worth it for 2 problems. Deferred, not silently dropped.
 
 Deliberately does NOT wire into orchestration.py's pipeline - mapping a matched
 misconception_id to an actual hint is #33's job ("map misconception_id to an
@@ -160,11 +168,43 @@ def _extract_integer_times_decimal_operands(expr):
     return a, b, a, b
 
 
+def _extract_double_compensation_operands(expr):
+    """From an unevaluated two-factor product where BOTH factors are near a
+    round number (e.g. 101 x 99, 99 x 1001 - the "double compensation" shape
+    _extract_multiplication_near_round_operands deliberately excludes), return
+    (r1, d1, r2, d2): each factor's nearest round number and diff (rounded -
+    messy), reusing _nearest_round_and_diff. Returns None if the shape doesn't
+    fit: not a two-factor integer product, or fewer than both factors are
+    near-round (the single-near-round case is handled by the other extractor).
+
+    Known, explicit limitation: sympy.Mul.args order isn't guaranteed to match
+    how the problem was written (unlike the Add-with-signs case in
+    _extract_two_fraction_operands, there's no sign here to disambiguate which
+    factor is "first") - so a rule about compensating only one specific side
+    can't be built on top of this without arbitrarily guessing which. Only the
+    symmetric "forgot both compensations" misconception is drafted against
+    this extractor's output for that reason.
+    """
+    if not isinstance(expr, sympy.Mul) or len(expr.args) != 2:
+        return None
+    factors = [sympy.nsimplify(f) for f in expr.args]
+    if not all(f.is_Integer for f in factors):
+        return None
+
+    near_round = [_nearest_round_and_diff(int(f)) for f in factors]
+    if any(result is None for result in near_round):
+        return None
+
+    (r1, d1), (r2, d2) = near_round
+    return r1, d1, r2, d2
+
+
 _OPERAND_EXTRACTORS = {
     "fraction_addition": _extract_two_fraction_operands,
     "fraction_subtraction": _extract_two_fraction_operands,
     "multiplication_near_round": _extract_multiplication_near_round_operands,
     "money_decimal_multiplication": _extract_integer_times_decimal_operands,
+    "multiplication_double_near_round": _extract_double_compensation_operands,
 }
 
 
