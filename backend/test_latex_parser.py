@@ -13,6 +13,9 @@ from latex_parser import LatexParseError, parse_math_latex
         (r"0.75", 0.75),
         (r"-\frac{3}{4}", -0.75),
         (r"3 - 5", -2.0),
+        ("6 × 199", 1194),
+        ("3 × €19.50", 58.5),
+        ("€9.50", 9.5),
     ],
 )
 def test_parses_expected_value(latex, expected):
