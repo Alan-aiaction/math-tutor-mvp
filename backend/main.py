@@ -157,6 +157,9 @@ class CheckStep(BaseModel):
 class CheckRequest(BaseModel):
     steps: list[CheckStep]
     correct_answer: str
+    # question_text (ticket #33): the problem's own text, needed for misconception
+    # matching - optional so pre-#33 callers (and existing tests) are unaffected.
+    question_text: str | None = None
 
 
 @app.post("/attempts/check", response_model=list[EvaluationResult])
@@ -169,7 +172,7 @@ def check_attempt(payload: CheckRequest):
         for s in payload.steps
     ]
     try:
-        return run_pipeline(steps, correct_answer=payload.correct_answer)
+        return run_pipeline(steps, correct_answer=payload.correct_answer, question_text=payload.question_text)
     except LatexParseError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     # PipelineError is deliberately not caught here - it signals a genuine unexpected bug
