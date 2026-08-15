@@ -228,15 +228,16 @@ const STAGES = [
             "cases (no rules seeded, unparseable question_text, unrecognized rule " +
             "operation) - all return None cleanly, none raise"],
         deps:"Depends on: #30" },
-      { id:"#9", owner:"all", title:"Seed first real misconception_rules batch", status:"In progress",
+      { id:"#9", owner:"all", title:"Seed first real misconception_rules batch", status:"Done",
         story:"As the team, we need real rule content to test the matching engine against, sourced from actual student mistakes, not guesswork.",
         ac:["At least 5-10 misconception rules seeded, each tied to a topic, in the Fig. " +
-            "1 JSON shape - PARTIAL: 7 rules DRAFTED across two batches (not yet seeded - " +
-            "see docs/architecture/misconception_rules_bootstrap_batch_1.md and _batch_2." +
-            "md), awaiting approval; within the 5-10 target now, but 2 seeded word " +
-            "problems (division-with-remainder, price-per-unit) still have no rule - " +
-            "their operands aren't recoverable from question_text alone, see batch_2's " +
-            "doc for the options considered and why that was deferred rather than forced",
+            "1 JSON shape - DONE: 7 rules SEEDED across two batches, approved 2026-08-15 " +
+            "(see docs/architecture/misconception_rules_bootstrap_batch_1.md and _batch_2." +
+            "md) - within the 5-10 target. Real, known gap not covered by any batch: 2 " +
+            "seeded word problems (division-with-remainder, price-per-unit) still have no " +
+            "rule - their operands aren't recoverable from question_text alone, see " +
+            "batch_2's doc for the options considered and why that was deferred rather " +
+            "than forced",
             "Sourced from #68's shadow-log review + #69's drafting tool, not authored " +
             "blind - DEVIATION, documented not hidden: attempts/attempt_steps were " +
             "confirmed to be test data (Alan/Jeff, not real students) and cleared 2026-" +
