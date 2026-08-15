@@ -318,12 +318,14 @@ const STAGES = [
               "cleanup. Full backend suite 128 passed. Also found and cleaned up 2 leftover " +
               "test rows from #68's own earlier integration test runs that hadn't been " +
               "cleaned up." },
-      { id:"#70", owner:"all", title:"Author hint-variant pool per misconception", status:"Not started",
+      { id:"#70", owner:"all", title:"Author hint-variant pool per misconception", status:"In progress",
         story:"As a student, I want the hint I see to feel specific and varied, not the exact same sentence every time the same mistake happens.",
-        ac:["For each seeded misconception, an LLM drafts several hint-text variants offline, using #67's abstraction",
-            "Every variant requires human approval before it's usable at runtime",
-            "At least 2-3 approved variants per misconception before #33 can select from them"],
-        deps:"Depends on: #67, #9 · Feeds: #33" },
+        ac:["For each seeded misconception, an LLM drafts several hint-text variants offline, using #67's abstraction - DEVIATION, documented not hidden: LLM_API_KEY isn't configured " +
+            "(no LLM_* vars in backend/.env despite .env.example documenting them) and this repo has never made a real LLM call - project lead chose to have these hand-authored " +
+            "directly instead rather than block the chain, see docs/architecture/hint_variants_bootstrap_batch_1.md",
+            "Every variant requires human approval before it's usable at runtime - PARTIAL: 14 variants DRAFTED (7 misconceptions x 2), not yet seeded, awaiting approval",
+            "At least 2-3 approved variants per misconception before #33 can select from them - 2 drafted per misconception, meets the low end of the target"],
+        deps:"Depends on: #67, #9 (both done) · Feeds: #33" },
       { id:"#61", owner:"all", title:"Expand misconception rule library from real usage data", status:"Blocked",
         story:"As the team, we'll grow the rule library on an ongoing basis once real student data exists to learn from - not a one-time task.",
         ac:["Ongoing: new rules added via #68/#69's tooling as shadow-log patterns emerge",
