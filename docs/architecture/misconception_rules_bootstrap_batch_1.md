@@ -39,80 +39,19 @@ match anything at all, not scope creep bundled in for convenience.
 
 ## The rules
 
-### 1. `multiplication_near_round_forgot_adjustment`
+*(JSON is compact/single-line so it fits a table cell — see the "more readable" note in
+[batch 2's doc](misconception_rules_bootstrap_batch_2.md) if this format doesn't read well
+in practice; happy to switch to a block-per-rule layout.)*
 
-**Misconception:** when using the compensation strategy for multiplication near a round
-number (e.g. `6 × 199` as `6 × 200 − 6`), rounds and multiplies correctly but forgets to
-subtract (or add) the compensation term back — treats the rounded multiplication as the
-final answer.
+| Name | Misconception | Example | JSON |
+|---|---|---|---|
+| `multiplication_near_round_forgot_adjustment` | Uses the compensation strategy for multiplication near a round number (e.g. `6 × 199` as `6 × 200 − 6`), rounds and multiplies correctly, but forgets to subtract (or add) the compensation term back — treats the rounded multiplication as the final answer. | `6 × 199` (correct: 1194) → student answers **1200** (just `6 × 200`). | `{"id": "multiplication_near_round_forgot_adjustment", "topic": "multiplication", "description": "Rounds the messy factor to a round number and multiplies, but forgets to compensate back for the rounding.", "matching_rule": {"operation": "multiplication_near_round", "error_transform": "forgot_compensation_adjustment", "check": {"type": "symbolic_equivalence", "wrong_result_template": "a*c"}}}` |
+| `multiplication_near_round_wrong_adjustment_amount` | Remembers to compensate, but subtracts (or adds) only the raw rounding difference, not that difference scaled by the other factor — e.g. for `6 × 199`, rounds to `6 × 200`, correctly notices 199 is 1 less than 200, but subtracts 1 instead of `6 × 1`. | `6 × 199` (correct: 1194) → student answers **1199** (`6×200 − 1`, should be `6×200 − 6×1`). | `{"id": "multiplication_near_round_wrong_adjustment_amount", "topic": "multiplication", "description": "Compensates by the raw rounding difference instead of that difference multiplied by the other factor.", "matching_rule": {"operation": "multiplication_near_round", "error_transform": "compensated_by_raw_diff_not_scaled_diff", "check": {"type": "symbolic_equivalence", "wrong_result_template": "a*c - d"}}}` |
+| `money_multiplication_ignores_decimal_part` | When multiplying a whole number by a euro amount, multiplies only the whole-euro part and drops the cents entirely, rather than multiplying the full decimal value. | `3 × €19.50` (correct: 58.50) → student answers **57** (`3 × 19`, ignoring `.50`). | `{"id": "money_multiplication_ignores_decimal_part", "topic": "money", "description": "Multiplies only the whole-euro part of a decimal amount, drops the cents.", "matching_rule": {"operation": "money_decimal_multiplication", "error_transform": "dropped_decimal_part", "check": {"type": "symbolic_equivalence", "wrong_result_template": "a*floor(b)"}}}` |
 
-**Example:** `6 × 199` (correct: 1194) → student answers **1200** (just `6 × 200`).
-
-```json
-{
-  "id": "multiplication_near_round_forgot_adjustment",
-  "topic": "multiplication",
-  "description": "Rounds the messy factor to a round number and multiplies, but forgets to compensate back for the rounding.",
-  "matching_rule": {
-    "operation": "multiplication_near_round",
-    "error_transform": "forgot_compensation_adjustment",
-    "check": {
-      "type": "symbolic_equivalence",
-      "wrong_result_template": "a*c"
-    }
-  }
-}
-```
-
-### 2. `multiplication_near_round_wrong_adjustment_amount`
-
-**Misconception:** remembers to compensate, but subtracts (or adds) only the raw rounding
-difference, not that difference scaled by the other factor — e.g. for `6 × 199`, rounds to
-`6 × 200`, correctly notices 199 is 1 less than 200, but subtracts 1 instead of `6 × 1`.
-
-**Example:** `6 × 199` (correct: 1194) → student answers **1199** (`6×200 − 1`, should be
-`6×200 − 6×1`).
-
-```json
-{
-  "id": "multiplication_near_round_wrong_adjustment_amount",
-  "topic": "multiplication",
-  "description": "Compensates by the raw rounding difference instead of that difference multiplied by the other factor.",
-  "matching_rule": {
-    "operation": "multiplication_near_round",
-    "error_transform": "compensated_by_raw_diff_not_scaled_diff",
-    "check": {
-      "type": "symbolic_equivalence",
-      "wrong_result_template": "a*c - d"
-    }
-  }
-}
-```
-
-### 3. `money_multiplication_ignores_decimal_part`
-
-**Misconception:** when multiplying a whole number by a euro amount, multiplies only the
-whole-euro part and drops the cents entirely, rather than multiplying the full decimal
-value.
-
-**Example:** `3 × €19.50` (correct: 58.50) → student answers **57** (`3 × 19`, ignoring
-`.50`).
-
-```json
-{
-  "id": "money_multiplication_ignores_decimal_part",
-  "topic": "money",
-  "description": "Multiplies only the whole-euro part of a decimal amount, drops the cents.",
-  "matching_rule": {
-    "operation": "money_decimal_multiplication",
-    "error_transform": "dropped_decimal_part",
-    "check": {
-      "type": "symbolic_equivalence",
-      "wrong_result_template": "a*floor(b)"
-    }
-  }
-}
-```
+See [batch 2](misconception_rules_bootstrap_batch_2.md) for 4 more rules on these same two
+operations, plus a new operation covering the "double compensation" problems this batch
+excludes (below).
 
 ## What these rules can and can't match
 
@@ -123,8 +62,9 @@ Verified against the real seeded problems (unit + integration tests in
   `403`-style factors, etc. — 18 of the 20 seeded `calculateInteger` problems.
 - **Explicitly do not match** the 2 "double compensation" problems (`101 × 99`, `99 × 1001`)
   where *both* factors are near a round number — the extractor requires exactly one messy
-  factor, by design, rather than guessing which one to round. Noted as a real, known gap,
-  not silently mishandled.
+  factor, by design, rather than guessing which one to round. Noted as a real, known gap
+  here, not silently mishandled — [batch 2](misconception_rules_bootstrap_batch_2.md) adds
+  a rule that covers this case.
 - Match correctly against integer-times-decimal money problems like `3 × €19.50` — the 25
   seeded `calculateMoney` problems.
 - Still correctly return no match on the 2 word-problem-style seeded problems (division
@@ -133,9 +73,12 @@ Verified against the real seeded problems (unit + integration tests in
 
 ## More rules can follow
 
-This is a first batch, not a claim of complete coverage. Additional common-mistake rules
-(e.g. for the division-with-remainder or price-per-unit problem shapes) can be added in a
-later batch the same way, once these are reviewed.
+This is a first batch, not a claim of complete coverage — see
+[batch 2](misconception_rules_bootstrap_batch_2.md), which adds 4 more rules on these same
+two operations plus the double-compensation case. The 2 word-problem-style seeded problems
+(division-with-remainder, price-per-unit) are still not covered by any batch so far — batch
+2's doc explains why (their operands aren't recoverable from `question_text` alone) and lays
+out the options for eventually closing that gap.
 
 ## Next step
 
