@@ -377,13 +377,35 @@ const STAGES = [
             "backend/test_hint_escalation.py"],
         deps:"Depends on: #33 (done) · Blocks: #72's trigger point · STACKED PR: branched " +
               "off #33's branch - must merge after #70 and #33" },
-      { id:"#72", owner:"all", title:"Live LLM hint-phrasing service (level-2 escalation only)", status:"Not started",
+      { id:"#72", owner:"all", title:"Live LLM hint-phrasing service (level-2 escalation only)", status:"Done",
         story:"As a student still stuck after the first hint, I want a genuinely tailored follow-up nudge, not the same static sentence.",
-        ac:["Only invoked via #71's escalation trigger - never on a first wrong answer",
-            "Uses #67's provider abstraction",
-            "Output passes validation guardrails before reaching the student: length cap, no answer leakage, Dutch, age-appropriate - falls back to a static hint if validation fails",
-            "Validation logic unit tested with mocked LLM responses covering both accept and reject cases"],
-        deps:"Depends on: #67, #71, #73 (review checklist informs validation rules)" },
+        ac:["Only invoked via #71's escalation trigger - never on a first wrong answer - " +
+            "DONE, orchestration.py only calls generate_escalated_hint() when hint_level " +
+            "== 2 (should_escalate() returned true) and question_text is available",
+            "Uses #67's provider abstraction - DONE, backend/hint_escalation_llm.py's " +
+            "generate_escalated_hint() calls llm.generate_text(), never a vendor SDK " +
+            "directly",
+            "Output passes validation guardrails before reaching the student: length cap, " +
+            "no answer leakage, Dutch, age-appropriate - falls back to a static hint if " +
+            "validation fails - DONE, backend/hint_validation.py's is_valid_hint() " +
+            "implements #73's checklist's own automatable-check table directly (length " +
+            "cap, correct_answer-substring check, Dutch heuristic word-presence check, " +
+            "banned flat-negative-opener heuristic for tone). Mathematical correctness is " +
+            "honestly NOT checked (the checklist doc itself says this isn't automatable) " +
+            "- falls back to the generic hint (#34) on ANY failure: validation rejection, " +
+            "missing LLM_API_KEY, network error, timeout - safe to ship even though no " +
+            "real LLM_API_KEY exists yet (see #70's card)",
+            "Validation logic unit tested with mocked LLM responses covering both accept " +
+            "and reject cases - DONE, backend/test_hint_validation.py (pure, no mocking - " +
+            "it's pure logic) + backend/test_hint_escalation_llm.py (mocked llm." +
+            "generate_text(), covers accept, LLMError/missing-config, answer-leak " +
+            "rejection, non-Dutch rejection, empty-output rejection, no-misconception " +
+            "case)"],
+        deps:"Depends on: #67 (done), #71 (done), #73 (done) · STACKED PR: branched off " +
+              "#71's branch - must merge last, after #70, #33, and #71 · Real live " +
+              "behavior still unverified - LLM_API_KEY isn't configured, so this has " +
+              "never actually called a real LLM; it fails safe (generic hint) until one " +
+              "exists" },
       { id:"#62", owner:"all", title:"Iterate hint wording based on observed confusion", status:"Blocked",
         story:"As the team, we'll refine hint wording (both #70's pool and #72's live prompts) once we've seen where real students get confused.",
         ac:["Ongoing: hint pool and live-phrasing prompts revised based on real pilot observation"],
