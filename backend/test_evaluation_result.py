@@ -39,3 +39,19 @@ def test_misconception_id_is_dropped_when_step_is_correct():
         is_valid=True, is_correct=True, hint_text="x", misconception_id="some_rule_id"
     )
     assert result.misconception_id is None
+
+
+def test_hint_level_defaults_to_none_when_not_given():
+    result = build_evaluation_result(is_valid=True, is_correct=False, hint_text="x")
+    assert result.hint_level is None
+
+
+def test_hint_level_is_carried_through_when_incorrect():
+    result = build_evaluation_result(is_valid=True, is_correct=False, hint_text="x", hint_level=2)
+    assert result.hint_level == 2
+
+
+def test_hint_level_is_dropped_when_step_is_correct():
+    """Mirrors hint_text/misconception_id's own None-when-correct behavior."""
+    result = build_evaluation_result(is_valid=True, is_correct=True, hint_text="x", hint_level=2)
+    assert result.hint_level is None

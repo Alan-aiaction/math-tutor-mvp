@@ -140,6 +140,42 @@ def test_garbled_step_never_attempts_misconception_matching():
     assert results[0].misconception_id is None
 
 
+# --- Escalation trigger (ticket #71) ---
+
+
+def test_first_wrong_try_gets_hint_level_1():
+    steps = [make_step(1, "5/7")]
+    results = run_pipeline(steps, correct_answer="7/12", previous_wrong_counts=[0])
+    assert results[0].hint_level == 1
+
+
+def test_second_wrong_try_at_same_step_escalates_to_hint_level_2():
+    steps = [make_step(1, "5/7")]
+    results = run_pipeline(steps, correct_answer="7/12", previous_wrong_counts=[1])
+    assert results[0].hint_level == 2
+
+
+def test_no_previous_wrong_counts_given_defaults_to_level_1():
+    """Pre-#71 callers (or any caller omitting previous_wrong_counts) get exactly
+    the old behavior - never escalated."""
+    steps = [make_step(1, "5/7")]
+    results = run_pipeline(steps, correct_answer="7/12")
+    assert results[0].hint_level == 1
+
+
+def test_correct_step_has_no_hint_level():
+    steps = [make_step(1, "7/12")]
+    results = run_pipeline(steps, correct_answer="7/12", previous_wrong_counts=[3])
+    assert results[0].hint_level is None
+
+
+def test_hint_level_tracked_independently_per_step():
+    steps = [make_step(1, "5/7"), make_step(2, "5/7")]
+    results = run_pipeline(steps, correct_answer="7/12", previous_wrong_counts=[0, 2])
+    assert results[0].hint_level == 1
+    assert results[1].hint_level == 2
+
+
 def test_logs_a_duration_for_each_pipeline_stage(caplog):
     steps = [make_step(1, "7/12")]
     with caplog.at_level("INFO", logger="orchestration"):

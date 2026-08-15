@@ -355,13 +355,28 @@ const STAGES = [
             "tested, just has nothing to select from yet"],
         deps:"Depends on: #9 (done), #31 (done), #70 (drafted, not yet approved/seeded) · " +
               "STACKED PR: branched off #70's branch, not master - must merge after #70" },
-      { id:"#71", owner:"all", title:"Implement hint escalation (Hint.level 1 to 2)", status:"Not started",
+      { id:"#71", owner:"all", title:"Implement hint escalation (Hint.level 1 to 2)", status:"Done",
         story:"As a student who's still stuck after the first hint, I want a more specific nudge on my second wrong try at the same step, not the identical hint again.",
-        ac:["Detects when the same step is answered wrong 2+ times in the same attempt",
-            "Triggers the level-2 path (#72) instead of repeating the level-1 hint",
-            "Populates and returns Hint.level correctly (1 vs 2)",
-            "Unit tested - the detection/trigger logic, no mocking, since it's pure logic over attempt state"],
-        deps:"Depends on: #33 · Blocks: #72's trigger point" },
+        ac:["Detects when the same step is answered wrong 2+ times in the same attempt - " +
+            "DONE, but via a real architectural decision worth noting: /attempts/check was " +
+            "fully stateless (no retry concept at all) and attempt_steps has no step-index " +
+            "column to correlate historical DB rows by, so retry count is tracked " +
+            "client-side (frontend/app/page.js's wrongTryCounts, parallel to steps, sent " +
+            "as previous_wrong_count per step) rather than inferred from persisted " +
+            "attempts - see decision-log.md for the full options table",
+            "Triggers the level-2 path (#72) instead of repeating the level-1 hint - DONE " +
+            "the trigger itself (hint_level set to 2). INTERIM: the level-2 hint's actual " +
+            "TEXT still comes from #33's pool selection until #72's PR (next in this " +
+            "stack) replaces it with real live-generated content - only hint_level " +
+            "correctly differs for now, documented in orchestration.py",
+            "Populates and returns Hint.level correctly (1 vs 2) - DONE, models.py's " +
+            "EvaluationResult gains hint_level (nullable, additive - flagged since " +
+            "models.py is the agreed-contract file)",
+            "Unit tested - the detection/trigger logic, no mocking, since it's pure logic " +
+            "over attempt state - DONE, backend/hint_escalation.py's should_escalate(), " +
+            "backend/test_hint_escalation.py"],
+        deps:"Depends on: #33 (done) · Blocks: #72's trigger point · STACKED PR: branched " +
+              "off #33's branch - must merge after #70 and #33" },
       { id:"#72", owner:"all", title:"Live LLM hint-phrasing service (level-2 escalation only)", status:"Not started",
         story:"As a student still stuck after the first hint, I want a genuinely tailored follow-up nudge, not the same static sentence.",
         ac:["Only invoked via #71's escalation trigger - never on a first wrong answer",
