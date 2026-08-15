@@ -1,10 +1,10 @@
 # Misconception rules — bootstrap batch 2 (ticket #9)
 
-## Status: DRAFTED, NOT SEEDED
+## Status: SEEDED (approved 2026-08-15)
 
-Nothing in this document has been inserted into the live `misconception_rules` table —
-same review-artifact status as [batch 1](misconception_rules_bootstrap_batch_1.md). Seeding
-requires an explicit, separate approval on this specific content.
+Approved by the project lead ("consider it is approved for now") and inserted into the
+live `misconception_rules` table on 2026-08-15, together with
+[batch 1](misconception_rules_bootstrap_batch_1.md)'s 3 rules — 7 rows total.
 
 ## Why a batch 2
 
@@ -86,7 +86,7 @@ can spuriously fire against a correct answer):
 - The 2 word-problem-style seeded problems still correctly return no match — see the
   decision table above.
 
-## Next step
+## Seeded
 
-Awaiting explicit approval on this content (same as batch 1) before anything is inserted
-into `misconception_rules`.
+Inserted directly into `misconception_rules` alongside batch 1's 3 rules — same row shape,
+`escalation_hint_id` left `null`.

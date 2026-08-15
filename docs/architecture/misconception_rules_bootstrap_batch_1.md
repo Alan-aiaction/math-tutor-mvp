@@ -1,13 +1,11 @@
 # Misconception rules — bootstrap batch 1 (ticket #9)
 
-## Status: DRAFTED, NOT SEEDED
+## Status: SEEDED (approved 2026-08-15)
 
-Nothing in this document has been inserted into the live `misconception_rules` table.
-This is a review artifact — the same "draft" state `draft_rule_from_note()` (ticket #69)
-produces, just authored by hand instead of from a shadow-log note. Seeding requires an
-explicit, separate approval on this specific content, matching this project's standing
-principle that nothing an LLM (or, here, an AI assistant) drafts reaches
-`misconception_rules` without a human sign-off.
+Approved by the project lead ("consider it is approved for now") and inserted into the
+live `misconception_rules` table on 2026-08-15, together with
+[batch 2](misconception_rules_bootstrap_batch_2.md)'s 4 rules — 7 rows total. This document
+now reflects what's live, not a pending draft.
 
 ## Why a bootstrap batch, not the usual shadow-log path
 
@@ -80,8 +78,10 @@ two operations plus the double-compensation case. The 2 word-problem-style seede
 2's doc explains why (their operands aren't recoverable from `question_text` alone) and lays
 out the options for eventually closing that gap.
 
-## Next step
+## Seeded
 
-Awaiting explicit approval on this content before anything is inserted into
-`misconception_rules`. Once approved, seeding is a direct insert (same shape
-`approve_and_seed_rule()` already uses) — no new code needed for that step.
+Inserted directly into `misconception_rules` (same row shape `approve_and_seed_rule()`
+uses: `id, topic, description, matching_rule`, `escalation_hint_id` left `null`) — no new
+code needed for that step. #33 ("map misconception_id to an approved hint") and the rest of
+the #9 → #70 → #33 → #71 → #72 chain can now build against real rows instead of an empty
+table.
