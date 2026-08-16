@@ -18,10 +18,24 @@ Follow these rules for every change, without needing to be asked each time.
   trap.** If PR B is based on PR A's branch, merging B into A's branch *after* A has already
   been merged into `main` does **not** bring B's changes into `main` — they land on a branch
   that's now disconnected from `main`'s history, even though GitHub shows B as "Merged."
-  Always retarget a stacked PR's base to `main` once the PR(s) underneath it have merged,
-  *before* merging it — don't merge it into its original (now-merged) base branch. After any
-  stacked-PR chain merges, diff the final branch against `main` to confirm the code actually
-  landed, not just that GitHub says "Merged."
+  A stacked PR's base must be retargeted to `main` once the PR(s) underneath it have
+  merged, *before* it gets merged itself — don't merge it into its original (now-merged)
+  base branch.
+  - **This is Claude's responsibility to do proactively, not a note left for the human to
+    act on.** The moment a stacked PR's base merges, retarget every PR still stacked on it
+    immediately (`gh pr edit <PR> --base main`, or the next branch up if more than one
+    layer remains) — don't just mention it in the PR description and wait. Got this wrong
+    once: a 4-PR stack (tickets #33/#71/#72's chain) got the retarget instruction written
+    into every PR description, but the human merged all four in the correct bottom-up
+    order via GitHub's UI without anyone actually flipping each base first — 3 of the 4
+    PRs merged into their already-merged original bases instead of `main`, and GitHub
+    showed all of them "Merged" while ~3 tickets' worth of code was silently absent from
+    `main`. Documenting the step in prose wasn't enough; only actually doing it prevents
+    this.
+  - After any stacked-PR chain merges (whether Claude retargeted proactively or the human
+    merged solo), diff the final branch against `main` to confirm the code actually landed,
+    not just that GitHub says "Merged" — a safety net, not a substitute for the retarget
+    step above.
 - **Return to a clean state after a PR is opened (or its work is otherwise done) —
   don't just stay on that branch.** Check out `main` and pull latest before starting the
   next unrelated task. Otherwise unrelated work quietly piles up on a branch that's already
