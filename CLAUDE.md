@@ -180,6 +180,21 @@ convention and file format) — two new files can never collide.
   written and everything else built around its absence, with the gap only flagged in the
   PR description at the end. Alan had to ask directly why I hadn't just asked him to fix it.
 
+## Product design references
+
+For complicated product/UX design questions — especially anything touching GDPR/AVG or
+other child-data compliance, account/login structure, or how a family (parent + child)
+interacts with the app — check how established Dutch EdTech products for this exact
+audience (Dutch primary school, groep 7-8 and nearby ages) have already solved it, rather
+than designing from scratch. Reference, in this order: **Squla**, **Junior Einstein**, and
+**Wijzer over de Basisschool**. These are real, market-tested products for the same age
+range and Dutch regulatory context this project targets — a design that already works for
+them is a stronger starting point than an invented-from-first-principles one, though still
+worth adapting, not copying blindly. Established this convention 2026-08-16 after using
+Junior Einstein's actual account structure (parent account owns the subscription; parent
+creates a separate lightweight username+password per child underneath it) to resolve the
+3rd MVP authentication design.
+
 ## Test Pyramid
 
 Applies as new code is written, not as a one-time backfill effort — see
