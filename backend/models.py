@@ -27,9 +27,17 @@ class Step(BaseModel):
 class Attempt(BaseModel):
     id: int
     problem_id: int
-    student_id: str  # the access code from task #50
+    child_id: int  # 3rd MVP: replaces the old free-text student_id access code (#50) -
+    # a real FK to a parent-owned child account, see children.py
     steps: list[Step]
     status: str  # e.g. "in_progress", "completed" - fixed value list still open
+
+
+class Child(BaseModel):
+    id: int
+    parent_id: str  # a Supabase Auth user id (uuid) - the owning parent
+    nickname: str
+    created_at: str  # never includes password_hash - that never leaves children.py
 
 
 class EvaluationResult(BaseModel):

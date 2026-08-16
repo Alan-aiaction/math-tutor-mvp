@@ -3,11 +3,15 @@
 import { useEffect, useState } from "react";
 import StepList from "./components/StepList";
 import ProblemDisplay from "./components/ProblemDisplay";
-import StudentCode from "./components/StudentCode";
+import ParentAuth from "./components/ParentAuth";
+import ChildPicker from "./components/ChildPicker";
+import ActiveChildHeader from "./components/ActiveChildHeader";
 import ScratchPad from "./components/ScratchPad";
 import { apiFetch } from "./lib/apiFetch";
+import { supabase } from "./lib/supabaseClient";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
+const ACTIVE_CHILD_STORAGE_KEY = "mathTutorActiveChild";
 
 const INITIAL_STEPS = [{ status: "unanswered", recognizedLatex: "" }];
 
@@ -22,7 +26,41 @@ export default function Home() {
   const [problem, setProblem] = useState(null);
   const [loadingProblem, setLoadingProblem] = useState(true);
   const [problemError, setProblemError] = useState(null);
-  const [studentCode, setStudentCode] = useState("");
+
+  // 3rd MVP: parent session (Supabase Auth) + active child (localStorage - "session
+  // persistence: keep last status", same pattern the old StudentCode component used).
+  const [session, setSession] = useState(undefined); // undefined = still checking
+  const [activeChild, setActiveChild] = useState(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      if (!newSession) {
+        setActiveChild(null);
+        window.localStorage.removeItem(ACTIVE_CHILD_STORAGE_KEY);
+      }
+    });
+    const stored = window.localStorage.getItem(ACTIVE_CHILD_STORAGE_KEY);
+    if (stored) {
+      try {
+        setActiveChild(JSON.parse(stored));
+      } catch {
+        window.localStorage.removeItem(ACTIVE_CHILD_STORAGE_KEY);
+      }
+    }
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  const selectChild = (child) => {
+    setActiveChild(child);
+    window.localStorage.setItem(ACTIVE_CHILD_STORAGE_KEY, JSON.stringify(child));
+  };
+
+  const switchChild = () => {
+    setActiveChild(null);
+    window.localStorage.removeItem(ACTIVE_CHILD_STORAGE_KEY);
+  };
 
   const fetchRandomProblem = () => apiFetch(`${BACKEND_URL}/problems/random`);
 
@@ -75,14 +113,19 @@ export default function Home() {
     setResults(null);
   };
 
+  const authHeaders = () => ({
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${session.access_token}`,
+  });
+
   const persistAttempt = async (checkResults) => {
     try {
       await apiFetch(`${BACKEND_URL}/attempts`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(),
         body: JSON.stringify({
           problem_id: problem.id,
-          student_id: studentCode,
+          child_id: activeChild.id,
           status: "completed",
           steps: steps.map((s, i) => ({
             recognized_latex: s.recognizedLatex,
@@ -102,7 +145,7 @@ export default function Home() {
     try {
       const data = await apiFetch(`${BACKEND_URL}/attempts/check`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(),
         body: JSON.stringify({
           steps: steps.map((s) => ({ recognized_latex: s.recognizedLatex })),
           correct_answer: problem.correct_answer,
@@ -124,6 +167,40 @@ export default function Home() {
 
   const allStepsCorrect = results && results.length > 0 && results.every((r) => r.valid);
 
+  if (session === undefined) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center gap-8 p-16 text-center font-sans">
+        <p className="text-sm text-gray-500">Loading…</p>
+      </main>
+    );
+  }
+
+  if (!session) {
+    return (
+      <main className="flex min-h-screen flex-col items-center gap-8 p-16 text-center font-sans">
+        <div>
+          <h1 className="text-3xl font-semibold">Math Tutor MVP</h1>
+        </div>
+        <ParentAuth onAuthenticated={setSession} />
+      </main>
+    );
+  }
+
+  if (!activeChild) {
+    return (
+      <main className="flex min-h-screen flex-col items-center gap-8 p-16 text-center font-sans">
+        <div>
+          <h1 className="text-3xl font-semibold">Math Tutor MVP</h1>
+        </div>
+        <ChildPicker
+          accessToken={session.access_token}
+          onChildSelected={selectChild}
+          onSignOut={() => setSession(null)}
+        />
+      </main>
+    );
+  }
+
   return (
     <main className="flex min-h-screen flex-col items-center gap-8 p-16 text-center font-sans">
       <ScratchPad side="left" key={`scratch-left-${problem?.id}`} />
@@ -133,7 +210,7 @@ export default function Home() {
         <p className="text-gray-600">Placeholder deployment — real UI coming in Phase 9.</p>
       </div>
 
-      <StudentCode onChange={setStudentCode} />
+      <ActiveChildHeader nickname={activeChild.nickname} onSwitchChild={switchChild} />
 
       <div className="flex w-full max-w-md flex-col gap-3">
         <h2 className="text-left text-sm font-medium uppercase tracking-wide text-gray-500">
