@@ -1,8 +1,16 @@
-"""Orchestration pipeline (task #36).
+"""Orchestration pipeline (task #36, extended by #33).
 
-Wires the evaluator chain (#25-28) and #34's fallback hint into one callable
-pipeline. Starts from already-recognized, already-confirmed Step.recognized_latex
-- recognition (#19) is a separate, already-live step, not re-invoked here.
+Wires the evaluator chain (#25-28), #30's misconception matching + #33's hint
+selection, and #34's fallback hint into one callable pipeline. Starts from
+already-recognized, already-confirmed Step.recognized_latex - recognition (#19)
+is a separate, already-live step, not re-invoked here.
+
+question_text (the problem's own text, e.g. "6 x 199" - not correct_answer, see
+misconception_matching.py's own docstring for why) is optional: callers that
+don't have it (or existing tests that predate #33) get the pre-#33 behavior -
+always the generic hint, misconception_id always None. Only when it's given, and
+a step both parses and is wrong, does match_misconception() run at all - an
+already-invalid/garbled step never had a parsed expr to match against.
 
 Does not call transition_validity.is_legal_transition() (#27): EvaluationResult
 has nowhere to put that signal (see #28's own flagged gap), and calling it would
@@ -18,8 +26,9 @@ from contextlib import contextmanager
 from correctness_check import is_correct
 from evaluation_result import build_evaluation_result
 from expression_validity import is_valid_expression
-from generic_hint import get_generic_hint
+from hint_selection import select_hint
 from latex_parser import LatexParseError, parse_math_latex
+from misconception_matching import match_misconception
 from models import EvaluationResult, Step
 
 logger = logging.getLogger(__name__)
@@ -42,7 +51,9 @@ def _timed_stage(stage_name: str):
     logger.info("Stage '%s' took %.2fms", stage_name, duration_ms)
 
 
-def run_pipeline(steps: list[Step], correct_answer: str) -> list[EvaluationResult]:
+def run_pipeline(
+    steps: list[Step], correct_answer: str, question_text: str | None = None
+) -> list[EvaluationResult]:
     """Evaluate each step against correct_answer, returning one EvaluationResult
     per step, matching the already-built frontend's per-step ✓/⚠ display."""
     pipeline_start = time.perf_counter()
@@ -67,14 +78,21 @@ def run_pipeline(steps: list[Step], correct_answer: str) -> list[EvaluationResul
                 with _timed_stage(f"correctness (step {i})"):
                     correct = is_correct(expr, correct_answer)
 
+            misconception_id = None
             if correct:
                 hint = None
             else:
+                if question_text is not None and expr is not None:
+                    with _timed_stage(f"match_misconception (step {i})"):
+                        misconception_id = match_misconception(question_text, expr)
                 with _timed_stage(f"hint (step {i})"):
-                    hint = get_generic_hint()
+                    # select_hint(None) already falls back to the generic hint, so this
+                    # covers both "no question_text given" and "no misconception matched"
+                    # with the one call.
+                    hint = select_hint(misconception_id)
 
             with _timed_stage(f"build_result (step {i})"):
-                result = build_evaluation_result(is_valid, correct, hint)
+                result = build_evaluation_result(is_valid, correct, hint, misconception_id)
             results.append(result)
         except LatexParseError:
             raise

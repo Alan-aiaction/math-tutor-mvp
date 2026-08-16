@@ -106,6 +106,7 @@ export default function Home() {
         body: JSON.stringify({
           steps: steps.map((s) => ({ recognized_latex: s.recognizedLatex })),
           correct_answer: problem.correct_answer,
+          question_text: problem.question_text,
         }),
       });
       setResults(data);

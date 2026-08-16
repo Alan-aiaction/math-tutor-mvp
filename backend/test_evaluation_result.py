@@ -19,7 +19,23 @@ def test_invalid_is_always_incorrect_regardless_of_is_correct():
     assert result.hint_text == "malformed"
 
 
-def test_misconception_id_is_always_none():
+def test_misconception_id_defaults_to_none_when_not_given():
     for is_valid, is_correct in [(True, True), (True, False), (False, True), (False, False)]:
         result = build_evaluation_result(is_valid=is_valid, is_correct=is_correct, hint_text="x")
         assert result.misconception_id is None
+
+
+def test_misconception_id_is_carried_through_when_incorrect():
+    result = build_evaluation_result(
+        is_valid=True, is_correct=False, hint_text="x", misconception_id="some_rule_id"
+    )
+    assert result.misconception_id == "some_rule_id"
+
+
+def test_misconception_id_is_dropped_when_step_is_correct():
+    """A correct step never carries a misconception_id, even if one was somehow passed -
+    mirrors the existing hint_text=None-on-correct behavior."""
+    result = build_evaluation_result(
+        is_valid=True, is_correct=True, hint_text="x", misconception_id="some_rule_id"
+    )
+    assert result.misconception_id is None

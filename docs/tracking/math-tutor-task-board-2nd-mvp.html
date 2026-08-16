@@ -338,11 +338,23 @@ const STAGES = [
     intro: "Option C from the Overview tab, built out: a pool-based default hint, escalating to a live, validated LLM call only when a student is genuinely stuck.",
     tree: null,
     tasks: [
-      { id:"#33", owner:"all", title:"Map misconception_id to an approved hint", status:"Not started",
+      { id:"#33", owner:"all", title:"Map misconception_id to an approved hint", status:"Done",
         story:"As a student, I want a hint tied to my specific mistake, not a generic message.",
-        ac:["Given a misconception_id, selects one approved hint from #70's variant pool",
-            "Falls back to the existing generic hint (#34, 1st MVP) when no id or no approved variant exists"],
-        deps:"Depends on: #9, #31, #70" },
+        ac:["Given a misconception_id, selects one approved hint from #70's variant pool - " +
+            "DONE, backend/hint_selection.py's select_hint(): queries hints for level=1 " +
+            "rows matching misconception_id, random.choice()s among them for variety " +
+            "(#70's own story). Also wires #30's match_misconception() into " +
+            "orchestration.py's run_pipeline (question_text param, optional so pre-#33 " +
+            "callers/tests are unaffected) and stops evaluation_result.py hardcoding " +
+            "misconception_id=None - the actual matching wasn't wired into the pipeline " +
+            "before this ticket, only the standalone engine existed (#30/#31)",
+            "Falls back to the existing generic hint (#34, 1st MVP) when no id or no " +
+            "approved variant exists - DONE. Honest current state: #70's 14 hints aren't " +
+            "seeded yet (0 rows in hints), so every hint shown today is still the generic " +
+            "fallback until that batch is approved - the selection code is real and " +
+            "tested, just has nothing to select from yet"],
+        deps:"Depends on: #9 (done), #31 (done), #70 (drafted, not yet approved/seeded) · " +
+              "STACKED PR: branched off #70's branch, not master - must merge after #70" },
       { id:"#71", owner:"all", title:"Implement hint escalation (Hint.level 1 to 2)", status:"Not started",
         story:"As a student who's still stuck after the first hint, I want a more specific nudge on my second wrong try at the same step, not the identical hint again.",
         ac:["Detects when the same step is answered wrong 2+ times in the same attempt",
