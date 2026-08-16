@@ -12,7 +12,7 @@ compensation exclusion case and batch 2's double-compensation match case.
 from unittest.mock import MagicMock, patch
 
 from latex_parser import parse_math_latex
-from misconception_matching import match_misconception
+from misconception_matching import get_misconception, match_misconception
 
 FRACTION_ADDITION_RULE = {
     "id": "fraction_addition_straight_across",
@@ -42,6 +42,9 @@ FRACTION_SUBTRACTION_RULE = {
 def _mock_client_with_rules(rules):
     mock_client = MagicMock()
     mock_client.table.return_value.select.return_value.execute.return_value.data = rules
+    # get_misconception() (#72) additionally chains .eq() before .execute() - wire
+    # the same rules list through that path too so one helper covers both callers.
+    mock_client.table.return_value.select.return_value.eq.return_value.execute.return_value.data = rules
     return mock_client
 
 
@@ -393,4 +396,22 @@ def test_word_problems_still_return_none_with_batch_2_rules_registered():
             "Julia and her 7 friends all get the same number of candies. How many candies are left over?",
             wrong,
         )
+    assert result is None
+
+
+# --- get_misconception (ticket #72: fetch a row's own description for the live hint prompt) ---
+
+
+def test_get_misconception_returns_the_matching_row():
+    with patch(
+        "misconception_matching.get_client",
+        return_value=_mock_client_with_rules([FORGOT_ADJUSTMENT_RULE]),
+    ):
+        result = get_misconception("multiplication_near_round_forgot_adjustment")
+    assert result == FORGOT_ADJUSTMENT_RULE
+
+
+def test_get_misconception_returns_none_when_id_not_found():
+    with patch("misconception_matching.get_client", return_value=_mock_client_with_rules([])):
+        result = get_misconception("no_such_id")
     assert result is None

@@ -338,25 +338,74 @@ const STAGES = [
     intro: "Option C from the Overview tab, built out: a pool-based default hint, escalating to a live, validated LLM call only when a student is genuinely stuck.",
     tree: null,
     tasks: [
-      { id:"#33", owner:"all", title:"Map misconception_id to an approved hint", status:"Not started",
+      { id:"#33", owner:"all", title:"Map misconception_id to an approved hint", status:"Done",
         story:"As a student, I want a hint tied to my specific mistake, not a generic message.",
-        ac:["Given a misconception_id, selects one approved hint from #70's variant pool",
-            "Falls back to the existing generic hint (#34, 1st MVP) when no id or no approved variant exists"],
-        deps:"Depends on: #9, #31, #70" },
-      { id:"#71", owner:"all", title:"Implement hint escalation (Hint.level 1 to 2)", status:"Not started",
+        ac:["Given a misconception_id, selects one approved hint from #70's variant pool - " +
+            "DONE, backend/hint_selection.py's select_hint(): queries hints for level=1 " +
+            "rows matching misconception_id, random.choice()s among them for variety " +
+            "(#70's own story). Also wires #30's match_misconception() into " +
+            "orchestration.py's run_pipeline (question_text param, optional so pre-#33 " +
+            "callers/tests are unaffected) and stops evaluation_result.py hardcoding " +
+            "misconception_id=None - the actual matching wasn't wired into the pipeline " +
+            "before this ticket, only the standalone engine existed (#30/#31)",
+            "Falls back to the existing generic hint (#34, 1st MVP) when no id or no " +
+            "approved variant exists - DONE. Honest current state: #70's 14 hints aren't " +
+            "seeded yet (0 rows in hints), so every hint shown today is still the generic " +
+            "fallback until that batch is approved - the selection code is real and " +
+            "tested, just has nothing to select from yet"],
+        deps:"Depends on: #9 (done), #31 (done), #70 (drafted, not yet approved/seeded) · " +
+              "STACKED PR: branched off #70's branch, not master - must merge after #70" },
+      { id:"#71", owner:"all", title:"Implement hint escalation (Hint.level 1 to 2)", status:"Done",
         story:"As a student who's still stuck after the first hint, I want a more specific nudge on my second wrong try at the same step, not the identical hint again.",
-        ac:["Detects when the same step is answered wrong 2+ times in the same attempt",
-            "Triggers the level-2 path (#72) instead of repeating the level-1 hint",
-            "Populates and returns Hint.level correctly (1 vs 2)",
-            "Unit tested - the detection/trigger logic, no mocking, since it's pure logic over attempt state"],
-        deps:"Depends on: #33 · Blocks: #72's trigger point" },
-      { id:"#72", owner:"all", title:"Live LLM hint-phrasing service (level-2 escalation only)", status:"Not started",
+        ac:["Detects when the same step is answered wrong 2+ times in the same attempt - " +
+            "DONE, but via a real architectural decision worth noting: /attempts/check was " +
+            "fully stateless (no retry concept at all) and attempt_steps has no step-index " +
+            "column to correlate historical DB rows by, so retry count is tracked " +
+            "client-side (frontend/app/page.js's wrongTryCounts, parallel to steps, sent " +
+            "as previous_wrong_count per step) rather than inferred from persisted " +
+            "attempts - see decision-log.md for the full options table",
+            "Triggers the level-2 path (#72) instead of repeating the level-1 hint - DONE " +
+            "the trigger itself (hint_level set to 2). INTERIM: the level-2 hint's actual " +
+            "TEXT still comes from #33's pool selection until #72's PR (next in this " +
+            "stack) replaces it with real live-generated content - only hint_level " +
+            "correctly differs for now, documented in orchestration.py",
+            "Populates and returns Hint.level correctly (1 vs 2) - DONE, models.py's " +
+            "EvaluationResult gains hint_level (nullable, additive - flagged since " +
+            "models.py is the agreed-contract file)",
+            "Unit tested - the detection/trigger logic, no mocking, since it's pure logic " +
+            "over attempt state - DONE, backend/hint_escalation.py's should_escalate(), " +
+            "backend/test_hint_escalation.py"],
+        deps:"Depends on: #33 (done) · Blocks: #72's trigger point · STACKED PR: branched " +
+              "off #33's branch - must merge after #70 and #33" },
+      { id:"#72", owner:"all", title:"Live LLM hint-phrasing service (level-2 escalation only)", status:"Done",
         story:"As a student still stuck after the first hint, I want a genuinely tailored follow-up nudge, not the same static sentence.",
-        ac:["Only invoked via #71's escalation trigger - never on a first wrong answer",
-            "Uses #67's provider abstraction",
-            "Output passes validation guardrails before reaching the student: length cap, no answer leakage, Dutch, age-appropriate - falls back to a static hint if validation fails",
-            "Validation logic unit tested with mocked LLM responses covering both accept and reject cases"],
-        deps:"Depends on: #67, #71, #73 (review checklist informs validation rules)" },
+        ac:["Only invoked via #71's escalation trigger - never on a first wrong answer - " +
+            "DONE, orchestration.py only calls generate_escalated_hint() when hint_level " +
+            "== 2 (should_escalate() returned true) and question_text is available",
+            "Uses #67's provider abstraction - DONE, backend/hint_escalation_llm.py's " +
+            "generate_escalated_hint() calls llm.generate_text(), never a vendor SDK " +
+            "directly",
+            "Output passes validation guardrails before reaching the student: length cap, " +
+            "no answer leakage, Dutch, age-appropriate - falls back to a static hint if " +
+            "validation fails - DONE, backend/hint_validation.py's is_valid_hint() " +
+            "implements #73's checklist's own automatable-check table directly (length " +
+            "cap, correct_answer-substring check, Dutch heuristic word-presence check, " +
+            "banned flat-negative-opener heuristic for tone). Mathematical correctness is " +
+            "honestly NOT checked (the checklist doc itself says this isn't automatable) " +
+            "- falls back to the generic hint (#34) on ANY failure: validation rejection, " +
+            "missing LLM_API_KEY, network error, timeout - safe to ship even though no " +
+            "real LLM_API_KEY exists yet (see #70's card)",
+            "Validation logic unit tested with mocked LLM responses covering both accept " +
+            "and reject cases - DONE, backend/test_hint_validation.py (pure, no mocking - " +
+            "it's pure logic) + backend/test_hint_escalation_llm.py (mocked llm." +
+            "generate_text(), covers accept, LLMError/missing-config, answer-leak " +
+            "rejection, non-Dutch rejection, empty-output rejection, no-misconception " +
+            "case)"],
+        deps:"Depends on: #67 (done), #71 (done), #73 (done) · STACKED PR: branched off " +
+              "#71's branch - must merge last, after #70, #33, and #71 · Real live " +
+              "behavior still unverified - LLM_API_KEY isn't configured, so this has " +
+              "never actually called a real LLM; it fails safe (generic hint) until one " +
+              "exists" },
       { id:"#62", owner:"all", title:"Iterate hint wording based on observed confusion", status:"Blocked",
         story:"As the team, we'll refine hint wording (both #70's pool and #72's live prompts) once we've seen where real students get confused.",
         ac:["Ongoing: hint pool and live-phrasing prompts revised based on real pilot observation"],

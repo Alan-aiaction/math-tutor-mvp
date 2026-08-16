@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from fastapi.testclient import TestClient
 
@@ -87,3 +87,39 @@ def test_check_attempt_malformed_correct_answer_returns_400():
         json={"steps": [{"recognized_latex": "7/12"}], "correct_answer": r"\notacommand{x}"},
     )
     assert response.status_code == 400
+
+
+def test_check_attempt_without_question_text_still_works():
+    """question_text is optional (ticket #33) - omitting it entirely must not break
+    the existing request shape."""
+    response = client.post(
+        "/attempts/check",
+        json={"steps": [{"recognized_latex": "5/7"}], "correct_answer": "7/12"},
+    )
+    assert response.status_code == 200
+    assert response.json()[0]["misconception_id"] is None
+
+
+def test_check_attempt_with_question_text_is_accepted():
+    """Confirms the field is accepted and passed through to run_pipeline without
+    error - the specific matching logic itself is covered by
+    test_orchestration.py's mocked-DB tests, not re-tested here. DB calls mocked
+    (empty results) so this stays a unit test, not a real Supabase hit."""
+    empty_client = MagicMock()
+    empty_client.table.return_value.select.return_value.execute.return_value.data = []
+    empty_client.table.return_value.select.return_value.eq.return_value.eq.return_value.execute.return_value.data = (
+        []
+    )
+    with (
+        patch("misconception_matching.get_client", return_value=empty_client),
+        patch("hint_selection.get_client", return_value=empty_client),
+    ):
+        response = client.post(
+            "/attempts/check",
+            json={
+                "steps": [{"recognized_latex": "5/7"}],
+                "correct_answer": "7/12",
+                "question_text": "1/3 + 1/4",
+            },
+        )
+    assert response.status_code == 200
