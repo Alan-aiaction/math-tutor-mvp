@@ -15,9 +15,13 @@ class AttemptPersistenceError(Exception):
     connection itself failed."""
 
 
-def create_attempt(problem_id: int, student_id: str, status: str, steps: list[dict]) -> Attempt:
+def create_attempt(problem_id: int, child_id: int, status: str, steps: list[dict]) -> Attempt:
     """Persist an attempt and its steps, returning the saved Attempt with
     server-generated IDs.
+
+    child_id (3rd MVP) replaces the old free-text student_id access code - the caller is
+    responsible for having already verified this child_id belongs to the authenticated
+    parent (see children.get_child) before calling this.
 
     Inserts the attempt row first, then all steps in one bulk insert - not
     atomic across both tables (supabase-py has no easy multi-table transaction
@@ -29,7 +33,7 @@ def create_attempt(problem_id: int, student_id: str, status: str, steps: list[di
     try:
         attempt_row = (
             client.table("attempts")
-            .insert({"problem_id": problem_id, "student_id": student_id, "status": status})
+            .insert({"problem_id": problem_id, "child_id": child_id, "status": status})
             .execute()
             .data[0]
         )
@@ -62,7 +66,7 @@ def create_attempt(problem_id: int, student_id: str, status: str, steps: list[di
     return Attempt(
         id=attempt_id,
         problem_id=problem_id,
-        student_id=student_id,
+        child_id=child_id,
         status=status,
         steps=[
             Step(

@@ -23,7 +23,7 @@ def _mock_client_for(attempt_row, step_rows):
 
 
 def test_successful_create_returns_attempt_with_generated_ids():
-    attempt_row = {"id": 1, "problem_id": 5, "student_id": "abc123", "status": "in_progress"}
+    attempt_row = {"id": 1, "problem_id": 5, "child_id": 42, "status": "in_progress"}
     step_rows = [
         {"id": 10, "recognized_latex": "1/4 + 1/3", "is_correct": True},
         {"id": 11, "recognized_latex": "7/12", "is_correct": True},
@@ -33,7 +33,7 @@ def test_successful_create_returns_attempt_with_generated_ids():
     with patch("attempts.get_client", return_value=mock_client):
         result = create_attempt(
             problem_id=5,
-            student_id="abc123",
+            child_id=42,
             status="in_progress",
             steps=[
                 {"recognized_latex": "1/4 + 1/3", "is_correct": True},
@@ -49,11 +49,11 @@ def test_successful_create_returns_attempt_with_generated_ids():
 
 
 def test_no_steps_returns_attempt_with_empty_steps_list():
-    attempt_row = {"id": 2, "problem_id": 5, "student_id": "abc123", "status": "in_progress"}
+    attempt_row = {"id": 2, "problem_id": 5, "child_id": 42, "status": "in_progress"}
     mock_client = _mock_client_for(attempt_row, [])
 
     with patch("attempts.get_client", return_value=mock_client):
-        result = create_attempt(problem_id=5, student_id="abc123", status="in_progress", steps=[])
+        result = create_attempt(problem_id=5, child_id=42, status="in_progress", steps=[])
 
     assert result.id == 2
     assert result.steps == []
@@ -67,11 +67,11 @@ def test_invalid_problem_id_raises_attempt_persistence_error():
 
     with patch("attempts.get_client", return_value=mock_client):
         with pytest.raises(AttemptPersistenceError):
-            create_attempt(problem_id=999999, student_id="abc123", status="in_progress", steps=[])
+            create_attempt(problem_id=999999, child_id=42, status="in_progress", steps=[])
 
 
 def test_steps_insert_failure_raises_attempt_persistence_error():
-    attempt_row = {"id": 3, "problem_id": 5, "student_id": "abc123", "status": "in_progress"}
+    attempt_row = {"id": 3, "problem_id": 5, "child_id": 42, "status": "in_progress"}
     mock_client = _mock_client_for(attempt_row, [])
     mock_client.table("attempt_steps").insert.return_value.execute.side_effect = APIError(
         {"message": "boom"}
@@ -81,7 +81,7 @@ def test_steps_insert_failure_raises_attempt_persistence_error():
         with pytest.raises(AttemptPersistenceError):
             create_attempt(
                 problem_id=5,
-                student_id="abc123",
+                child_id=42,
                 status="in_progress",
                 steps=[{"recognized_latex": "7/12", "is_correct": True}],
             )

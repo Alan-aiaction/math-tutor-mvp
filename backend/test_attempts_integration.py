@@ -7,7 +7,13 @@ The `problems` table is empty (#8 hasn't seeded real content yet), so this test 
 its own throwaway problem row to get a valid problem_id, and deletes everything it
 created (steps, attempt, problem) during teardown - leaves the live DB clean, not
 accumulating test junk in a table meant to hold real student data.
+
+3rd MVP: attempts.child_id has a real FK to children, which has a real FK to
+auth.users - so this test also needs a real throwaway parent (via supabase-py's admin
+API) and a real throwaway child underneath it, both cleaned up in teardown.
 """
+import uuid
+
 import pytest
 from dotenv import load_dotenv
 
@@ -37,12 +43,30 @@ def throwaway_problem():
     client.table("problems").delete().eq("id", row["id"]).execute()
 
 
-def test_create_attempt_persists_and_is_queryable(throwaway_problem):
+@pytest.fixture
+def throwaway_child():
+    client = get_client()
+    email = f"test-attempts-integration-{uuid.uuid4()}@example.com"
+    user = client.auth.admin.create_user(
+        {"email": email, "password": "throwaway-test-password", "email_confirm": True}
+    ).user
+    child_row = (
+        client.table("children")
+        .insert({"parent_id": user.id, "nickname": "TestChild", "password_hash": "unused-in-this-test"})
+        .execute()
+        .data[0]
+    )
+    yield child_row
+    client.table("children").delete().eq("id", child_row["id"]).execute()
+    client.auth.admin.delete_user(user.id)
+
+
+def test_create_attempt_persists_and_is_queryable(throwaway_problem, throwaway_child):
     client = get_client()
 
     result = create_attempt(
         problem_id=throwaway_problem["id"],
-        student_id="test-student-task-15",
+        child_id=throwaway_child["id"],
         status="in_progress",
         steps=[{"recognized_latex": "7/12", "is_correct": True}],
     )

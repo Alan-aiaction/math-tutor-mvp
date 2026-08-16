@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Math Tutor MVP — 3rd MVP Task Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1c2b27; --paper:#eef1ee; --card:#ffffff; --line:#d7ddd8;
+    --chalk:#1f4d43; --chalk-soft:#e4efec; --amber:#b8792f; --amber-soft:#f6ead9; --muted:#5c6d67;
+    --all-soft:#ececeb;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans', sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1080px;margin:0 auto;padding:56px 28px 100px;}
+  header{margin-bottom:32px;}
+  .eyebrow{font-family:'IBM Plex Mono', monospace;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--chalk);margin-bottom:10px;}
+  h1{font-family:'Fraunces', serif;font-weight:600;font-size:clamp(28px,4vw,40px);line-height:1.08;margin:0 0 10px;letter-spacing:-0.01em;}
+  header p{color:var(--muted);font-size:15.5px;max-width:660px;margin:0;line-height:1.5;}
+
+  .dod-band{background:var(--chalk);color:#eef4f1;border-radius:14px;padding:24px 26px;margin-bottom:36px;position:relative;overflow:hidden;}
+  .dod-band::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(180deg, transparent 0 27px, rgba(255,255,255,.045) 27px 28px);pointer-events:none;}
+  .dod-title{font-family:'Fraunces', serif;font-weight:600;font-size:18px;margin:0 0 4px;}
+  .dod-sub{font-size:13px;color:#b9d3ca;margin:0 0 16px;}
+  .dod-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:9px 20px;list-style:none;margin:0;padding:0;position:relative;}
+  .dod-list li{font-size:13.5px;display:flex;gap:9px;align-items:flex-start;line-height:1.4;}
+  .dod-list li::before{content:"";width:14px;height:14px;margin-top:2px;flex:0 0 auto;border:1.5px solid #9fc3b8;border-radius:4px;}
+
+  .stage-intro{font-size:14px;color:var(--muted);margin:0 0 22px;max-width:660px;line-height:1.5;}
+
+  .tree-box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:24px;margin-bottom:32px;}
+  .plain-list{margin:0 0 18px;padding-left:20px;font-size:13.5px;line-height:1.6;color:var(--ink);}
+  .plain-list li{margin-bottom:6px;}
+  .sub-h{font-family:'Fraunces',serif;font-weight:600;font-size:16px;margin:22px 0 10px;color:var(--chalk);}
+  .sub-h:first-child{margin-top:0;}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px 22px 20px;display:flex;flex-direction:column;}
+  .card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:14px;}
+  .ticket-id{font-family:'IBM Plex Mono', monospace;font-size:12px;color:var(--chalk);background:var(--chalk-soft);padding:3px 8px;border-radius:6px;font-weight:500;white-space:nowrap;}
+  .status{font-family:'IBM Plex Mono', monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:20px;background:var(--amber-soft);color:var(--amber);white-space:nowrap;}
+  .card h3{font-family:'Fraunces', serif;font-weight:600;font-size:17px;margin:0 0 10px;line-height:1.3;}
+  .story{font-size:13.5px;color:var(--muted);line-height:1.5;margin:0 0 16px;padding-left:12px;border-left:2px solid var(--line);}
+  .story b{color:var(--ink);font-weight:600;}
+  .ac-label{font-family:'IBM Plex Mono', monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;}
+  .ac-list{list-style:none;margin:0 0 16px;padding:0;display:flex;flex-direction:column;gap:8px;}
+  .ac-list li{font-size:13.5px;line-height:1.45;display:flex;gap:9px;align-items:flex-start;}
+  .ac-list li input[type="checkbox"]{appearance:none;-webkit-appearance:none;width:14px;height:14px;margin:2px 0 0;flex:0 0 auto;border:1.5px solid var(--chalk);border-radius:4px;cursor:pointer;position:relative;}
+  .ac-list li input[type="checkbox"]:checked{background:var(--chalk);}
+  .ac-list li input[type="checkbox"]:checked::after{content:"";position:absolute;left:3.5px;top:0.5px;width:4px;height:8px;border:solid #fff;border-width:0 1.5px 1.5px 0;transform:rotate(45deg);}
+  .card-footer{margin-top:auto;padding-top:14px;border-top:1px dashed var(--line);font-size:12px;color:var(--muted);}
+  code{font-family:'IBM Plex Mono',monospace;background:var(--chalk-soft);padding:1px 5px;border-radius:4px;font-size:.92em;}
+  footer.note{margin-top:48px;font-size:12.5px;color:var(--muted);text-align:center;}
+  @media (max-width:520px){ .wrap{padding:36px 18px 70px;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Sprint Board · 3rd MVP</div>
+    <h1>Math Tutor MVP — 3rd MVP Task Board</h1>
+    <p>Turning the validated tutoring engine into a real product: real accounts, a dashboard, KPIs.
+    1st MVP (frontend/recognition/deploy) and 2nd MVP (misconception detection + hint chain) boards
+    live separately: <a href="math-tutor-task-board-1st-mvp.html">math-tutor-task-board-1st-mvp.html</a>,
+    <a href="math-tutor-task-board-2nd-mvp.html">math-tutor-task-board-2nd-mvp.html</a>.</p>
+  </header>
+
+  <div class="dod-band">
+    <p class="dod-title">Definition of Done — applies to every ticket, every stage</p>
+    <p class="dod-sub">Same checklist as 1st/2nd MVP, not repeated per ticket.</p>
+    <ul class="dod-list">
+      <li>Code pushed to a branch, PR opened</li>
+      <li>At least one review pass on the PR</li>
+      <li>No console errors / unhandled exceptions</li>
+      <li>Deploys successfully (Vercel preview or Railway)</li>
+      <li>Merged to <code style="background:rgba(255,255,255,.12);color:#eef4f1;">main</code></li>
+    </ul>
+  </div>
+
+  <div class="tree-box">
+    <p class="sub-h">Scope, decided 2026-08-16</p>
+    <p style="font-size:13.5px;line-height:1.6;color:var(--ink);margin:0 0 18px;">B2C, after-school product - parents subscribe, not schools. 3rd MVP: login, dashboard,
+    GUI layout, real authentication, result KPIs, frontend test coverage. Content bank
+    breadth and payment/subscription land in 4th MVP (deliberately separate from auth - see
+    #76's own card); classroom/roster management is a future feature, not yet numbered.
+    Full reasoning in <code>decision-log.md</code>'s "3rd/4th MVP scope split" and
+    "authentication design" entries.</p>
+
+    <p class="sub-h">User roles</p>
+    <ul class="plain-list">
+      <li><b>Parent</b> - real account (Supabase Auth), owns the subscription (once 4th
+      MVP's payment system exists), sees their child(ren)'s results/KPIs.</li>
+      <li><b>Child</b> - lightweight, parent-managed account (nickname + password),
+      no billing relationship.</li>
+      <li><b>Teacher/tutor</b> - deliberately deferred, not core to this MVP's data model.</li>
+    </ul>
+
+    <p class="sub-h">Design references</p>
+    <p style="font-size:13.5px;line-height:1.6;color:var(--ink);margin:0;">Per <code>CLAUDE.md</code>'s product-design-references convention: Squla and Junior
+    Einstein (real Dutch EdTech products, same age range) informed the parent/child account
+    shape directly - see #76's card and <code>decision-log.md</code> for the specifics.</p>
+  </div>
+
+  <p class="stage-intro">Stage 1 · Authentication - the prerequisite for everything else in this MVP (dashboard/KPIs need a real parent/child relationship; 4th MVP's payment needs a real parent account to attach to).</p>
+
+  <div class="cards">
+    <div class="card">
+      <div class="card-top">
+        <span class="ticket-id">#76</span>
+        <span class="status">Done</span>
+      </div>
+      <h3>Parent + child authentication</h3>
+      <p class="story"><b>Story —</b> As a parent, I want to own a real account and add my
+      child(ren), so their results are tied to something real instead of a typed access
+      code.</p>
+      <p class="ac-label">Acceptance Criteria</p>
+      <ul class="ac-list">
+        <li><input type="checkbox" checked>Parent sign-up/sign-in via Supabase Auth
+        (email/password) - DONE, <code>frontend/app/components/ParentAuth.jsx</code>, direct
+        against Supabase, never routed through the backend.</li>
+        <li><input type="checkbox" checked>Parent can add/list children, each with their
+        own lightweight nickname + password - DONE, new <code>children</code> table +
+        <code>backend/children.py</code>. Password bcrypt-hashed, never returned to any
+        caller.</li>
+        <li><input type="checkbox" checked>Child login is a password gate under the
+        parent's session, not a second independent auth system - DONE, deliberate design
+        decision (see card footer) matching Squla/Junior Einstein's own shape.</li>
+        <li><input type="checkbox" checked>Every attempt is tied to a real, ownership-checked
+        child_id - DONE, <code>attempts.student_id</code> (free-text) replaced with a real
+        FK <code>attempts.child_id</code>; every backend endpoint touching a specific
+        child_id re-verifies parent ownership on every call, not just at picker time.</li>
+        <li><input type="checkbox" checked>RLS tightened now that real identity exists -
+        DONE, resolves old ticket #51's flagged gap for the tables this ticket touches
+        (<code>children</code>/<code>attempts</code>/<code>attempt_steps</code> now
+        parent-owned policies, not the "any authenticated session" MVP-permissive
+        baseline). <code>problems</code>/<code>misconception_rules</code>/<code>hints</code>
+        correctly untouched - shared content, nothing to scope per-parent.</li>
+        <li><input type="checkbox" checked>Session persistence: stays logged into the
+        last-selected child - DONE, <code>localStorage</code>, same pattern the old
+        <code>StudentCode.js</code> stub used.</li>
+        <li><input type="checkbox" checked>Frontend test framework chosen + real coverage
+        for the new auth components - DONE, Vitest + React Testing Library (this repo's
+        first frontend test suite ever - previously zero infrastructure, flagged as an open
+        decision in <code>.claude/plans/test-pyramid-design.md</code>), 14 tests across
+        <code>ParentAuth</code>/<code>ChildPicker</code>/<code>ActiveChildHeader</code>.</li>
+      </ul>
+      <div class="card-footer">Depends on: nothing (first 3rd MVP ticket) · Blocks: dashboard,
+      KPIs, 4th MVP's payment system · Deliberately deferred, not this ticket: GDPR/AVG
+      consent flow (separate topic, explicitly parked), teacher/tutor role, a "forgot
+      password" UI flow for parents (Supabase Auth supports it natively, fast follow if
+      wanted) · See <code>decision-log.md</code>'s "authentication design" entry for the
+      full options table (client-only vs. also-a-Supabase-Auth-user for children) and why
+      the lightweight-password-gate shape won.</div>
+    </div>
+  </div>
+
+  <footer class="note">Scope decided <code>2026-08-16</code> - see <code>docs/tracking/decision-log.md</code> for the full reasoning behind every choice on this board.</footer>
+
+</div>
+</body>
+</html>

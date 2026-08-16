@@ -5,15 +5,17 @@ import time
 import sentry_sdk
 from dotenv import load_dotenv
 from sentry_sdk.integrations.logging import LoggingIntegration
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from attempts import AttemptPersistenceError, create_attempt
+from auth import AuthError, get_current_parent_id
+from children import ChildError, create_child, get_child, list_children, verify_child_login
 from db import DatabaseError
 from latex_parser import LatexParseError
-from models import Attempt, EvaluationResult, Problem, Step
+from models import Attempt, Child, EvaluationResult, Problem, Step
 from orchestration import run_pipeline
 from problems import ProblemNotFoundError, get_problem, get_random_problem
 from recognition import RecognitionError, recognize_math
@@ -78,6 +80,17 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 
+def require_parent_id(authorization: str | None = Header(None)) -> str:
+    """FastAPI dependency (ticket #children-auth, 3rd MVP): verifies the parent's
+    Supabase access token and returns their user id, or raises a clean 401. Used by
+    every route that acts on behalf of a parent - see auth.py for the actual
+    verification."""
+    try:
+        return get_current_parent_id(authorization)
+    except AuthError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+
+
 @app.get("/")
 def root():
     return {"status": "ok", "message": "Math Tutor MVP backend — placeholder, real API coming in Phase 2"}
@@ -123,6 +136,39 @@ def recognize(payload: RecognizeRequest):
     return RecognizeResponse(latex=latex)
 
 
+class ChildCreate(BaseModel):
+    nickname: str
+    password: str
+
+
+@app.post("/children", response_model=Child)
+def create_child_endpoint(payload: ChildCreate, parent_id: str = Depends(require_parent_id)):
+    try:
+        return create_child(parent_id, payload.nickname, payload.password)
+    except ChildError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/children", response_model=list[Child])
+def list_children_endpoint(parent_id: str = Depends(require_parent_id)):
+    return list_children(parent_id)
+
+
+class ChildLogin(BaseModel):
+    password: str
+
+
+@app.post("/children/{child_id}/login", response_model=Child)
+def child_login_endpoint(child_id: int, payload: ChildLogin, parent_id: str = Depends(require_parent_id)):
+    # Deliberately the same 401 for "not this parent's child" and "wrong password" -
+    # neither should let a caller distinguish which one it was (see children.py's
+    # verify_child_login docstring).
+    if not verify_child_login(parent_id, child_id, payload.password):
+        raise HTTPException(status_code=401, detail="Incorrect child password")
+    child = get_child(parent_id, child_id)
+    return child
+
+
 class StepCreate(BaseModel):
     recognized_latex: str
     is_correct: bool
@@ -130,17 +176,19 @@ class StepCreate(BaseModel):
 
 class AttemptCreate(BaseModel):
     problem_id: int
-    student_id: str
+    child_id: int
     status: str
     steps: list[StepCreate]
 
 
 @app.post("/attempts", response_model=Attempt)
-def create_attempt_endpoint(payload: AttemptCreate):
+def create_attempt_endpoint(payload: AttemptCreate, parent_id: str = Depends(require_parent_id)):
+    if get_child(parent_id, payload.child_id) is None:
+        raise HTTPException(status_code=403, detail="This child does not belong to the authenticated parent")
     try:
         return create_attempt(
             problem_id=payload.problem_id,
-            student_id=payload.student_id,
+            child_id=payload.child_id,
             status=payload.status,
             steps=[s.model_dump() for s in payload.steps],
         )
@@ -168,7 +216,11 @@ class CheckRequest(BaseModel):
 
 
 @app.post("/attempts/check", response_model=list[EvaluationResult])
-def check_attempt(payload: CheckRequest):
+def check_attempt(payload: CheckRequest, parent_id: str = Depends(require_parent_id)):
+    # parent_id isn't used directly here (this endpoint is stateless, computational -
+    # it never touches the children/attempts tables) - the dependency is still applied
+    # so the endpoint can't be hit anonymously, consistent with the rest of the app.
+    #
     # Placeholder id/attempt_id: run_pipeline only ever reads recognized_latex - this
     # endpoint checks work before a real Attempt/Step exists to attach real ids to,
     # matching test_orchestration.py's own make_step() precedent.

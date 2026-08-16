@@ -2,13 +2,25 @@ from unittest.mock import MagicMock, patch
 
 from fastapi.testclient import TestClient
 
+from children import ChildError
 from main import app
+from models import Child
 from recognition import RecognitionError
 
 # raise_server_exceptions=False: without this, TestClient re-raises the original
 # exception for debugging convenience, even though the app's own exception handler
 # already produced a response - we need to inspect that actual HTTP response here.
 client = TestClient(app, raise_server_exceptions=False)
+
+FAKE_PARENT_ID = "11111111-1111-1111-1111-111111111111"
+AUTH_HEADER = {"Authorization": "Bearer fake-token"}
+
+
+def _mock_parent_auth():
+    """Patches main.get_current_parent_id (not auth.get_current_parent_id - main.py
+    imports the name directly, so that's where the call is actually looked up) to
+    return a fixed parent id without a real Supabase round-trip."""
+    return patch("main.get_current_parent_id", return_value=FAKE_PARENT_ID)
 
 
 def test_unhandled_exception_returns_clean_500_not_a_crash():
@@ -47,10 +59,12 @@ def test_request_logging_middleware_logs_method_path_status(caplog):
 
 
 def test_check_attempt_correct_step():
-    response = client.post(
-        "/attempts/check",
-        json={"steps": [{"recognized_latex": "7/12"}], "correct_answer": "7/12"},
-    )
+    with _mock_parent_auth():
+        response = client.post(
+            "/attempts/check",
+            json={"steps": [{"recognized_latex": "7/12"}], "correct_answer": "7/12"},
+            headers=AUTH_HEADER,
+        )
     assert response.status_code == 200
     results = response.json()
     assert len(results) == 1
@@ -59,10 +73,12 @@ def test_check_attempt_correct_step():
 
 
 def test_check_attempt_incorrect_step_gets_hint():
-    response = client.post(
-        "/attempts/check",
-        json={"steps": [{"recognized_latex": "5/7"}], "correct_answer": "7/12"},
-    )
+    with _mock_parent_auth():
+        response = client.post(
+            "/attempts/check",
+            json={"steps": [{"recognized_latex": "5/7"}], "correct_answer": "7/12"},
+            headers=AUTH_HEADER,
+        )
     assert response.status_code == 200
     results = response.json()
     assert results[0]["valid"] is False
@@ -70,32 +86,136 @@ def test_check_attempt_incorrect_step_gets_hint():
 
 
 def test_check_attempt_multiple_steps_returns_one_result_each():
-    response = client.post(
-        "/attempts/check",
-        json={
-            "steps": [{"recognized_latex": "5/7"}, {"recognized_latex": "7/12"}],
-            "correct_answer": "7/12",
-        },
-    )
+    with _mock_parent_auth():
+        response = client.post(
+            "/attempts/check",
+            json={
+                "steps": [{"recognized_latex": "5/7"}, {"recognized_latex": "7/12"}],
+                "correct_answer": "7/12",
+            },
+            headers=AUTH_HEADER,
+        )
     assert response.status_code == 200
     assert len(response.json()) == 2
 
 
 def test_check_attempt_malformed_correct_answer_returns_400():
+    with _mock_parent_auth():
+        response = client.post(
+            "/attempts/check",
+            json={"steps": [{"recognized_latex": "7/12"}], "correct_answer": r"\notacommand{x}"},
+            headers=AUTH_HEADER,
+        )
+    assert response.status_code == 400
+
+
+def test_check_attempt_without_auth_header_returns_401():
     response = client.post(
         "/attempts/check",
-        json={"steps": [{"recognized_latex": "7/12"}], "correct_answer": r"\notacommand{x}"},
+        json={"steps": [{"recognized_latex": "7/12"}], "correct_answer": "7/12"},
     )
+    assert response.status_code == 401
+
+
+# --- Children endpoints (3rd MVP auth) ---
+
+
+def test_create_child_requires_auth():
+    response = client.post("/children", json={"nickname": "Sam", "password": "sesame"})
+    assert response.status_code == 401
+
+
+def test_create_child_success():
+    with _mock_parent_auth(), patch(
+        "main.create_child",
+        return_value=Child(id=1, parent_id=FAKE_PARENT_ID, nickname="Sam", created_at="2026-08-16T00:00:00Z"),
+    ):
+        response = client.post(
+            "/children", json={"nickname": "Sam", "password": "sesame"}, headers=AUTH_HEADER
+        )
+    assert response.status_code == 200
+    assert response.json()["nickname"] == "Sam"
+
+
+def test_create_child_duplicate_nickname_returns_400():
+    with _mock_parent_auth(), patch("main.create_child", side_effect=ChildError("nickname already used")):
+        response = client.post(
+            "/children", json={"nickname": "Sam", "password": "sesame"}, headers=AUTH_HEADER
+        )
     assert response.status_code == 400
+
+
+def test_list_children_requires_auth():
+    response = client.get("/children")
+    assert response.status_code == 401
+
+
+def test_list_children_success():
+    with _mock_parent_auth(), patch(
+        "main.list_children",
+        return_value=[Child(id=1, parent_id=FAKE_PARENT_ID, nickname="Sam", created_at="2026-08-16T00:00:00Z")],
+    ):
+        response = client.get("/children", headers=AUTH_HEADER)
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+
+
+def test_child_login_wrong_password_returns_401():
+    with _mock_parent_auth(), patch("main.verify_child_login", return_value=False):
+        response = client.post("/children/1/login", json={"password": "wrong"}, headers=AUTH_HEADER)
+    assert response.status_code == 401
+
+
+def test_child_login_success():
+    with (
+        _mock_parent_auth(),
+        patch("main.verify_child_login", return_value=True),
+        patch(
+            "main.get_child",
+            return_value=Child(id=1, parent_id=FAKE_PARENT_ID, nickname="Sam", created_at="2026-08-16T00:00:00Z"),
+        ),
+    ):
+        response = client.post("/children/1/login", json={"password": "sesame"}, headers=AUTH_HEADER)
+    assert response.status_code == 200
+    assert response.json()["nickname"] == "Sam"
+
+
+# --- Attempts endpoint ownership check (3rd MVP auth) ---
+
+
+def test_create_attempt_requires_auth():
+    response = client.post(
+        "/attempts",
+        json={"problem_id": 1, "child_id": 1, "status": "completed", "steps": []},
+    )
+    assert response.status_code == 401
+
+
+def test_create_attempt_rejects_a_child_that_doesnt_belong_to_this_parent():
+    with _mock_parent_auth(), patch("main.get_child", return_value=None):
+        response = client.post(
+            "/attempts",
+            json={"problem_id": 1, "child_id": 999, "status": "completed", "steps": []},
+            headers=AUTH_HEADER,
+        )
+    assert response.status_code == 403
+
+
+# --- question_text / misconception matching passthrough (ticket #33) ---
+# Merged with #76's auth requirement: /attempts/check now needs a parent token too,
+# so both cases below carry _mock_parent_auth()/AUTH_HEADER same as the check_attempt
+# tests above - originally written pre-auth, adapted here rather than dropped.
 
 
 def test_check_attempt_without_question_text_still_works():
     """question_text is optional (ticket #33) - omitting it entirely must not break
     the existing request shape."""
-    response = client.post(
-        "/attempts/check",
-        json={"steps": [{"recognized_latex": "5/7"}], "correct_answer": "7/12"},
-    )
+    with _mock_parent_auth():
+        response = client.post(
+            "/attempts/check",
+            json={"steps": [{"recognized_latex": "5/7"}], "correct_answer": "7/12"},
+            headers=AUTH_HEADER,
+        )
     assert response.status_code == 200
     assert response.json()[0]["misconception_id"] is None
 
@@ -111,6 +231,7 @@ def test_check_attempt_with_question_text_is_accepted():
         []
     )
     with (
+        _mock_parent_auth(),
         patch("misconception_matching.get_client", return_value=empty_client),
         patch("hint_selection.get_client", return_value=empty_client),
     ):
@@ -121,5 +242,6 @@ def test_check_attempt_with_question_text_is_accepted():
                 "correct_answer": "7/12",
                 "question_text": "1/3 + 1/4",
             },
+            headers=AUTH_HEADER,
         )
     assert response.status_code == 200
