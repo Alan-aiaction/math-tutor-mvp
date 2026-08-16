@@ -62,6 +62,9 @@ def test_misconception_id_stays_none_when_question_text_not_given():
 def _mock_rules_client(rules):
     mock_client = MagicMock()
     mock_client.table.return_value.select.return_value.execute.return_value.data = rules
+    # get_misconception() (#72) additionally chains .eq() before .execute() - wire
+    # the same rules list through that path too so one helper covers both callers.
+    mock_client.table.return_value.select.return_value.eq.return_value.execute.return_value.data = rules
     return mock_client
 
 
@@ -174,6 +177,64 @@ def test_hint_level_tracked_independently_per_step():
     results = run_pipeline(steps, correct_answer="7/12", previous_wrong_counts=[0, 2])
     assert results[0].hint_level == 1
     assert results[1].hint_level == 2
+
+
+# --- Live escalation wiring (ticket #72) ---
+
+
+def test_escalation_with_question_text_calls_the_live_hint_service():
+    with (
+        patch("misconception_matching.get_client", return_value=_mock_rules_client([_FORGOT_ADJUSTMENT_RULE])),
+        patch("orchestration.generate_escalated_hint", return_value="Bijna goed! Live hint.") as mock_generate,
+    ):
+        steps = [make_step(1, "1200")]
+        results = run_pipeline(
+            steps, correct_answer="1194", question_text="6 × 199", previous_wrong_counts=[1]
+        )
+    assert results[0].hint_level == 2
+    assert results[0].hint_text == "Bijna goed! Live hint."
+    mock_generate.assert_called_once()
+    call_args = mock_generate.call_args.args
+    assert call_args[0] == _FORGOT_ADJUSTMENT_RULE["description"]  # misconception_description
+    assert call_args[1] == "6 × 199"  # question_text
+    assert call_args[2] == "1194"  # correct_answer
+    assert call_args[3] == "1200"  # wrong_answer_text (the raw recognized_latex)
+
+
+def test_escalation_without_question_text_falls_back_to_pool_selection_not_live_service():
+    with patch("orchestration.generate_escalated_hint") as mock_generate:
+        steps = [make_step(1, "5/7")]
+        results = run_pipeline(steps, correct_answer="7/12", previous_wrong_counts=[1])
+    mock_generate.assert_not_called()
+    assert results[0].hint_level == 2
+    assert results[0].hint_text == get_generic_hint()
+
+
+def test_non_escalated_step_with_question_text_does_not_call_the_live_hint_service():
+    with (
+        patch("misconception_matching.get_client", return_value=_mock_rules_client([])),
+        patch("hint_selection.get_client", return_value=_mock_hints_client([])),
+        patch("orchestration.generate_escalated_hint") as mock_generate,
+    ):
+        steps = [make_step(1, "5/7")]
+        results = run_pipeline(
+            steps, correct_answer="7/12", question_text="1/3 + 1/4", previous_wrong_counts=[0]
+        )
+    mock_generate.assert_not_called()
+    assert results[0].hint_level == 1
+
+
+def test_escalation_with_no_misconception_match_still_calls_live_service_without_description():
+    with (
+        patch("misconception_matching.get_client", return_value=_mock_rules_client([])),
+        patch("orchestration.generate_escalated_hint", return_value="Bijna goed! Algemene hint.") as mock_generate,
+    ):
+        steps = [make_step(1, "5/7")]
+        results = run_pipeline(
+            steps, correct_answer="7/12", question_text="1/3 + 1/4", previous_wrong_counts=[1]
+        )
+    assert results[0].hint_text == "Bijna goed! Algemene hint."
+    assert mock_generate.call_args.args[0] is None  # no misconception_description
 
 
 def test_logs_a_duration_for_each_pipeline_stage(caplog):
