@@ -36,6 +36,9 @@ class EvaluationResult(BaseModel):
     valid: bool
     misconception_id: str | None
     hint_text: str | None
+    hint_level: int | None = None  # ticket #71: 1 = first hint, 2 = escalated -
+    # None (not 0) when valid=True, matching hint_text/misconception_id's own
+    # None-when-correct convention. Default preserves every pre-#71 caller.
 
 
 class Misconception(BaseModel):

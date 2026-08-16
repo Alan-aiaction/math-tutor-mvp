@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
 
 from generic_hint import get_generic_hint
@@ -47,10 +49,192 @@ def test_empty_steps_returns_empty_list():
     assert run_pipeline([], correct_answer="7/12") == []
 
 
-def test_misconception_id_always_none():
+def test_misconception_id_stays_none_when_question_text_not_given():
+    """Pre-#33 callers (or any caller with no question_text) get exactly the old
+    behavior - misconception_id always None, no DB call made at all (select_hint
+    short-circuits on misconception_id=None before ever touching Supabase)."""
     steps = [make_step(1, "5/7")]
     results = run_pipeline(steps, correct_answer="7/12")
     assert results[0].misconception_id is None
+    assert results[0].hint_text == get_generic_hint()
+
+
+def _mock_rules_client(rules):
+    mock_client = MagicMock()
+    mock_client.table.return_value.select.return_value.execute.return_value.data = rules
+    # get_misconception() (#72) additionally chains .eq() before .execute() - wire
+    # the same rules list through that path too so one helper covers both callers.
+    mock_client.table.return_value.select.return_value.eq.return_value.execute.return_value.data = rules
+    return mock_client
+
+
+def _mock_hints_client(hints):
+    mock_client = MagicMock()
+    mock_client.table.return_value.select.return_value.eq.return_value.eq.return_value.execute.return_value.data = (
+        hints
+    )
+    return mock_client
+
+
+_FORGOT_ADJUSTMENT_RULE = {
+    "id": "multiplication_near_round_forgot_adjustment",
+    "topic": "multiplication",
+    "description": "Rounds the messy factor to a round number and multiplies, but forgets to compensate back.",
+    "matching_rule": {
+        "operation": "multiplication_near_round",
+        "error_transform": "forgot_compensation_adjustment",
+        "check": {"type": "symbolic_equivalence", "wrong_result_template": "a*c"},
+    },
+    "escalation_hint_id": None,
+}
+
+
+def test_misconception_id_populated_when_question_text_given_and_matched():
+    with (
+        patch("misconception_matching.get_client", return_value=_mock_rules_client([_FORGOT_ADJUSTMENT_RULE])),
+        patch("hint_selection.get_client", return_value=_mock_hints_client([])),
+    ):
+        steps = [make_step(1, "1200")]
+        results = run_pipeline(steps, correct_answer="1194", question_text="6 × 199")
+    assert results[0].misconception_id == "multiplication_near_round_forgot_adjustment"
+    # No approved hint seeded yet for this misconception (mocked as empty) - falls
+    # back to the generic hint, same honest state #9's batches left match_misconception
+    # in before real content was approved.
+    assert results[0].hint_text == get_generic_hint()
+
+
+def test_selected_hint_used_when_an_approved_variant_exists():
+    approved_hint = {
+        "id": "multiplication_near_round_forgot_adjustment_hint_1",
+        "misconception_id": "multiplication_near_round_forgot_adjustment",
+        "text": "Bijna goed! Denk aan de correctie na het afronden.",
+        "level": 1,
+    }
+    with (
+        patch("misconception_matching.get_client", return_value=_mock_rules_client([_FORGOT_ADJUSTMENT_RULE])),
+        patch("hint_selection.get_client", return_value=_mock_hints_client([approved_hint])),
+    ):
+        steps = [make_step(1, "1200")]
+        results = run_pipeline(steps, correct_answer="1194", question_text="6 × 199")
+    assert results[0].misconception_id == "multiplication_near_round_forgot_adjustment"
+    assert results[0].hint_text == approved_hint["text"]
+
+
+def test_no_misconception_match_falls_back_to_generic_hint_even_with_question_text():
+    with (
+        patch("misconception_matching.get_client", return_value=_mock_rules_client([])),
+        patch("hint_selection.get_client", return_value=_mock_hints_client([])),
+    ):
+        steps = [make_step(1, "5/7")]
+        results = run_pipeline(steps, correct_answer="7/12", question_text="1/3 + 1/4")
+    assert results[0].misconception_id is None
+    assert results[0].hint_text == get_generic_hint()
+
+
+def test_garbled_step_never_attempts_misconception_matching():
+    """An unparseable step has no expr to match against - matching must not even be
+    attempted, regardless of question_text. Patches orchestration's own imported name
+    (orchestration.py does `from misconception_matching import match_misconception`,
+    so that's where the call is actually looked up, not the source module)."""
+    with patch("orchestration.match_misconception") as mock_match:
+        steps = [make_step(1, r"\notacommand{x}")]
+        results = run_pipeline(steps, correct_answer="7/12", question_text="1/3 + 1/4")
+    mock_match.assert_not_called()
+    assert results[0].misconception_id is None
+
+
+# --- Escalation trigger (ticket #71) ---
+
+
+def test_first_wrong_try_gets_hint_level_1():
+    steps = [make_step(1, "5/7")]
+    results = run_pipeline(steps, correct_answer="7/12", previous_wrong_counts=[0])
+    assert results[0].hint_level == 1
+
+
+def test_second_wrong_try_at_same_step_escalates_to_hint_level_2():
+    steps = [make_step(1, "5/7")]
+    results = run_pipeline(steps, correct_answer="7/12", previous_wrong_counts=[1])
+    assert results[0].hint_level == 2
+
+
+def test_no_previous_wrong_counts_given_defaults_to_level_1():
+    """Pre-#71 callers (or any caller omitting previous_wrong_counts) get exactly
+    the old behavior - never escalated."""
+    steps = [make_step(1, "5/7")]
+    results = run_pipeline(steps, correct_answer="7/12")
+    assert results[0].hint_level == 1
+
+
+def test_correct_step_has_no_hint_level():
+    steps = [make_step(1, "7/12")]
+    results = run_pipeline(steps, correct_answer="7/12", previous_wrong_counts=[3])
+    assert results[0].hint_level is None
+
+
+def test_hint_level_tracked_independently_per_step():
+    steps = [make_step(1, "5/7"), make_step(2, "5/7")]
+    results = run_pipeline(steps, correct_answer="7/12", previous_wrong_counts=[0, 2])
+    assert results[0].hint_level == 1
+    assert results[1].hint_level == 2
+
+
+# --- Live escalation wiring (ticket #72) ---
+
+
+def test_escalation_with_question_text_calls_the_live_hint_service():
+    with (
+        patch("misconception_matching.get_client", return_value=_mock_rules_client([_FORGOT_ADJUSTMENT_RULE])),
+        patch("orchestration.generate_escalated_hint", return_value="Bijna goed! Live hint.") as mock_generate,
+    ):
+        steps = [make_step(1, "1200")]
+        results = run_pipeline(
+            steps, correct_answer="1194", question_text="6 × 199", previous_wrong_counts=[1]
+        )
+    assert results[0].hint_level == 2
+    assert results[0].hint_text == "Bijna goed! Live hint."
+    mock_generate.assert_called_once()
+    call_args = mock_generate.call_args.args
+    assert call_args[0] == _FORGOT_ADJUSTMENT_RULE["description"]  # misconception_description
+    assert call_args[1] == "6 × 199"  # question_text
+    assert call_args[2] == "1194"  # correct_answer
+    assert call_args[3] == "1200"  # wrong_answer_text (the raw recognized_latex)
+
+
+def test_escalation_without_question_text_falls_back_to_pool_selection_not_live_service():
+    with patch("orchestration.generate_escalated_hint") as mock_generate:
+        steps = [make_step(1, "5/7")]
+        results = run_pipeline(steps, correct_answer="7/12", previous_wrong_counts=[1])
+    mock_generate.assert_not_called()
+    assert results[0].hint_level == 2
+    assert results[0].hint_text == get_generic_hint()
+
+
+def test_non_escalated_step_with_question_text_does_not_call_the_live_hint_service():
+    with (
+        patch("misconception_matching.get_client", return_value=_mock_rules_client([])),
+        patch("hint_selection.get_client", return_value=_mock_hints_client([])),
+        patch("orchestration.generate_escalated_hint") as mock_generate,
+    ):
+        steps = [make_step(1, "5/7")]
+        results = run_pipeline(
+            steps, correct_answer="7/12", question_text="1/3 + 1/4", previous_wrong_counts=[0]
+        )
+    mock_generate.assert_not_called()
+    assert results[0].hint_level == 1
+
+
+def test_escalation_with_no_misconception_match_still_calls_live_service_without_description():
+    with (
+        patch("misconception_matching.get_client", return_value=_mock_rules_client([])),
+        patch("orchestration.generate_escalated_hint", return_value="Bijna goed! Algemene hint.") as mock_generate,
+    ):
+        steps = [make_step(1, "5/7")]
+        results = run_pipeline(
+            steps, correct_answer="7/12", question_text="1/3 + 1/4", previous_wrong_counts=[1]
+        )
+    assert results[0].hint_text == "Bijna goed! Algemene hint."
+    assert mock_generate.call_args.args[0] is None  # no misconception_description
 
 
 def test_logs_a_duration_for_each_pipeline_stage(caplog):
