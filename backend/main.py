@@ -200,11 +200,19 @@ def create_attempt_endpoint(payload: AttemptCreate, parent_id: str = Depends(req
 
 class CheckStep(BaseModel):
     recognized_latex: str
+    # previous_wrong_count (ticket #71): how many times this step already came
+    # back wrong in this same problem-solving session, tracked client-side - see
+    # orchestration.py's module docstring for why the backend doesn't infer this
+    # from persisted attempt history instead. Defaults to 0 (first try).
+    previous_wrong_count: int = 0
 
 
 class CheckRequest(BaseModel):
     steps: list[CheckStep]
     correct_answer: str
+    # question_text (ticket #33): the problem's own text, needed for misconception
+    # matching - optional so pre-#33 callers (and existing tests) are unaffected.
+    question_text: str | None = None
 
 
 @app.post("/attempts/check", response_model=list[EvaluationResult])
@@ -221,7 +229,12 @@ def check_attempt(payload: CheckRequest, parent_id: str = Depends(require_parent
         for s in payload.steps
     ]
     try:
-        return run_pipeline(steps, correct_answer=payload.correct_answer)
+        return run_pipeline(
+            steps,
+            correct_answer=payload.correct_answer,
+            question_text=payload.question_text,
+            previous_wrong_counts=[s.previous_wrong_count for s in payload.steps],
+        )
     except LatexParseError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     # PipelineError is deliberately not caught here - it signals a genuine unexpected bug

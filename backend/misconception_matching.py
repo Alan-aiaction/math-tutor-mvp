@@ -244,3 +244,15 @@ def match_misconception(question_text: str, wrong_expr) -> str | None:
             return rule["id"]
 
     return None
+
+
+def get_misconception(misconception_id: str) -> dict | None:
+    """Fetch a misconception_rules row by id, or None if it doesn't exist.
+
+    Added for #72: the live hint-escalation prompt needs a misconception's own
+    `description` (e.g. "Rounds the messy factor... forgets to compensate") for
+    context - match_misconception() only ever returns the bare id, not the row.
+    """
+    client = get_client()
+    rows = client.table("misconception_rules").select("*").eq("id", misconception_id).execute().data
+    return rows[0] if rows else None

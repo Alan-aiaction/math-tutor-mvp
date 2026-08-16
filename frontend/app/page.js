@@ -17,8 +17,17 @@ const INITIAL_STEPS = [{ status: "unanswered", recognizedLatex: "" }];
 
 const ALL_CORRECT_MESSAGE = "Goed zo! Je hebt de hele som goed opgelost.";
 
+const INITIAL_WRONG_TRY_COUNTS = [0];
+
 export default function Home() {
   const [steps, setSteps] = useState(INITIAL_STEPS);
+  // wrongTryCounts (ticket #71): how many times each step has already come back
+  // wrong in this problem-solving session - parallel to `steps`, sent to the
+  // backend so it can trigger hint escalation on a 2nd+ wrong try at the same
+  // step. Deliberately NOT reset by handleStepChange - editing a step IS the
+  // retry itself, so the count must survive across edits, only resetting when
+  // the session itself ends (next problem / clear).
+  const [wrongTryCounts, setWrongTryCounts] = useState(INITIAL_WRONG_TRY_COUNTS);
   const [results, setResults] = useState(null);
   const [checking, setChecking] = useState(false);
   const [checkError, setCheckError] = useState(null);
@@ -85,6 +94,7 @@ export default function Home() {
     setLoadingProblem(true);
     setProblemError(null);
     setSteps(INITIAL_STEPS);
+    setWrongTryCounts(INITIAL_WRONG_TRY_COUNTS);
     setResults(null);
     setCheckError(null);
     setSaveError(null);
@@ -100,11 +110,13 @@ export default function Home() {
 
   const addStep = () => {
     setSteps((prev) => [...prev, { status: "unanswered", recognizedLatex: "" }]);
+    setWrongTryCounts((prev) => [...prev, 0]);
     setResults(null);
   };
 
   const deleteStep = (index) => {
     setSteps((prev) => prev.filter((_, i) => i !== index));
+    setWrongTryCounts((prev) => prev.filter((_, i) => i !== index));
     setResults(null);
   };
 
@@ -147,11 +159,16 @@ export default function Home() {
         method: "POST",
         headers: authHeaders(),
         body: JSON.stringify({
-          steps: steps.map((s) => ({ recognized_latex: s.recognizedLatex })),
+          steps: steps.map((s, i) => ({
+            recognized_latex: s.recognizedLatex,
+            previous_wrong_count: wrongTryCounts[i] ?? 0,
+          })),
           correct_answer: problem.correct_answer,
+          question_text: problem.question_text,
         }),
       });
       setResults(data);
+      setWrongTryCounts((prev) => steps.map((_, i) => (data[i]?.valid ? 0 : (prev[i] ?? 0) + 1)));
       await persistAttempt(data);
     } catch (err) {
       setCheckError(err.message || "Check failed");
@@ -162,6 +179,7 @@ export default function Home() {
 
   const clearSteps = () => {
     setSteps([]);
+    setWrongTryCounts([]);
     setResults(null);
   };
 

@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from fastapi.testclient import TestClient
 
@@ -199,3 +199,49 @@ def test_create_attempt_rejects_a_child_that_doesnt_belong_to_this_parent():
             headers=AUTH_HEADER,
         )
     assert response.status_code == 403
+
+
+# --- question_text / misconception matching passthrough (ticket #33) ---
+# Merged with #76's auth requirement: /attempts/check now needs a parent token too,
+# so both cases below carry _mock_parent_auth()/AUTH_HEADER same as the check_attempt
+# tests above - originally written pre-auth, adapted here rather than dropped.
+
+
+def test_check_attempt_without_question_text_still_works():
+    """question_text is optional (ticket #33) - omitting it entirely must not break
+    the existing request shape."""
+    with _mock_parent_auth():
+        response = client.post(
+            "/attempts/check",
+            json={"steps": [{"recognized_latex": "5/7"}], "correct_answer": "7/12"},
+            headers=AUTH_HEADER,
+        )
+    assert response.status_code == 200
+    assert response.json()[0]["misconception_id"] is None
+
+
+def test_check_attempt_with_question_text_is_accepted():
+    """Confirms the field is accepted and passed through to run_pipeline without
+    error - the specific matching logic itself is covered by
+    test_orchestration.py's mocked-DB tests, not re-tested here. DB calls mocked
+    (empty results) so this stays a unit test, not a real Supabase hit."""
+    empty_client = MagicMock()
+    empty_client.table.return_value.select.return_value.execute.return_value.data = []
+    empty_client.table.return_value.select.return_value.eq.return_value.eq.return_value.execute.return_value.data = (
+        []
+    )
+    with (
+        _mock_parent_auth(),
+        patch("misconception_matching.get_client", return_value=empty_client),
+        patch("hint_selection.get_client", return_value=empty_client),
+    ):
+        response = client.post(
+            "/attempts/check",
+            json={
+                "steps": [{"recognized_latex": "5/7"}],
+                "correct_answer": "7/12",
+                "question_text": "1/3 + 1/4",
+            },
+            headers=AUTH_HEADER,
+        )
+    assert response.status_code == 200
