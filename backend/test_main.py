@@ -201,6 +201,41 @@ def test_create_attempt_rejects_a_child_that_doesnt_belong_to_this_parent():
     assert response.status_code == 403
 
 
+# --- Child KPIs endpoint (KPI data layer) ---
+
+
+def test_get_child_kpis_requires_auth():
+    response = client.get("/children/1/kpis")
+    assert response.status_code == 401
+
+
+def test_get_child_kpis_rejects_a_child_that_doesnt_belong_to_this_parent():
+    with _mock_parent_auth(), patch("main.get_child", return_value=None):
+        response = client.get("/children/999/kpis", headers=AUTH_HEADER)
+    assert response.status_code == 403
+
+
+def test_get_child_kpis_success():
+    with (
+        _mock_parent_auth(),
+        patch(
+            "main.get_child",
+            return_value=Child(id=1, parent_id=FAKE_PARENT_ID, nickname="Sam", created_at="2026-08-16T00:00:00Z"),
+        ),
+        patch("main.get_accuracy_trend", return_value=[{"date": "2026-08-16", "accuracy": 0.5}]),
+        patch("main.get_practice_frequency", return_value=3),
+        patch("main.get_average_retries", return_value=1.5),
+        patch("main.get_weak_spots_by_topic", return_value=[{"topic": "fractions", "accuracy": 0.5}]),
+    ):
+        response = client.get("/children/1/kpis", headers=AUTH_HEADER)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["accuracy_trend"] == [{"date": "2026-08-16", "accuracy": 0.5}]
+    assert body["practice_frequency_days"] == 3
+    assert body["average_retries"] == 1.5
+    assert body["weak_spots_by_topic"] == [{"topic": "fractions", "accuracy": 0.5}]
+
+
 # --- question_text / misconception matching passthrough (ticket #33) ---
 # Merged with #76's auth requirement: /attempts/check now needs a parent token too,
 # so both cases below carry _mock_parent_auth()/AUTH_HEADER same as the check_attempt

@@ -23,10 +23,16 @@ def _mock_client_for(attempt_row, step_rows):
 
 
 def test_successful_create_returns_attempt_with_generated_ids():
-    attempt_row = {"id": 1, "problem_id": 5, "child_id": 42, "status": "in_progress"}
+    attempt_row = {
+        "id": 1,
+        "problem_id": 5,
+        "child_id": 42,
+        "status": "in_progress",
+        "created_at": "2026-08-16T00:00:00Z",
+    }
     step_rows = [
-        {"id": 10, "recognized_latex": "1/4 + 1/3", "is_correct": True},
-        {"id": 11, "recognized_latex": "7/12", "is_correct": True},
+        {"id": 10, "recognized_latex": "1/4 + 1/3", "is_correct": True, "previous_wrong_count": 0},
+        {"id": 11, "recognized_latex": "7/12", "is_correct": True, "previous_wrong_count": 1},
     ]
     mock_client = _mock_client_for(attempt_row, step_rows)
 
@@ -36,20 +42,50 @@ def test_successful_create_returns_attempt_with_generated_ids():
             child_id=42,
             status="in_progress",
             steps=[
-                {"recognized_latex": "1/4 + 1/3", "is_correct": True},
-                {"recognized_latex": "7/12", "is_correct": True},
+                {"recognized_latex": "1/4 + 1/3", "is_correct": True, "previous_wrong_count": 0},
+                {"recognized_latex": "7/12", "is_correct": True, "previous_wrong_count": 1},
             ],
         )
 
     assert result.id == 1
     assert result.problem_id == 5
+    assert result.created_at == "2026-08-16T00:00:00Z"
     assert len(result.steps) == 2
     assert result.steps[0].id == 10
     assert result.steps[0].attempt_id == 1
+    assert result.steps[1].previous_wrong_count == 1
+
+
+def test_step_previous_wrong_count_defaults_to_zero_when_omitted():
+    attempt_row = {
+        "id": 4,
+        "problem_id": 5,
+        "child_id": 42,
+        "status": "in_progress",
+        "created_at": "2026-08-16T00:00:00Z",
+    }
+    step_rows = [{"id": 12, "recognized_latex": "7/12", "is_correct": True, "previous_wrong_count": 0}]
+    mock_client = _mock_client_for(attempt_row, step_rows)
+
+    with patch("attempts.get_client", return_value=mock_client):
+        result = create_attempt(
+            problem_id=5,
+            child_id=42,
+            status="in_progress",
+            steps=[{"recognized_latex": "7/12", "is_correct": True}],
+        )
+
+    assert result.steps[0].previous_wrong_count == 0
 
 
 def test_no_steps_returns_attempt_with_empty_steps_list():
-    attempt_row = {"id": 2, "problem_id": 5, "child_id": 42, "status": "in_progress"}
+    attempt_row = {
+        "id": 2,
+        "problem_id": 5,
+        "child_id": 42,
+        "status": "in_progress",
+        "created_at": "2026-08-16T00:00:00Z",
+    }
     mock_client = _mock_client_for(attempt_row, [])
 
     with patch("attempts.get_client", return_value=mock_client):

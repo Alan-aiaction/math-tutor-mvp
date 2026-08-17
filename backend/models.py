@@ -22,6 +22,8 @@ class Step(BaseModel):
     attempt_id: int
     recognized_latex: str  # output from MyScript recognition
     is_correct: bool
+    previous_wrong_count: int = 0  # KPI data layer: how many times this step already
+    # came back wrong before this save - see main.py's StepCreate for the full note
 
 
 class Attempt(BaseModel):
@@ -31,6 +33,7 @@ class Attempt(BaseModel):
     # a real FK to a parent-owned child account, see children.py
     steps: list[Step]
     status: str  # e.g. "in_progress", "completed" - fixed value list still open
+    created_at: str  # KPI data layer: powers accuracy-trend/practice-frequency queries
 
 
 class Child(BaseModel):
