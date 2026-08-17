@@ -53,6 +53,7 @@ def create_attempt(problem_id: int, child_id: int, status: str, steps: list[dict
                             "attempt_id": attempt_id,
                             "recognized_latex": step["recognized_latex"],
                             "is_correct": step["is_correct"],
+                            "previous_wrong_count": step.get("previous_wrong_count", 0),
                         }
                         for step in steps
                     ]
@@ -68,12 +69,14 @@ def create_attempt(problem_id: int, child_id: int, status: str, steps: list[dict
         problem_id=problem_id,
         child_id=child_id,
         status=status,
+        created_at=attempt_row["created_at"],
         steps=[
             Step(
                 id=row["id"],
                 attempt_id=attempt_id,
                 recognized_latex=row["recognized_latex"],
                 is_correct=row["is_correct"],
+                previous_wrong_count=row["previous_wrong_count"],
             )
             for row in step_rows
         ],

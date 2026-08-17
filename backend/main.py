@@ -14,6 +14,7 @@ from attempts import AttemptPersistenceError, create_attempt
 from auth import AuthError, get_current_parent_id
 from children import ChildError, create_child, get_child, list_children, verify_child_login
 from db import DatabaseError
+from kpis import get_accuracy_trend, get_average_retries, get_practice_frequency, get_weak_spots_by_topic
 from latex_parser import LatexParseError
 from models import Attempt, Child, EvaluationResult, Problem, Step
 from orchestration import run_pipeline
@@ -172,6 +173,11 @@ def child_login_endpoint(child_id: int, payload: ChildLogin, parent_id: str = De
 class StepCreate(BaseModel):
     recognized_latex: str
     is_correct: bool
+    # previous_wrong_count (KPI data layer): same field name/semantics as CheckStep's
+    # existing field (ticket #71) - how many times this step already came back wrong
+    # before this save. Persisted now instead of discarded, so retry-rate KPIs are
+    # computable later.
+    previous_wrong_count: int = 0
 
 
 class AttemptCreate(BaseModel):
@@ -196,6 +202,25 @@ def create_attempt_endpoint(payload: AttemptCreate, parent_id: str = Depends(req
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except DatabaseError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+class ChildKpis(BaseModel):
+    accuracy_trend: list[dict]
+    practice_frequency_days: int
+    average_retries: float
+    weak_spots_by_topic: list[dict]
+
+
+@app.get("/children/{child_id}/kpis", response_model=ChildKpis)
+def get_child_kpis_endpoint(child_id: int, parent_id: str = Depends(require_parent_id)):
+    if get_child(parent_id, child_id) is None:
+        raise HTTPException(status_code=403, detail="This child does not belong to the authenticated parent")
+    return ChildKpis(
+        accuracy_trend=get_accuracy_trend(child_id),
+        practice_frequency_days=get_practice_frequency(child_id),
+        average_retries=get_average_retries(child_id),
+        weak_spots_by_topic=get_weak_spots_by_topic(child_id),
+    )
 
 
 class CheckStep(BaseModel):

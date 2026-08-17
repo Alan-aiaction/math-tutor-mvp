@@ -68,24 +68,28 @@ def test_create_attempt_persists_and_is_queryable(throwaway_problem, throwaway_c
         problem_id=throwaway_problem["id"],
         child_id=throwaway_child["id"],
         status="in_progress",
-        steps=[{"recognized_latex": "7/12", "is_correct": True}],
+        steps=[{"recognized_latex": "7/12", "is_correct": True, "previous_wrong_count": 2}],
     )
 
     try:
         assert result.id is not None
+        assert result.created_at is not None
         assert len(result.steps) == 1
+        assert result.steps[0].previous_wrong_count == 2
 
         queried_attempt = (
             client.table("attempts").select("*").eq("id", result.id).execute().data
         )
         assert len(queried_attempt) == 1
         assert queried_attempt[0]["problem_id"] == throwaway_problem["id"]
+        assert queried_attempt[0]["created_at"] is not None
 
         queried_steps = (
             client.table("attempt_steps").select("*").eq("attempt_id", result.id).execute().data
         )
         assert len(queried_steps) == 1
         assert queried_steps[0]["recognized_latex"] == "7/12"
+        assert queried_steps[0]["previous_wrong_count"] == 2
     finally:
         client.table("attempt_steps").delete().eq("attempt_id", result.id).execute()
         client.table("attempts").delete().eq("id", result.id).execute()

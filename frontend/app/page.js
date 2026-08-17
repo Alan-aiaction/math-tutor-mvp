@@ -142,6 +142,10 @@ export default function Home() {
           steps: steps.map((s, i) => ({
             recognized_latex: s.recognizedLatex,
             is_correct: checkResults[i]?.valid ?? false,
+            // Same value just sent to /attempts/check for this step (KPI data layer) -
+            // previously computed and used for hint escalation, then discarded; now
+            // also persisted so retry-rate KPIs are computable later.
+            previous_wrong_count: wrongTryCounts[i] ?? 0,
           })),
         }),
       });
