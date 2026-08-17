@@ -49,12 +49,13 @@ app = FastAPI(title="Math Tutor MVP Backend")
 app.add_middleware(
     CORSMiddleware,
     # Local dev, plus every Vercel deployment for this project (prod + all
-    # preview URLs). No credentials are involved (no cookies/auth headers),
-    # so a broad-but-scoped-to-Vercel origin match is reasonable here.
+    # preview URLs). Authorization is required (ticket #76's parent/child auth
+    # sends Bearer tokens on every request that needs a parent identity) - no
+    # cookies/TLS-client-certs are used, so allow_credentials stays False.
     allow_origins=["http://localhost:3000"],
     allow_origin_regex=r"https://.*\.vercel\.app",
     allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 
