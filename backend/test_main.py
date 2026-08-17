@@ -23,6 +23,29 @@ def _mock_parent_auth():
     return patch("main.get_current_parent_id", return_value=FAKE_PARENT_ID)
 
 
+# --- CORS (fix #76: Authorization was missing from allow_headers, which silently
+# broke every authenticated request from the deployed frontend - see decision log) ---
+
+
+def test_cors_preflight_allows_authorization_header():
+    """Reproduces the exact browser preflight for a cross-origin authenticated request
+    (e.g. Vercel frontend -> Railway backend). Before the fix, Authorization was missing
+    from allow_headers, so this came back without it - the browser would then block the
+    real request and the frontend saw it as a generic network error."""
+    response = client.options(
+        "/children",
+        headers={
+            "Origin": "https://math-tutor-mvp.vercel.app",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "authorization,content-type",
+        },
+    )
+    assert response.status_code == 200
+    allowed_headers = response.headers["access-control-allow-headers"].lower()
+    assert "authorization" in allowed_headers
+    assert "content-type" in allowed_headers
+
+
 def test_unhandled_exception_returns_clean_500_not_a_crash():
     # main.capture_exception is mocked here so this unit test doesn't send a real event to
     # the team's live Sentry dashboard on every run (#59) - Sentry delivery itself is a
