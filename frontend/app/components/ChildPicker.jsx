@@ -16,6 +16,9 @@ export default function ChildPicker({ accessToken, onChildSelected, onSignOut })
 
   const [view, setView] = useState("list"); // "list" | "add" | "gate"
   const [gatingChild, setGatingChild] = useState(null);
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState(null);
+  const [deleteError, setDeleteError] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const authHeaders = {
     "Content-Type": "application/json",
@@ -45,6 +48,20 @@ export default function ChildPicker({ accessToken, onChildSelected, onSignOut })
   const backToList = () => {
     setView("list");
     setGatingChild(null);
+  };
+
+  const confirmDelete = async (childId) => {
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await apiFetch(`${BACKEND_URL}/children/${childId}`, { method: "DELETE", headers: authHeaders });
+      setConfirmingDeleteId(null);
+      await loadChildren();
+    } catch (err) {
+      setDeleteError(err.message || "Could not remove this child");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   if (children === null && !loadError) {
@@ -96,18 +113,59 @@ export default function ChildPicker({ accessToken, onChildSelected, onSignOut })
         <p className="text-sm text-gray-600">No children yet — add your first one below.</p>
       )}
 
+      {deleteError && <p className="text-sm text-red-600">{deleteError}</p>}
+
       {children && children.length > 0 && (
         <div className="flex flex-wrap gap-3">
-          {children.map((child) => (
-            <button
-              key={child.id}
-              type="button"
-              onClick={() => openGate(child)}
-              className="rounded-lg border-2 border-gray-300 px-4 py-3 text-sm font-medium text-gray-700 hover:border-emerald-500"
-            >
-              {child.nickname}
-            </button>
-          ))}
+          {children.map((child) =>
+            confirmingDeleteId === child.id ? (
+              <div
+                key={child.id}
+                className="flex items-center gap-2 rounded-lg border-2 border-red-300 px-3 py-2 text-sm"
+              >
+                <span className="text-gray-700">Remove {child.nickname}?</span>
+                <button
+                  type="button"
+                  onClick={() => confirmDelete(child.id)}
+                  disabled={deleting}
+                  className="font-medium text-red-600 hover:underline disabled:opacity-40"
+                >
+                  {deleting ? "Removing…" : "Yes, remove"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmingDeleteId(null)}
+                  className="text-gray-500 hover:underline"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <div
+                key={child.id}
+                className="flex items-center gap-1 rounded-lg border-2 border-gray-300 px-2 py-2 hover:border-emerald-500"
+              >
+                <button
+                  type="button"
+                  onClick={() => openGate(child)}
+                  className="px-2 py-1 text-sm font-medium text-gray-700"
+                >
+                  {child.nickname}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeleteError(null);
+                    setConfirmingDeleteId(child.id);
+                  }}
+                  aria-label={`Remove ${child.nickname}`}
+                  className="px-1 text-xs text-gray-400 hover:text-red-600"
+                >
+                  ✕
+                </button>
+              </div>
+            )
+          )}
         </div>
       )}
 

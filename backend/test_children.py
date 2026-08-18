@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import bcrypt
 
-from children import ChildError, create_child, get_child, list_children, verify_child_login
+from children import ChildError, create_child, delete_child, get_child, list_children, verify_child_login
 
 PARENT_ID = "11111111-1111-1111-1111-111111111111"
 OTHER_PARENT_ID = "22222222-2222-2222-2222-222222222222"
@@ -83,6 +83,65 @@ def test_get_child_returns_the_child_when_owned():
         result = get_child(PARENT_ID, 1)
     assert result is not None
     assert result.nickname == "Sam"
+
+
+def _mock_client_for_delete(owned_rows, attempt_rows):
+    """children table returns owned_rows for the ownership check, attempts returns
+    attempt_rows for this child's attempt ids - both tables also need working
+    .delete() chains so delete_child's cascade calls don't blow up on a bare
+    MagicMock attribute access."""
+    mock_client = MagicMock()
+
+    children_table = MagicMock()
+    children_table.select.return_value.eq.return_value.eq.return_value.execute.return_value.data = owned_rows
+
+    attempts_table = MagicMock()
+    attempts_table.select.return_value.eq.return_value.execute.return_value.data = attempt_rows
+
+    steps_table = MagicMock()
+
+    def table(name):
+        return {"children": children_table, "attempts": attempts_table, "attempt_steps": steps_table}[name]
+
+    mock_client.table.side_effect = table
+    return mock_client, children_table, attempts_table, steps_table
+
+
+def test_delete_child_cascades_steps_then_attempts_then_child():
+    owned_rows = [{"id": 1}]
+    attempt_rows = [{"id": 10}, {"id": 11}]
+    mock_client, children_table, attempts_table, steps_table = _mock_client_for_delete(owned_rows, attempt_rows)
+
+    with patch("children.get_client", return_value=mock_client):
+        result = delete_child(PARENT_ID, 1)
+
+    assert result is True
+    steps_table.delete.return_value.in_.assert_called_once_with("attempt_id", [10, 11])
+    attempts_table.delete.return_value.eq.assert_called_once_with("child_id", 1)
+    children_table.delete.return_value.eq.return_value.eq.assert_called_once_with("parent_id", PARENT_ID)
+
+
+def test_delete_child_no_attempts_skips_step_delete_but_still_removes_child():
+    mock_client, children_table, attempts_table, steps_table = _mock_client_for_delete([{"id": 1}], [])
+
+    with patch("children.get_client", return_value=mock_client):
+        result = delete_child(PARENT_ID, 1)
+
+    assert result is True
+    steps_table.delete.assert_not_called()
+    children_table.delete.return_value.eq.return_value.eq.assert_called_once_with("parent_id", PARENT_ID)
+
+
+def test_delete_child_not_owned_returns_false_and_deletes_nothing():
+    mock_client, children_table, attempts_table, steps_table = _mock_client_for_delete([], [])
+
+    with patch("children.get_client", return_value=mock_client):
+        result = delete_child(OTHER_PARENT_ID, 1)
+
+    assert result is False
+    children_table.delete.assert_not_called()
+    attempts_table.delete.assert_not_called()
+    steps_table.delete.assert_not_called()
 
 
 def test_verify_child_login_correct_password():
