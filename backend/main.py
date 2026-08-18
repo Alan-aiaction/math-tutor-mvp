@@ -12,7 +12,7 @@ from pydantic import BaseModel
 
 from attempts import AttemptPersistenceError, create_attempt
 from auth import AuthError, get_current_parent_id
-from children import ChildError, create_child, get_child, list_children, verify_child_login
+from children import ChildError, create_child, delete_child, get_child, list_children, verify_child_login
 from db import DatabaseError
 from kpis import get_accuracy_trend, get_average_retries, get_practice_frequency, get_weak_spots_by_topic
 from latex_parser import LatexParseError
@@ -55,7 +55,7 @@ app.add_middleware(
     # cookies/TLS-client-certs are used, so allow_credentials stays False.
     allow_origins=["http://localhost:3000"],
     allow_origin_regex=r"https://.*\.vercel\.app",
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["Content-Type", "Authorization"],
 )
 
@@ -154,6 +154,16 @@ def create_child_endpoint(payload: ChildCreate, parent_id: str = Depends(require
 @app.get("/children", response_model=list[Child])
 def list_children_endpoint(parent_id: str = Depends(require_parent_id)):
     return list_children(parent_id)
+
+
+@app.delete("/children/{child_id}")
+def delete_child_endpoint(child_id: int, parent_id: str = Depends(require_parent_id)):
+    if get_child(parent_id, child_id) is None:
+        raise HTTPException(status_code=403, detail="This child does not belong to the authenticated parent")
+    delete_child(parent_id, child_id)
+    # {"deleted": true} rather than 204 No Content - apiFetch.js always calls res.json(),
+    # which would throw on an empty body and get reported as a generic network error.
+    return {"deleted": True}
 
 
 class ChildLogin(BaseModel):

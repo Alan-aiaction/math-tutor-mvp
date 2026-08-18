@@ -46,6 +46,21 @@ def test_cors_preflight_allows_authorization_header():
     assert "content-type" in allowed_headers
 
 
+def test_cors_preflight_allows_delete_method():
+    """DELETE /children/{id} (remove-child feature) needs DELETE in allow_methods, the
+    same class of gap the Authorization-header fix above closed for allow_headers."""
+    response = client.options(
+        "/children/1",
+        headers={
+            "Origin": "https://math-tutor-mvp.vercel.app",
+            "Access-Control-Request-Method": "DELETE",
+            "Access-Control-Request-Headers": "authorization",
+        },
+    )
+    assert response.status_code == 200
+    assert "DELETE" in response.headers["access-control-allow-methods"]
+
+
 def test_unhandled_exception_returns_clean_500_not_a_crash():
     # main.capture_exception is mocked here so this unit test doesn't send a real event to
     # the team's live Sentry dashboard on every run (#59) - Sentry delivery itself is a
@@ -187,6 +202,32 @@ def test_child_login_wrong_password_returns_401():
     with _mock_parent_auth(), patch("main.verify_child_login", return_value=False):
         response = client.post("/children/1/login", json={"password": "wrong"}, headers=AUTH_HEADER)
     assert response.status_code == 401
+
+
+def test_delete_child_requires_auth():
+    response = client.delete("/children/1")
+    assert response.status_code == 401
+
+
+def test_delete_child_rejects_a_child_that_doesnt_belong_to_this_parent():
+    with _mock_parent_auth(), patch("main.get_child", return_value=None):
+        response = client.delete("/children/999", headers=AUTH_HEADER)
+    assert response.status_code == 403
+
+
+def test_delete_child_success():
+    with (
+        _mock_parent_auth(),
+        patch(
+            "main.get_child",
+            return_value=Child(id=1, parent_id=FAKE_PARENT_ID, nickname="Sam", created_at="2026-08-16T00:00:00Z"),
+        ),
+        patch("main.delete_child", return_value=True) as mock_delete,
+    ):
+        response = client.delete("/children/1", headers=AUTH_HEADER)
+    assert response.status_code == 200
+    assert response.json() == {"deleted": True}
+    mock_delete.assert_called_once_with(FAKE_PARENT_ID, 1)
 
 
 def test_child_login_success():

@@ -88,6 +88,42 @@ describe("ChildPicker", () => {
     await waitFor(() => expect(onChildSelected).toHaveBeenCalledWith(loggedInChild));
   });
 
+  it("remove-child flow: confirming calls DELETE and reloads the list without that child", async () => {
+    apiFetch
+      .mockResolvedValueOnce([{ id: 1, nickname: "Sam", parent_id: "p", created_at: "x" }]) // initial load
+      .mockResolvedValueOnce({ deleted: true }) // DELETE /children/1
+      .mockResolvedValueOnce([]); // reload
+    render(<ChildPicker accessToken="t" />);
+    fireEvent.click(await screen.findByLabelText("Remove Sam"));
+    fireEvent.click(screen.getByRole("button", { name: "Yes, remove" }));
+    await waitFor(() => expect(screen.getByText(/no children yet/i)).toBeInTheDocument());
+    expect(apiFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/children/1"),
+      expect.objectContaining({ method: "DELETE" })
+    );
+  });
+
+  it("remove-child flow: cancel leaves the child in place untouched", async () => {
+    apiFetch.mockResolvedValueOnce([{ id: 1, nickname: "Sam", parent_id: "p", created_at: "x" }]);
+    render(<ChildPicker accessToken="t" />);
+    fireEvent.click(await screen.findByLabelText("Remove Sam"));
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.getByText("Sam")).toBeInTheDocument();
+    expect(apiFetch).toHaveBeenCalledTimes(1); // only the initial load - no DELETE call
+  });
+
+  it("remove-child flow: a failed delete shows an error and keeps the child", async () => {
+    apiFetch
+      .mockResolvedValueOnce([{ id: 1, nickname: "Sam", parent_id: "p", created_at: "x" }])
+      .mockRejectedValueOnce(new ApiError("Could not remove this child"));
+    render(<ChildPicker accessToken="t" />);
+    fireEvent.click(await screen.findByLabelText("Remove Sam"));
+    fireEvent.click(screen.getByRole("button", { name: "Yes, remove" }));
+    expect(await screen.findByText("Could not remove this child")).toBeInTheDocument();
+    // Still in the confirm state, not silently reset - the child wasn't removed.
+    expect(screen.getByText(/remove sam\?/i)).toBeInTheDocument();
+  });
+
   it("sign-out calls supabase.auth.signOut and onSignOut", async () => {
     apiFetch.mockResolvedValue([]);
     const onSignOut = vi.fn();

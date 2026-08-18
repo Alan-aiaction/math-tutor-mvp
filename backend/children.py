@@ -69,6 +69,32 @@ def get_child(parent_id: str, child_id: int) -> Child | None:
     return Child(id=row["id"], parent_id=row["parent_id"], nickname=row["nickname"], created_at=row["created_at"])
 
 
+def delete_child(parent_id: str, child_id: int) -> bool:
+    """Remove a child and all their attempt history - a hard delete, not a
+    deactivation. False (not an exception) if child_id doesn't exist or isn't this
+    parent's, matching this module's other ownership-check functions.
+
+    Neither attempts.child_id nor attempt_steps.attempt_id has ON DELETE CASCADE (see
+    the migrations), so the cascade happens explicitly here, child-of-child-of-child
+    order, rather than relying on the database to do it - same precedent as
+    attempts.py's own explicit multi-table writes.
+    """
+    client = get_client()
+
+    owned = client.table("children").select("id").eq("id", child_id).eq("parent_id", parent_id).execute().data
+    if not owned:
+        return False
+
+    attempt_ids = [
+        row["id"] for row in client.table("attempts").select("id").eq("child_id", child_id).execute().data
+    ]
+    if attempt_ids:
+        client.table("attempt_steps").delete().in_("attempt_id", attempt_ids).execute()
+    client.table("attempts").delete().eq("child_id", child_id).execute()
+    client.table("children").delete().eq("id", child_id).eq("parent_id", parent_id).execute()
+    return True
+
+
 def verify_child_login(parent_id: str, child_id: int, password: str) -> bool:
     """True if child_id belongs to this parent AND the password matches. False (not an
     exception) on either a wrong password or a child_id that isn't this parent's - the
