@@ -13,6 +13,7 @@ import bcrypt
 
 from db import get_client
 from models import Child
+from parents import get_or_create_parent
 
 
 class ChildError(Exception):
@@ -30,8 +31,15 @@ def _verify_password(password: str, password_hash: str) -> bool:
 
 def create_child(parent_id: str, nickname: str, password: str) -> Child:
     """Create a new child under this parent. Raises ChildError if this parent already
-    has a child with the same nickname (the (parent_id, nickname) unique constraint)."""
+    has a child with the same nickname (the (parent_id, nickname) unique constraint),
+    or if they're already at their child cap (parents.max_children)."""
+    parent = get_or_create_parent(parent_id)
     client = get_client()
+
+    existing_count = len(client.table("children").select("id").eq("parent_id", parent_id).execute().data)
+    if existing_count >= parent.max_children:
+        raise ChildError(f"This account already has the maximum of {parent.max_children} children")
+
     try:
         row = (
             client.table("children")

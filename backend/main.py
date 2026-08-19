@@ -24,6 +24,7 @@ from kpis import (
 from latex_parser import LatexParseError
 from models import Attempt, Child, EvaluationResult, Problem, Step
 from orchestration import run_pipeline
+from parents import get_or_create_parent
 from problems import ProblemNotFoundError, get_problem, get_random_problem
 from recognition import RecognitionError, recognize_math
 
@@ -147,6 +148,19 @@ def recognize(payload: RecognizeRequest):
 class ChildCreate(BaseModel):
     nickname: str
     password: str
+
+
+class ParentProfile(BaseModel):
+    family_code: str
+    max_children: int
+    children_count: int
+
+
+@app.get("/parents/me", response_model=ParentProfile)
+def get_parent_profile_endpoint(parent_id: str = Depends(require_parent_id)):
+    parent = get_or_create_parent(parent_id)
+    children_count = len(list_children(parent_id))
+    return ParentProfile(family_code=parent.family_code, max_children=parent.max_children, children_count=children_count)
 
 
 @app.post("/children", response_model=Child)

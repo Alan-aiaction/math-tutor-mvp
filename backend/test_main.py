@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 
 from children import ChildError
 from main import app
-from models import Child
+from models import Child, Parent
 from recognition import RecognitionError
 
 # raise_server_exceptions=False: without this, TestClient re-raises the original
@@ -153,6 +153,32 @@ def test_check_attempt_without_auth_header_returns_401():
         json={"steps": [{"recognized_latex": "7/12"}], "correct_answer": "7/12"},
     )
     assert response.status_code == 401
+
+
+# --- Parent profile (child cap groundwork) ---
+
+
+def test_get_parent_profile_requires_auth():
+    response = client.get("/parents/me")
+    assert response.status_code == 401
+
+
+def test_get_parent_profile_success():
+    with (
+        _mock_parent_auth(),
+        patch(
+            "main.get_or_create_parent",
+            return_value=Parent(id=FAKE_PARENT_ID, family_code="AB12CD", max_children=3, created_at="2026-08-19T00:00:00Z"),
+        ),
+        patch(
+            "main.list_children",
+            return_value=[Child(id=1, parent_id=FAKE_PARENT_ID, nickname="Sam", created_at="2026-08-16T00:00:00Z")],
+        ),
+    ):
+        response = client.get("/parents/me", headers=AUTH_HEADER)
+    assert response.status_code == 200
+    body = response.json()
+    assert body == {"family_code": "AB12CD", "max_children": 3, "children_count": 1}
 
 
 # --- Children endpoints (3rd MVP auth) ---

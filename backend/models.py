@@ -43,6 +43,16 @@ class Child(BaseModel):
     created_at: str  # never includes password_hash - that never leaves children.py
 
 
+class Parent(BaseModel):
+    id: str  # a Supabase Auth user id (uuid) - same id as auth.users, not a new one
+    family_code: str  # short, unambiguous code a parent hands to their child for
+    # independent login (see parents.py) - not a secret on its own, always paired
+    # with the child's own nickname + password
+    max_children: int  # per-parent cap; fixed default until a real billing system
+    # exists to vary it per plan (deferred to 4th MVP)
+    created_at: str
+
+
 class EvaluationResult(BaseModel):
     valid: bool
     misconception_id: str | None
