@@ -14,7 +14,13 @@ from attempts import AttemptPersistenceError, create_attempt
 from auth import AuthError, get_current_parent_id
 from children import ChildError, create_child, delete_child, get_child, list_children, verify_child_login
 from db import DatabaseError
-from kpis import get_accuracy_trend, get_average_retries, get_practice_frequency, get_weak_spots_by_topic
+from kpis import (
+    get_accuracy_trend,
+    get_average_retries,
+    get_practice_frequency,
+    get_total_attempts,
+    get_weak_spots_by_topic,
+)
 from latex_parser import LatexParseError
 from models import Attempt, Child, EvaluationResult, Problem, Step
 from orchestration import run_pipeline
@@ -220,6 +226,7 @@ class ChildKpis(BaseModel):
     practice_frequency_days: int
     average_retries: float
     weak_spots_by_topic: list[dict]
+    total_attempts: int
 
 
 @app.get("/children/{child_id}/kpis", response_model=ChildKpis)
@@ -231,6 +238,7 @@ def get_child_kpis_endpoint(child_id: int, parent_id: str = Depends(require_pare
         practice_frequency_days=get_practice_frequency(child_id),
         average_retries=get_average_retries(child_id),
         weak_spots_by_topic=get_weak_spots_by_topic(child_id),
+        total_attempts=get_total_attempts(child_id),
     )
 
 

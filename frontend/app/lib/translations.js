@@ -54,7 +54,8 @@ export const translations = {
     "oefenen.next": "Volgend probleem",
     "oefenen.allCorrect": "Goed zo! Je hebt de hele som goed opgelost.",
 
-    "dashboard.eyebrow": "Deze week",
+    "dashboard.eyebrow": "Voortgang",
+    "dashboard.heroFor": "{name}'s voortgang",
     "dashboard.kpiAccuracy": "Nauwkeurigheid",
     "dashboard.kpiDays": "Oefendagen deze maand",
     "dashboard.kpiRetries": "Gem. pogingen per opgave",
@@ -138,7 +139,8 @@ export const translations = {
     "oefenen.next": "Next problem",
     "oefenen.allCorrect": "Well done! You solved the whole problem correctly.",
 
-    "dashboard.eyebrow": "This week",
+    "dashboard.eyebrow": "Progress",
+    "dashboard.heroFor": "{name}'s progress",
     "dashboard.kpiAccuracy": "Accuracy",
     "dashboard.kpiDays": "Practice days this month",
     "dashboard.kpiRetries": "Avg. attempts per problem",
