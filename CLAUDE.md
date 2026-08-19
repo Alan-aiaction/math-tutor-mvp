@@ -162,6 +162,19 @@ convention and file format) — two new files can never collide.
   not user-visible yet, what it directly unblocks). AC bullets say what's true when it's
   done; this says why that's worth doing. Applies to every plan, not just ticket-specific
   ones.
+- **Every plan checks whether `docs/architecture/` needs updating too — proactively,
+  never only when asked.** Before finalizing a plan (and again right before it's
+  reported done), check whether the change makes any diagram in
+  `docs/architecture/system-design.html` (or similar) stale — a sequence diagram
+  depicting a flow that changed, an ER diagram missing a new entity, a state diagram
+  describing behavior that no longer holds. If so, the diagram update belongs in the
+  *same* plan and the *same* PR as the code change, not a follow-up someone has to
+  remember. Got this wrong on PR #129 ("retire active child"): had already established
+  and followed this exact practice on an earlier PR that same session, then skipped
+  checking `system-design.html` entirely for #129 until Alan asked directly whether it
+  had been updated. Turned out nothing in that file actually needed changing that
+  time — but the check itself must never depend on being asked; a plan isn't finished
+  until this question has been asked and answered, whatever the answer turns out to be.
 - **Label PR numbers and ticket numbers explicitly — never a bare `#N`.** GitHub PR numbers
   and task-board ticket numbers are two independent sequences that overlap in value (PR #60
   and ticket #60 are unrelated). A sentence like "merge #67, then #68, once #45/#46b merge"
