@@ -77,6 +77,25 @@ def get_child(parent_id: str, child_id: int) -> Child | None:
     return Child(id=row["id"], parent_id=row["parent_id"], nickname=row["nickname"], created_at=row["created_at"])
 
 
+def get_child_by_nickname(parent_id: str, nickname: str) -> Child | None:
+    """Fetch a child by nickname, scoped to this parent - used by independent child
+    login (PR 2/3), where a child arrives with a nickname (not an id) once their family
+    code has already resolved which parent they belong to."""
+    client = get_client()
+    rows = (
+        client.table("children")
+        .select("*")
+        .eq("parent_id", parent_id)
+        .eq("nickname", nickname)
+        .execute()
+        .data
+    )
+    if not rows:
+        return None
+    row = rows[0]
+    return Child(id=row["id"], parent_id=row["parent_id"], nickname=row["nickname"], created_at=row["created_at"])
+
+
 def delete_child(parent_id: str, child_id: int) -> bool:
     """Remove a child and all their attempt history - a hard delete, not a
     deactivation. False (not an exception) if child_id doesn't exist or isn't this

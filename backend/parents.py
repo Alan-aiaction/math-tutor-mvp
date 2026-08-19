@@ -54,3 +54,13 @@ def get_or_create_parent(parent_id: str) -> Parent:
         except Exception as exc:  # family_code collision (astronomically rare) - retry with a new code
             last_exc = exc
     raise RuntimeError(f"Could not create parent profile after 5 attempts: {last_exc}")
+
+
+def get_parent_by_family_code(family_code: str) -> Parent | None:
+    """Look up a parent by their family code - the entry point for independent child
+    login (PR 2/3), where there's no parent session yet to key off instead."""
+    client = get_client()
+    rows = client.table("parents").select("*").eq("family_code", family_code).execute().data
+    if not rows:
+        return None
+    return _to_parent(rows[0])

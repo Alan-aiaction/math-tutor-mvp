@@ -3,7 +3,13 @@ Mocked Supabase client, no real DB.
 """
 from unittest.mock import MagicMock, patch
 
-from parents import DEFAULT_MAX_CHILDREN, _CODE_ALPHABET, _generate_family_code, get_or_create_parent
+from parents import (
+    DEFAULT_MAX_CHILDREN,
+    _CODE_ALPHABET,
+    _generate_family_code,
+    get_or_create_parent,
+    get_parent_by_family_code,
+)
 
 PARENT_ID = "11111111-1111-1111-1111-111111111111"
 
@@ -88,3 +94,25 @@ def test_get_or_create_parent_retries_on_family_code_collision():
 
     assert call_count["n"] == 2
     assert result.id == PARENT_ID
+
+
+# --- Independent child login: family-code lookup (PR 2 of 3) ---
+
+
+def test_get_parent_by_family_code_returns_the_matching_parent():
+    mock_client = MagicMock()
+    mock_client.table.return_value.select.return_value.eq.return_value.execute.return_value.data = [
+        {"id": PARENT_ID, "family_code": "AB12CD", "max_children": 3, "created_at": "2026-08-19T00:00:00Z"}
+    ]
+    with patch("parents.get_client", return_value=mock_client):
+        result = get_parent_by_family_code("AB12CD")
+    assert result is not None
+    assert result.id == PARENT_ID
+
+
+def test_get_parent_by_family_code_returns_none_when_not_found():
+    mock_client = MagicMock()
+    mock_client.table.return_value.select.return_value.eq.return_value.execute.return_value.data = []
+    with patch("parents.get_client", return_value=mock_client):
+        result = get_parent_by_family_code("NOTREAL")
+    assert result is None

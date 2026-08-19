@@ -9,9 +9,9 @@ import uuid
 import pytest
 from dotenv import load_dotenv
 
-from children import ChildError, create_child
+from children import ChildError, create_child, get_child_by_nickname, verify_child_login
 from db import get_client
-from parents import DEFAULT_MAX_CHILDREN, get_or_create_parent
+from parents import DEFAULT_MAX_CHILDREN, get_or_create_parent, get_parent_by_family_code
 
 load_dotenv()
 
@@ -49,3 +49,25 @@ def test_create_child_enforces_the_real_cap(throwaway_parent):
 
     with pytest.raises(ChildError):
         create_child(throwaway_parent, "Ian", "sesame")
+
+
+def test_independent_child_login_lookup_chain_end_to_end(throwaway_parent):
+    """Exercises the exact real-DB lookup chain POST /children/login uses: family_code
+    -> parent, then (parent, nickname) -> child, then the existing password check -
+    without going through the endpoint itself (that's covered at the unit level in
+    test_main.py with mocks)."""
+    parent = get_or_create_parent(throwaway_parent)
+    create_child(throwaway_parent, "Sam", "sesame")
+
+    found_parent = get_parent_by_family_code(parent.family_code)
+    assert found_parent is not None
+    assert found_parent.id == throwaway_parent
+
+    found_child = get_child_by_nickname(found_parent.id, "Sam")
+    assert found_child is not None
+    assert found_child.nickname == "Sam"
+
+    assert verify_child_login(found_parent.id, found_child.id, "sesame") is True
+    assert verify_child_login(found_parent.id, found_child.id, "wrong-password") is False
+    assert get_child_by_nickname(found_parent.id, "NotReal") is None
+    assert get_parent_by_family_code("NOTAREALCODE") is None

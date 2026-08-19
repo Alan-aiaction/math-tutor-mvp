@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+from dataclasses import dataclass
 
 import sentry_sdk
 from dotenv import load_dotenv
@@ -11,8 +12,16 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from attempts import AttemptPersistenceError, create_attempt
-from auth import AuthError, get_current_parent_id
-from children import ChildError, create_child, delete_child, get_child, list_children, verify_child_login
+from auth import AuthError, get_current_child, get_current_parent_id, issue_child_token
+from children import (
+    ChildError,
+    create_child,
+    delete_child,
+    get_child,
+    get_child_by_nickname,
+    list_children,
+    verify_child_login,
+)
 from db import DatabaseError
 from kpis import (
     get_accuracy_trend,
@@ -24,7 +33,7 @@ from kpis import (
 from latex_parser import LatexParseError
 from models import Attempt, Child, EvaluationResult, Problem, Step
 from orchestration import run_pipeline
-from parents import get_or_create_parent
+from parents import get_or_create_parent, get_parent_by_family_code
 from problems import ProblemNotFoundError, get_problem, get_random_problem
 from recognition import RecognitionError, recognize_math
 
@@ -96,6 +105,38 @@ def require_parent_id(authorization: str | None = Header(None)) -> str:
     verification."""
     try:
         return get_current_parent_id(authorization)
+    except AuthError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+
+
+@dataclass
+class Requester:
+    """Either a parent (acting on behalf of a child they've picked) or an
+    independently-logged-in child (PR 2/3) - exactly one of parent_id/child_id is set."""
+
+    parent_id: str | None
+    child_id: int | None
+
+
+def require_requester(authorization: str | None = Header(None)) -> Requester:
+    """Accepts either a child's own session token OR a parent's Supabase token - used
+    only on the two endpoints an independent child's practice session actually needs
+    (POST /attempts, POST /attempts/check). Everything else (dashboard, account
+    management, /children CRUD) stays strictly parent-only via require_parent_id above.
+
+    Tries the child token first: it's a local signature check, no network round-trip,
+    unlike the parent path below - cheaper for the common case once independent child
+    login exists, and a real Supabase token can never verify as a child token anyway
+    (different signing key), so trying it first changes nothing about which requests
+    succeed."""
+    try:
+        child = get_current_child(authorization)
+        return Requester(parent_id=child.parent_id, child_id=child.child_id)
+    except AuthError:
+        pass
+    try:
+        parent_id = get_current_parent_id(authorization)
+        return Requester(parent_id=parent_id, child_id=None)
     except AuthError as exc:
         raise HTTPException(status_code=401, detail=str(exc)) from exc
 
@@ -201,6 +242,42 @@ def child_login_endpoint(child_id: int, payload: ChildLogin, parent_id: str = De
     return child
 
 
+class ChildIndependentLogin(BaseModel):
+    family_code: str
+    nickname: str
+    password: str
+
+
+class ChildLoginSession(BaseModel):
+    child: Child
+    token: str
+
+
+@app.post("/children/login", response_model=ChildLoginSession)
+def child_independent_login_endpoint(payload: ChildIndependentLogin):
+    """Independent child login (PR 2 of 3) - no parent session required at all. A child
+    proves who they are with family_code + nickname + password (see decision-log.md for
+    why family_code, not a globally-unique nickname); a matching login issues them their
+    own short-lived token (auth.issue_child_token) to use on every later practice
+    request instead of a parent's Bearer token.
+
+    Every failure - unknown family code, unknown nickname, wrong password - collapses to
+    the same generic 401, same enumeration-avoidance principle as the existing
+    parent-mediated child_login_endpoint above."""
+    generic_error = HTTPException(status_code=401, detail="Incorrect login")
+
+    parent = get_parent_by_family_code(payload.family_code)
+    if parent is None:
+        raise generic_error
+
+    child = get_child_by_nickname(parent.id, payload.nickname)
+    if child is None or not verify_child_login(parent.id, child.id, payload.password):
+        raise generic_error
+
+    token = issue_child_token(child_id=child.id, parent_id=parent.id)
+    return ChildLoginSession(child=child, token=token)
+
+
 class StepCreate(BaseModel):
     recognized_latex: str
     is_correct: bool
@@ -219,8 +296,13 @@ class AttemptCreate(BaseModel):
 
 
 @app.post("/attempts", response_model=Attempt)
-def create_attempt_endpoint(payload: AttemptCreate, parent_id: str = Depends(require_parent_id)):
-    if get_child(parent_id, payload.child_id) is None:
+def create_attempt_endpoint(payload: AttemptCreate, requester: Requester = Depends(require_requester)):
+    if requester.child_id is not None:
+        # An independent child's own token already proves ownership - just confirm
+        # they're not posting under a sibling's child_id (403, not silently corrected).
+        if requester.child_id != payload.child_id:
+            raise HTTPException(status_code=403, detail="This child does not belong to the authenticated parent")
+    elif get_child(requester.parent_id, payload.child_id) is None:
         raise HTTPException(status_code=403, detail="This child does not belong to the authenticated parent")
     try:
         return create_attempt(
@@ -274,10 +356,13 @@ class CheckRequest(BaseModel):
 
 
 @app.post("/attempts/check", response_model=list[EvaluationResult])
-def check_attempt(payload: CheckRequest, parent_id: str = Depends(require_parent_id)):
-    # parent_id isn't used directly here (this endpoint is stateless, computational -
+def check_attempt(payload: CheckRequest, requester: Requester = Depends(require_requester)):
+    # requester isn't used directly here (this endpoint is stateless, computational -
     # it never touches the children/attempts tables) - the dependency is still applied
     # so the endpoint can't be hit anonymously, consistent with the rest of the app.
+    # require_requester (not require_parent_id) so an independent child's own token
+    # works here too - a child's practice session needs to check their work without
+    # ever having a parent session at all.
     #
     # Placeholder id/attempt_id: run_pipeline only ever reads recognized_latex - this
     # endpoint checks work before a real Attempt/Step exists to attach real ids to,
