@@ -68,10 +68,16 @@ export default function Home() {
   // Picking a child from "Mijn kinderen" (or restoring one from localStorage above)
   // both funnel through here - selecting a child now also navigates straight into
   // Oefenen, since that's the reason a parent picks a child in the first place.
+  //
+  // loadNextProblem() (defined below) resets every piece of the *previous* child's
+  // in-progress practice state and loads a fresh problem - without it, switching from
+  // Child A mid-problem to Child B left Child A's steps/results on screen, and a check
+  // from that point would persist Child A's answers under Child B's child_id.
   const selectChild = (child) => {
     setActiveChild(child);
     window.localStorage.setItem(ACTIVE_CHILD_STORAGE_KEY, JSON.stringify(child));
     setView("oefenen");
+    loadNextProblem();
   };
 
   const handleSignOut = () => {
@@ -125,18 +131,24 @@ export default function Home() {
   const addStep = () => {
     setSteps((prev) => [...prev, { status: "unanswered", recognizedLatex: "" }]);
     setWrongTryCounts((prev) => [...prev, 0]);
-    setResults(null);
+    // Deliberately not touching `results` - a new step has no entry yet (undefined at
+    // its index reads as "unanswered"), and clearing the whole array used to wipe every
+    // already-correct step's confirmed status the moment any step was added.
   };
 
   const deleteStep = (index) => {
     setSteps((prev) => prev.filter((_, i) => i !== index));
     setWrongTryCounts((prev) => prev.filter((_, i) => i !== index));
-    setResults(null);
+    // Filter results the same way steps/wrongTryCounts already are, so surviving
+    // steps keep their confirmed status instead of losing it to a full-array wipe.
+    setResults((prev) => (prev ? prev.filter((_, i) => i !== index) : prev));
   };
 
   const handleStepChange = (index, recognizedLatex) => {
     setSteps((prev) => prev.map((step, i) => (i === index ? { ...step, recognizedLatex } : step)));
-    setResults(null);
+    // Clear only this step's own result (it's being re-answered) - leave every other
+    // step's confirmed status untouched, instead of wiping the whole results array.
+    setResults((prev) => (prev ? prev.map((r, i) => (i === index ? null : r)) : prev));
   };
 
   const authHeaders = () => ({
