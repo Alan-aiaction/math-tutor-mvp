@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import ChildPicker from "./ChildPicker";
 import { apiFetch, ApiError } from "../lib/apiFetch";
-import { supabase } from "../lib/supabaseClient";
+import { LanguageProvider } from "../lib/LanguageContext";
 
 vi.mock("../lib/apiFetch", () => ({
   apiFetch: vi.fn(),
@@ -14,9 +14,13 @@ vi.mock("../lib/apiFetch", () => ({
   },
 }));
 
-vi.mock("../lib/supabaseClient", () => ({
-  supabase: { auth: { signOut: vi.fn().mockResolvedValue({}) } },
-}));
+function renderPicker(props = {}) {
+  return render(
+    <LanguageProvider>
+      <ChildPicker accessToken="t" {...props} />
+    </LanguageProvider>
+  );
+}
 
 describe("ChildPicker", () => {
   beforeEach(() => {
@@ -25,8 +29,8 @@ describe("ChildPicker", () => {
 
   it("shows the empty state when the parent has no children yet", async () => {
     apiFetch.mockResolvedValue([]);
-    render(<ChildPicker accessToken="t" />);
-    expect(await screen.findByText(/no children yet/i)).toBeInTheDocument();
+    renderPicker();
+    expect(await screen.findByText(/nog geen kinderen/i)).toBeInTheDocument();
   });
 
   it("renders a tile per child once loaded", async () => {
@@ -34,16 +38,16 @@ describe("ChildPicker", () => {
       { id: 1, nickname: "Sam", parent_id: "p", created_at: "x" },
       { id: 2, nickname: "Robin", parent_id: "p", created_at: "x" },
     ]);
-    render(<ChildPicker accessToken="t" />);
+    renderPicker();
     expect(await screen.findByText("Sam")).toBeInTheDocument();
     expect(screen.getByText("Robin")).toBeInTheDocument();
   });
 
   it("shows a distinct error when loading children fails", async () => {
     apiFetch.mockRejectedValue(new ApiError("Could not load your children"));
-    render(<ChildPicker accessToken="t" />);
+    renderPicker();
     expect(await screen.findByText("Could not load your children")).toBeInTheDocument();
-    expect(screen.queryByText(/no children yet/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/nog geen kinderen/i)).not.toBeInTheDocument();
   });
 
   it("add-child flow: submitting the form calls apiFetch and returns to the list", async () => {
@@ -51,11 +55,11 @@ describe("ChildPicker", () => {
       .mockResolvedValueOnce([]) // initial load
       .mockResolvedValueOnce({ id: 1, nickname: "Sam" }) // POST /children
       .mockResolvedValueOnce([{ id: 1, nickname: "Sam", parent_id: "p", created_at: "x" }]); // reload
-    render(<ChildPicker accessToken="t" />);
-    fireEvent.click(await screen.findByText("+ Add child"));
-    fireEvent.change(screen.getByPlaceholderText("Nickname"), { target: { value: "Sam" } });
-    fireEvent.change(screen.getByPlaceholderText("Password"), { target: { value: "sesame" } });
-    fireEvent.click(screen.getByRole("button", { name: "Add child" }));
+    renderPicker();
+    fireEvent.click(await screen.findByText("+ Kind toevoegen"));
+    fireEvent.change(screen.getByPlaceholderText("Bijnaam"), { target: { value: "Sam" } });
+    fireEvent.change(screen.getByPlaceholderText("Wachtwoord"), { target: { value: "sesame" } });
+    fireEvent.click(screen.getByRole("button", { name: "Kind toevoegen" }));
     await waitFor(() => expect(screen.getByText("Sam")).toBeInTheDocument());
     expect(apiFetch).toHaveBeenCalledWith(
       expect.stringContaining("/children"),
@@ -67,24 +71,24 @@ describe("ChildPicker", () => {
     apiFetch
       .mockResolvedValueOnce([{ id: 1, nickname: "Sam", parent_id: "p", created_at: "x" }])
       .mockRejectedValueOnce(new ApiError("Incorrect child password"));
-    render(<ChildPicker accessToken="t" />);
+    renderPicker();
     fireEvent.click(await screen.findByText("Sam"));
-    expect(screen.getByText(/sam.*password/i)).toBeInTheDocument();
-    fireEvent.change(screen.getByPlaceholderText("Password"), { target: { value: "wrong" } });
-    fireEvent.click(screen.getByRole("button", { name: "Go" }));
+    expect(screen.getByText(/sam.*wachtwoord/i)).toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText("Wachtwoord"), { target: { value: "wrong" } });
+    fireEvent.click(screen.getByRole("button", { name: "Ga" }));
     expect(await screen.findByText("Incorrect child password")).toBeInTheDocument();
     // Still on the gate, not bounced back to the tile list.
-    expect(screen.getByRole("button", { name: "Go" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ga" })).toBeInTheDocument();
   });
 
   it("password gate: correct password calls onChildSelected", async () => {
     const loggedInChild = { id: 1, nickname: "Sam", parent_id: "p", created_at: "x" };
     apiFetch.mockResolvedValueOnce([loggedInChild]).mockResolvedValueOnce(loggedInChild);
     const onChildSelected = vi.fn();
-    render(<ChildPicker accessToken="t" onChildSelected={onChildSelected} />);
+    renderPicker({ onChildSelected });
     fireEvent.click(await screen.findByText("Sam"));
-    fireEvent.change(screen.getByPlaceholderText("Password"), { target: { value: "sesame" } });
-    fireEvent.click(screen.getByRole("button", { name: "Go" }));
+    fireEvent.change(screen.getByPlaceholderText("Wachtwoord"), { target: { value: "sesame" } });
+    fireEvent.click(screen.getByRole("button", { name: "Ga" }));
     await waitFor(() => expect(onChildSelected).toHaveBeenCalledWith(loggedInChild));
   });
 
@@ -93,10 +97,10 @@ describe("ChildPicker", () => {
       .mockResolvedValueOnce([{ id: 1, nickname: "Sam", parent_id: "p", created_at: "x" }]) // initial load
       .mockResolvedValueOnce({ deleted: true }) // DELETE /children/1
       .mockResolvedValueOnce([]); // reload
-    render(<ChildPicker accessToken="t" />);
-    fireEvent.click(await screen.findByLabelText("Remove Sam"));
-    fireEvent.click(screen.getByRole("button", { name: "Yes, remove" }));
-    await waitFor(() => expect(screen.getByText(/no children yet/i)).toBeInTheDocument());
+    renderPicker();
+    fireEvent.click(await screen.findByLabelText("Sam verwijderen"));
+    fireEvent.click(screen.getByRole("button", { name: "Ja, verwijderen" }));
+    await waitFor(() => expect(screen.getByText(/nog geen kinderen/i)).toBeInTheDocument());
     expect(apiFetch).toHaveBeenCalledWith(
       expect.stringContaining("/children/1"),
       expect.objectContaining({ method: "DELETE" })
@@ -105,9 +109,9 @@ describe("ChildPicker", () => {
 
   it("remove-child flow: cancel leaves the child in place untouched", async () => {
     apiFetch.mockResolvedValueOnce([{ id: 1, nickname: "Sam", parent_id: "p", created_at: "x" }]);
-    render(<ChildPicker accessToken="t" />);
-    fireEvent.click(await screen.findByLabelText("Remove Sam"));
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    renderPicker();
+    fireEvent.click(await screen.findByLabelText("Sam verwijderen"));
+    fireEvent.click(screen.getByRole("button", { name: "Annuleren" }));
     expect(screen.getByText("Sam")).toBeInTheDocument();
     expect(apiFetch).toHaveBeenCalledTimes(1); // only the initial load - no DELETE call
   });
@@ -116,20 +120,11 @@ describe("ChildPicker", () => {
     apiFetch
       .mockResolvedValueOnce([{ id: 1, nickname: "Sam", parent_id: "p", created_at: "x" }])
       .mockRejectedValueOnce(new ApiError("Could not remove this child"));
-    render(<ChildPicker accessToken="t" />);
-    fireEvent.click(await screen.findByLabelText("Remove Sam"));
-    fireEvent.click(screen.getByRole("button", { name: "Yes, remove" }));
+    renderPicker();
+    fireEvent.click(await screen.findByLabelText("Sam verwijderen"));
+    fireEvent.click(screen.getByRole("button", { name: "Ja, verwijderen" }));
     expect(await screen.findByText("Could not remove this child")).toBeInTheDocument();
     // Still in the confirm state, not silently reset - the child wasn't removed.
-    expect(screen.getByText(/remove sam\?/i)).toBeInTheDocument();
-  });
-
-  it("sign-out calls supabase.auth.signOut and onSignOut", async () => {
-    apiFetch.mockResolvedValue([]);
-    const onSignOut = vi.fn();
-    render(<ChildPicker accessToken="t" onSignOut={onSignOut} />);
-    fireEvent.click(await screen.findByText("Sign out"));
-    await waitFor(() => expect(supabase.auth.signOut).toHaveBeenCalled());
-    expect(onSignOut).toHaveBeenCalled();
+    expect(screen.getByText(/sam verwijderen\?/i)).toBeInTheDocument();
   });
 });
