@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useLanguage } from "../lib/LanguageContext";
 
 // 3rd MVP: parent sign up / sign in, one screen, toggled. Goes straight to Supabase Auth
 // (never through the backend) - the anon key + client SDK are exactly what this is for.
@@ -9,6 +10,7 @@ import { supabase } from "../lib/supabaseClient";
 // parent's ongoing session itself is tracked by supabase.auth.onAuthStateChange in the
 // parent component (page.js), not here.
 export default function ParentAuth({ onAuthenticated }) {
+  const { t } = useLanguage();
   const [mode, setMode] = useState("signin"); // "signin" | "signup"
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -35,7 +37,7 @@ export default function ParentAuth({ onAuthenticated }) {
       }
       onAuthenticated?.(data.session);
     } catch (err) {
-      setError(err.message || "Something went wrong. Please try again.");
+      setError(err.message || t("parentAuth.genericError"));
     } finally {
       setLoading(false);
     }
@@ -43,34 +45,34 @@ export default function ParentAuth({ onAuthenticated }) {
 
   return (
     <div className="flex w-full max-w-md flex-col gap-3">
-      <h2 className="text-left text-sm font-medium uppercase tracking-wide text-gray-500">
-        {isSignUp ? "Create your account" : "Sign in"}
+      <h2 className="text-left text-sm font-bold uppercase tracking-wide text-ink-muted">
+        {isSignUp ? t("parentAuth.createAccount") : t("parentAuth.signIn")}
       </h2>
       <form onSubmit={submit} className="flex flex-col gap-3">
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email"
+          placeholder={t("parentAuth.email")}
           required
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className="rounded-xl border border-border px-3 py-2 text-sm"
         />
         <input
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
+          placeholder={t("parentAuth.password")}
           required
           minLength={6}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className="rounded-xl border border-border px-3 py-2 text-sm"
         />
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-warn">{error}</p>}
         <button
           type="submit"
           disabled={loading}
-          className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-40"
+          className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-strong disabled:opacity-40"
         >
-          {loading ? "Please wait…" : isSignUp ? "Sign up" : "Sign in"}
+          {loading ? t("parentAuth.pleaseWait") : isSignUp ? t("parentAuth.signUp") : t("parentAuth.signIn")}
         </button>
       </form>
       <button
@@ -79,9 +81,9 @@ export default function ParentAuth({ onAuthenticated }) {
           setMode(isSignUp ? "signin" : "signup");
           setError(null);
         }}
-        className="text-xs font-medium text-blue-600 hover:underline"
+        className="text-xs font-bold text-primary hover:underline"
       >
-        {isSignUp ? "Already have an account? Sign in" : "New here? Sign up"}
+        {isSignUp ? t("parentAuth.alreadyHaveAccount") : t("parentAuth.newHere")}
       </button>
     </div>
   );
