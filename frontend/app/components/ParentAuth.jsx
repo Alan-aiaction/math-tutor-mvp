@@ -22,8 +22,12 @@ export default function ParentAuth({ onAuthenticated }) {
     setLoading(true);
     setError(null);
     try {
+      // emailRedirectTo (bug #76): without it, Supabase falls back to the dashboard's
+      // Site URL for the confirmation email's link - window.location.origin adapts to
+      // whichever environment sign-up actually happened in, instead of a hardcoded URL
+      // that would itself go stale if the domain ever changes.
       const { data, error: authError } = isSignUp
-        ? await supabase.auth.signUp({ email, password })
+        ? await supabase.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin } })
         : await supabase.auth.signInWithPassword({ email, password });
       if (authError) {
         setError(authError.message);
