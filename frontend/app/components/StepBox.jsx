@@ -29,9 +29,10 @@ const STATUS_STYLES = {
   },
 };
 
-export default function StepBox({ index, status = "unanswered", recognizedLatex = "", result = null, onDelete, onChange }) {
+export default function StepBox({ index, status = "unanswered", recognizedLatex = "", result = null, isLast = true, onDelete, onChange }) {
   const effectiveStatus = result ? (result.valid ? "correct" : "incorrect") : status;
   const style = STATUS_STYLES[effectiveStatus] ?? STATUS_STYLES.unanswered;
+  const editable = effectiveStatus !== "correct" && isLast;
   const [value, setValue] = useState(recognizedLatex);
   const [draft, setDraft] = useState(recognizedLatex);
   const [editing, setEditing] = useState(false);
@@ -144,12 +145,13 @@ export default function StepBox({ index, status = "unanswered", recognizedLatex 
             <span className="text-sm text-gray-600">
               Recognised as: <span className="font-mono">{value || "—"}</span>
             </span>
-            {/* Once a step is correct, it's locked - no more Draw/Edit. Matches the
-                mental model that answering correctly finishes that step, rather than
-                leaving it editable forever with no end state. Delete still works
-                regardless (see the ✕ button above) - removing a step entirely is a
-                different action from editing its content. */}
-            {effectiveStatus !== "correct" && (
+            {/* Locked once correct, or once the student has moved on to a later step -
+                either way, no more Draw/Edit. A wrong step stays editable for retry
+                only while it's still the current (last) step; once a next step exists
+                it's a fixed record of what was tried, not something to quietly go back
+                and rewrite. Delete still works regardless (see the ✕ button above) -
+                removing a step entirely is a different action from editing its content. */}
+            {editable && (
               <div className="flex items-center gap-3">
                 <button
                   type="button"
