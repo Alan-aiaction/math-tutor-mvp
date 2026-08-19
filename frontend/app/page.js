@@ -15,12 +15,9 @@ import { supabase } from "./lib/supabaseClient";
 import { useLanguage } from "./lib/LanguageContext";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
-const ACTIVE_CHILD_STORAGE_KEY = "mathTutorActiveChild";
-// Independent child login (3rd MVP, PR 3 of 3) - deliberately a separate key from
-// ACTIVE_CHILD_STORAGE_KEY above: that one tracks which child a signed-in *parent* is
-// currently practicing as, this one tracks a child's own independent session (family
-// code + nickname + password, no parent session at all) - the two must never be
-// confused for one another.
+// Retire-active-child: every practice session - a parent picking a child from Mijn
+// kinderen, or a child logging in independently with a family code - now converges on
+// this one session type. There's no separate "active child" concept left to track.
 const CHILD_SESSION_STORAGE_KEY = "mathTutorChildSession";
 
 const INITIAL_STEPS = [{ status: "unanswered", recognizedLatex: "" }];
@@ -29,7 +26,7 @@ const INITIAL_WRONG_TRY_COUNTS = [0];
 
 export default function Home() {
   const { t } = useLanguage();
-  const [view, setView] = useState("kinderen"); // "oefenen" | "dashboard" | "kinderen" | "account"
+  const [view, setView] = useState("kinderen"); // "dashboard" | "kinderen" | "account"
   const [steps, setSteps] = useState(INITIAL_STEPS);
   // wrongTryCounts (ticket #71): how many times each step has already come back
   // wrong in this problem-solving session - parallel to `steps`, sent to the
@@ -46,15 +43,13 @@ export default function Home() {
   const [loadingProblem, setLoadingProblem] = useState(true);
   const [problemError, setProblemError] = useState(null);
 
-  // 3rd MVP: parent session (Supabase Auth) + active child (localStorage - "session
-  // persistence: keep last status", same pattern the old StudentCode component used).
+  // 3rd MVP: parent session (Supabase Auth).
   const [session, setSession] = useState(undefined); // undefined = still checking
-  const [activeChild, setActiveChild] = useState(null);
 
-  // Independent child login (PR 3 of 3): a second, separate session that exists
-  // entirely without the parent one above. childSession is {child, token} once a
-  // child has logged in with their own family code + nickname + password - see
-  // authHeaders() below for how the two sessions' tokens are kept from ever mixing.
+  // Every practice session - however it starts - is this one session type. childSession
+  // is {child, token} once a child is practicing: either picked from Mijn kinderen (the
+  // password gate there now issues a real token instead of just marking them "active"),
+  // or logged in independently with a family code. See authHeaders() below.
   const [childSession, setChildSession] = useState(null);
   // authMode only matters pre-session, choosing which of ParentAuth/ChildLogin to show
   // on the landing screen - "choose" | "parent" | "child".
@@ -64,20 +59,7 @@ export default function Home() {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
-      if (!newSession) {
-        setActiveChild(null);
-        window.localStorage.removeItem(ACTIVE_CHILD_STORAGE_KEY);
-      }
     });
-    const stored = window.localStorage.getItem(ACTIVE_CHILD_STORAGE_KEY);
-    if (stored) {
-      try {
-        setActiveChild(JSON.parse(stored));
-        setView("oefenen");
-      } catch {
-        window.localStorage.removeItem(ACTIVE_CHILD_STORAGE_KEY);
-      }
-    }
     const storedChildSession = window.localStorage.getItem(CHILD_SESSION_STORAGE_KEY);
     if (storedChildSession) {
       try {
@@ -89,25 +71,13 @@ export default function Home() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  // Picking a child from "Mijn kinderen" (or restoring one from localStorage above)
-  // both funnel through here - selecting a child now also navigates straight into
-  // Oefenen, since that's the reason a parent picks a child in the first place.
-  //
-  // loadNextProblem() (defined below) resets every piece of the *previous* child's
-  // in-progress practice state and loads a fresh problem - without it, switching from
-  // Child A mid-problem to Child B left Child A's steps/results on screen, and a check
-  // from that point would persist Child A's answers under Child B's child_id.
-  const selectChild = (child) => {
-    setActiveChild(child);
-    window.localStorage.setItem(ACTIVE_CHILD_STORAGE_KEY, JSON.stringify(child));
-    setView("oefenen");
-    loadNextProblem();
-  };
-
   const handleSignOut = () => {
     supabase.auth.signOut().then(() => setSession(null));
   };
 
+  // Picking a child from Mijn kinderen and logging in independently both funnel here -
+  // whichever one got them there, the result is the same real child session, and
+  // starting one always hands off into the same practice screen.
   const handleChildLogin = (loggedInSession) => {
     setChildSession(loggedInSession);
     window.localStorage.setItem(CHILD_SESSION_STORAGE_KEY, JSON.stringify(loggedInSession));
@@ -119,18 +89,6 @@ export default function Home() {
     window.localStorage.removeItem(CHILD_SESSION_STORAGE_KEY);
     setAuthMode("choose");
   };
-
-  // Whichever child is actually being practiced as right now, regardless of which of
-  // the two login paths got them there - the parent-mediated activeChild, or an
-  // independently-logged-in child's own session.
-  const practicingChild = childSession ? childSession.child : activeChild;
-
-  // Oefenen is only ever reachable with an active child (AppShell already hides the nav
-  // item), but if activeChild disappears while still viewing it - e.g. removed from
-  // "Mijn kinderen" mid-session - fall back to Dashboard rather than a blank pane.
-  useEffect(() => {
-    if (view === "oefenen" && !activeChild) setView("dashboard");
-  }, [view, activeChild]);
 
   const fetchRandomProblem = () => apiFetch(`${BACKEND_URL}/problems/random`);
 
@@ -192,14 +150,11 @@ export default function Home() {
     setResults((prev) => (prev ? prev.map((r, i) => (i === index ? null : r)) : prev));
   };
 
-  // Whichever session is actually active supplies the Bearer token - a child's own
-  // token when independently logged in (require_requester on the backend accepts
-  // either), the parent's Supabase token otherwise. Never both, never neither, since
-  // this is only ever called from within the practice UI, which only renders once one
-  // of the two sessions exists.
+  // Oefenen only ever renders inside the childSession branch below now - always a
+  // child's own token, never a parent's.
   const authHeaders = () => ({
     "Content-Type": "application/json",
-    Authorization: `Bearer ${childSession ? childSession.token : session.access_token}`,
+    Authorization: `Bearer ${childSession.token}`,
   });
 
   const persistAttempt = async (checkResults) => {
@@ -209,7 +164,7 @@ export default function Home() {
         headers: authHeaders(),
         body: JSON.stringify({
           problem_id: problem.id,
-          child_id: practicingChild.id,
+          child_id: childSession.child.id,
           status: "completed",
           steps: steps.map((s, i) => ({
             recognized_latex: s.recognizedLatex,
@@ -264,11 +219,10 @@ export default function Home() {
   // whole-array-is-null case, or this throws on the next render after any edit.
   const allStepsCorrect = results && results.length > 0 && results.every((r) => r && r.valid);
 
-  // The Oefenen practice UI itself, shared by both ways of getting here: a parent's
-  // AppShell-wrapped "oefenen" view (an activeChild picked via Mijn kinderen), and an
-  // independently-logged-in child's own minimal shell (no AppShell at all). Extracted
-  // to a function rather than a separate component/file - it's a closure over this
-  // component's own state/handlers, with no reuse need outside page.js itself.
+  // The Oefenen practice UI itself - rendered inside the childSession branch below,
+  // whichever of the two ways a child ended up practicing. Kept as a local closure
+  // over this component's own state/handlers rather than a separate file - no reuse
+  // need outside page.js itself.
   const renderPractice = () => (
     <div className="flex flex-col items-center gap-8 text-center">
       <ScratchPad side="left" key={`scratch-left-${problem?.id}`} />
@@ -401,14 +355,12 @@ export default function Home() {
   }
 
   return (
-    <AppShell activeChild={activeChild} view={view} onNavigate={setView} onSignOut={handleSignOut}>
-      {view === "oefenen" && activeChild && renderPractice()}
-
+    <AppShell view={view} onNavigate={setView} onSignOut={handleSignOut}>
       {view === "kinderen" && (
-        <ChildPicker accessToken={session.access_token} onChildSelected={selectChild} />
+        <ChildPicker accessToken={session.access_token} onChildLoggedIn={handleChildLogin} />
       )}
 
-      {view === "dashboard" && <Dashboard accessToken={session.access_token} activeChild={activeChild} />}
+      {view === "dashboard" && <Dashboard accessToken={session.access_token} />}
       {view === "account" && <Account accessToken={session.access_token} />}
     </AppShell>
   );

@@ -81,15 +81,18 @@ describe("ChildPicker", () => {
     expect(screen.getByRole("button", { name: "Ga" })).toBeInTheDocument();
   });
 
-  it("password gate: correct password calls onChildSelected", async () => {
-    const loggedInChild = { id: 1, nickname: "Sam", parent_id: "p", created_at: "x" };
-    apiFetch.mockResolvedValueOnce([loggedInChild]).mockResolvedValueOnce(loggedInChild);
-    const onChildSelected = vi.fn();
-    renderPicker({ onChildSelected });
+  it("password gate: correct password calls onChildLoggedIn with the real session", async () => {
+    // Retire-active-child: the backend now issues a real {child, token} session here,
+    // same shape independent login returns - not just the bare Child it used to.
+    const child = { id: 1, nickname: "Sam", parent_id: "p", created_at: "x" };
+    const session = { child, token: "real-token" };
+    apiFetch.mockResolvedValueOnce([child]).mockResolvedValueOnce(session);
+    const onChildLoggedIn = vi.fn();
+    renderPicker({ onChildLoggedIn });
     fireEvent.click(await screen.findByText("Sam"));
     fireEvent.change(screen.getByPlaceholderText("Wachtwoord"), { target: { value: "sesame" } });
     fireEvent.click(screen.getByRole("button", { name: "Ga" }));
-    await waitFor(() => expect(onChildSelected).toHaveBeenCalledWith(loggedInChild));
+    await waitFor(() => expect(onChildLoggedIn).toHaveBeenCalledWith(session));
   });
 
   it("remove-child flow: confirming calls DELETE and reloads the list without that child", async () => {

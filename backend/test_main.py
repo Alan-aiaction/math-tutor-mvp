@@ -273,7 +273,10 @@ def test_delete_child_success():
 
 
 def test_child_login_success():
+    # Retire-active-child: this endpoint now issues a real child session token too
+    # (same shape independent login returns), not just the bare Child it used to.
     with (
+        _with_child_session_secret(),
         _mock_parent_auth(),
         patch("main.verify_child_login", return_value=True),
         patch(
@@ -283,7 +286,9 @@ def test_child_login_success():
     ):
         response = client.post("/children/1/login", json={"password": "sesame"}, headers=AUTH_HEADER)
     assert response.status_code == 200
-    assert response.json()["nickname"] == "Sam"
+    body = response.json()
+    assert body["child"]["nickname"] == "Sam"
+    assert isinstance(body["token"], str) and len(body["token"]) > 0
 
 
 # --- Independent child login: POST /children/login, no parent session (PR 2 of 3) ---

@@ -4,19 +4,23 @@ import { useState } from "react";
 import { useLanguage } from "../lib/LanguageContext";
 
 // 3rd MVP: real navigation shell, replacing page.js's old three-way full-screen branch.
-// Oefenen is only reachable once a child is active (mirrors the ouder-dashboard mockup's
-// data-mode rule) - Dashboard and Mijn kinderen are reachable regardless, so a parent can
-// check progress without first launching a practice session. Logo/nav icons are dashed
-// placeholder slots, same as the mockup - real assets land once design work is done.
-export default function AppShell({ activeChild, view, onNavigate, onSignOut, children }) {
+// Dashboard and Mijn kinderen are reachable regardless, so a parent can check progress
+// without first launching a practice session. Logo/nav icons are dashed placeholder
+// slots, same as the mockup - real assets land once design work is done.
+//
+// Retire-active-child: Oefenen is never reached from inside this shell at all anymore -
+// every practice session (parent picks a child from Mijn kinderen, or a child logs in
+// independently) now hands off into its own separate child-mode screen (see page.js),
+// so there's no "which child is active" concept for this shell to represent, and the
+// nav item that used to depend on one is gone.
+export default function AppShell({ view, onNavigate, onSignOut, children }) {
   const { t } = useLanguage();
   const [collapsed, setCollapsed] = useState(false);
 
   const navItems = [
-    activeChild ? { key: "oefenen", label: t("nav.oefenen") } : null,
     { key: "dashboard", label: t("nav.dashboard") },
     { key: "kinderen", label: t("nav.mijnkinderen") },
-  ].filter(Boolean);
+  ];
 
   return (
     <div className="flex min-h-screen">
@@ -88,10 +92,6 @@ export default function AppShell({ activeChild, view, onNavigate, onSignOut, chi
 
       <div className="flex flex-1 flex-col bg-surface">
         <div className="flex items-center gap-3 border-b border-border bg-bg px-8 py-3">
-          <div className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-sm font-bold text-ink">
-            <span className="h-6 w-6 flex-shrink-0 rounded-full border border-dashed border-ink-muted" />
-            {activeChild ? activeChild.nickname : t("topbar.workingAs").split(":")[0]}
-          </div>
           <div className="flex-1" />
           <span className="h-8 w-8 flex-shrink-0 rounded-full border border-dashed border-ink-muted" />
         </div>
