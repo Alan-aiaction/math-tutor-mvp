@@ -213,7 +213,10 @@ export default function Home() {
     setResults(null);
   };
 
-  const allStepsCorrect = results && results.length > 0 && results.every((r) => r.valid);
+  // r can be null for a step mid-retry (PR #121's handleStepChange clears just that
+  // step's own entry, not the whole array) - guard against that, not only the
+  // whole-array-is-null case, or this throws on the next render after any edit.
+  const allStepsCorrect = results && results.length > 0 && results.every((r) => r && r.valid);
 
   if (session === undefined) {
     return (
