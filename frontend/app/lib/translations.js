@@ -41,6 +41,16 @@ export const translations = {
     "childpicker.removeError": "Kon dit kind niet verwijderen",
     "childpicker.go": "Ga",
 
+    "landing.parentButton": "Ik ben een ouder",
+    "landing.childButton": "Ik ben een kind",
+    "landing.back": "Terug",
+
+    "childLogin.title": "Inloggen als kind",
+    "childLogin.familyCode": "Gezinscode",
+    "childLogin.submit": "Inloggen",
+    "childLogin.error": "Onjuiste inloggegevens",
+    "childLogin.back": "Terug",
+
     "oefenen.problemLabel": "Probleem",
     "oefenen.step": "Stap {number}",
     "oefenen.unanswered": "Onbeantwoord",
@@ -132,6 +142,16 @@ export const translations = {
     "childpicker.removing": "Removing…",
     "childpicker.removeError": "Could not remove this child",
     "childpicker.go": "Go",
+
+    "landing.parentButton": "I'm a parent",
+    "landing.childButton": "I'm a child",
+    "landing.back": "Back",
+
+    "childLogin.title": "Log in as a child",
+    "childLogin.familyCode": "Family code",
+    "childLogin.submit": "Log in",
+    "childLogin.error": "Incorrect login details",
+    "childLogin.back": "Back",
 
     "oefenen.problemLabel": "Problem",
     "oefenen.step": "Step {number}",
