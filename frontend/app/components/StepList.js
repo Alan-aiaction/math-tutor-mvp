@@ -14,6 +14,7 @@ export default function StepList({ steps, results, onDelete, onStepChange, probl
           status={step.status}
           recognizedLatex={step.recognizedLatex}
           result={results ? results[index] : null}
+          isLast={index === steps.length - 1}
           onDelete={onDelete ? () => onDelete(index) : undefined}
           onChange={onStepChange ? (value) => onStepChange(index, value) : undefined}
         />
