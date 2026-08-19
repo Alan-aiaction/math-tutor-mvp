@@ -140,7 +140,11 @@ class Hint(BaseModel):
 
 **Open questions:**
 - Confirms the escalation mechanic — does `level` cap at 2, or support more steps?
-- Language: Dutch only for MVP, per non-goals — confirm no bilingual field needed.
+- ~~Language: Dutch only for MVP, per non-goals — confirm no bilingual field needed.~~
+  Superseded 2026-08-19: the 3rd MVP dashboard/rebrand work adds real NL/EN support across
+  the live app — see `docs/tracking/decision-log.md`'s "Real dashboard + app shell +
+  visual rebrand + real i18n" entry. This was a real 1st-MVP-scope decision, not stale
+  drift; it no longer holds now that the product has grown past that scope.
 
 ---
 
