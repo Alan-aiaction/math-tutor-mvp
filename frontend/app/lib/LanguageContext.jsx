@@ -17,7 +17,7 @@ function interpolate(template, params) {
 }
 
 // Plain React Context, same "read localStorage in an effect after mount" pattern
-// page.js already uses for activeChild - avoids a server/client hydration mismatch
+// page.js already uses for childSession - avoids a server/client hydration mismatch
 // (localStorage doesn't exist during Next.js's server render).
 export function LanguageProvider({ children }) {
   const [lang, setLangState] = useState(DEFAULT_LANG);

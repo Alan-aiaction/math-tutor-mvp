@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import Dashboard from "./Dashboard";
 import { apiFetch, ApiError } from "../lib/apiFetch";
@@ -39,7 +39,7 @@ const noorKpis = {
 function renderDashboard(props = {}) {
   return render(
     <LanguageProvider>
-      <Dashboard accessToken="t" activeChild={sam} {...props} />
+      <Dashboard accessToken="t" {...props} />
     </LanguageProvider>
   );
 }
@@ -49,7 +49,7 @@ describe("Dashboard", () => {
     vi.clearAllMocks();
   });
 
-  it("renders the hero and KPI cards using the active child's real data", async () => {
+  it("renders the hero and KPI cards, defaulting to the first child", async () => {
     apiFetch.mockImplementation((url) => {
       if (url.endsWith("/children")) return Promise.resolve([sam]);
       if (url.endsWith("/children/1/kpis")) return Promise.resolve(samKpis);
@@ -94,6 +94,25 @@ describe("Dashboard", () => {
     expect(table).toBeInTheDocument();
     expect(screen.getAllByText("Sam").length).toBeGreaterThan(0);
     expect(screen.getByText("Noor")).toBeInTheDocument();
+  });
+
+  it("clicking a different child's row in the comparison table switches the hero section to that child", async () => {
+    apiFetch.mockImplementation((url) => {
+      if (url.endsWith("/children")) return Promise.resolve([sam, noor]);
+      if (url.endsWith("/children/1/kpis")) return Promise.resolve(samKpis);
+      if (url.endsWith("/children/2/kpis")) return Promise.resolve(noorKpis);
+      throw new Error(`unexpected fetch: ${url}`);
+    });
+    renderDashboard();
+    // Hero defaults to Sam (first child) - Sam's total_attempts figure (12) is visible.
+    expect(await screen.findByText("12")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("Noor"));
+
+    // Hero now shows Noor's data (18) instead of Sam's (12) - no page reload, no
+    // effect on any practice session, this is purely a viewing switch.
+    expect(await screen.findByText("18")).toBeInTheDocument();
+    expect(screen.queryByText("12")).not.toBeInTheDocument();
   });
 
   it("shows an error state instead of crashing when the fetch fails", async () => {

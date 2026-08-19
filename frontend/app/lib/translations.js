@@ -11,9 +11,6 @@ export const translations = {
     "nav.account": "Account",
     "nav.uitloggen": "Uitloggen",
 
-    "topbar.workingAs": "Werkt als: {name}",
-    "topbar.switchChild": "Wissel van kind",
-
     "parentAuth.createAccount": "Account aanmaken",
     "parentAuth.signIn": "Inloggen",
     "parentAuth.email": "E-mail",
@@ -112,9 +109,6 @@ export const translations = {
     "nav.mijnkinderen": "My children",
     "nav.account": "Account",
     "nav.uitloggen": "Sign out",
-
-    "topbar.workingAs": "Working as: {name}",
-    "topbar.switchChild": "Switch child",
 
     "parentAuth.createAccount": "Create your account",
     "parentAuth.signIn": "Sign in",

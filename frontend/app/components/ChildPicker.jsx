@@ -10,9 +10,14 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 // forced full-screen gate, and no longer has its own sign-out - the shell's sidebar
 // covers that globally now). Tiles for each linked child, an "add child" flow, and a
 // per-child password gate - matches Squla/Junior Einstein's own shape (see
-// decision-log.md's authentication-design entry). onChildSelected fires with the chosen
-// child once its password gate succeeds; page.js stores that as the active child.
-export default function ChildPicker({ accessToken, onChildSelected }) {
+// decision-log.md's authentication-design entry).
+//
+// Retire-active-child: tapping a tile now starts a real child session (the password
+// gate's backend call returns {child, token}, the same shape independent login
+// produces), not just "select this child to browse the app as" - onChildLoggedIn fires
+// with that whole session, and page.js hands off into the same child-mode screen
+// independent login uses, regardless of which of the two ever got them there.
+export default function ChildPicker({ accessToken, onChildLoggedIn }) {
   const { t } = useLanguage();
   const [children, setChildren] = useState(null);
   const [loadError, setLoadError] = useState(null);
@@ -89,7 +94,7 @@ export default function ChildPicker({ accessToken, onChildSelected }) {
       <ChildPasswordGate
         child={gatingChild}
         authHeaders={authHeaders}
-        onSuccess={(child) => onChildSelected?.(child)}
+        onSuccess={(session) => onChildLoggedIn?.(session)}
         onBack={backToList}
       />
     );
@@ -249,12 +254,12 @@ function ChildPasswordGate({ child, authHeaders, onSuccess, onBack }) {
     setSubmitting(true);
     setError(null);
     try {
-      const loggedInChild = await apiFetch(`${BACKEND_URL}/children/${child.id}/login`, {
+      const session = await apiFetch(`${BACKEND_URL}/children/${child.id}/login`, {
         method: "POST",
         headers: authHeaders,
         body: JSON.stringify({ password }),
       });
-      onSuccess?.(loggedInChild);
+      onSuccess?.(session);
     } catch (err) {
       // Stays on this same gate, not the whole picker - fast re-entry on a shared tablet.
       setError(err.message || t("childpicker.incorrectPassword"));

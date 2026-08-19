@@ -16,15 +16,20 @@ function formatPercent(value) {
 }
 
 // 3rd MVP: the "Dashboard" chapter's content, consuming the already-built
-// GET /children/{child_id}/kpis endpoint (ticket "KPI data layer"). The hero/KPI cards
-// personalize to activeChild (falling back to the first child if none is active - a
-// parent can reach Dashboard without picking a child, per the shell restructure), while
-// the comparison table always covers every child, matching the ouder-dashboard mockup's
-// layout.
-export default function Dashboard({ accessToken, activeChild }) {
+// GET /children/{child_id}/kpis endpoint (ticket "KPI data layer"). The comparison
+// table always covers every child, matching the ouder-dashboard mockup's layout.
+//
+// Retire-active-child: the hero/KPI cards used to personalize to activeChild - now that
+// concept is gone entirely (every practice session is its own separate child session,
+// never represented here), so this owns its own local "which child am I looking at"
+// state instead, defaulting to the first child. Purely a viewing choice - clicking a
+// different child's row below can never affect anyone's practice session, by
+// construction, since there's nothing here that could.
+export default function Dashboard({ accessToken }) {
   const { t } = useLanguage();
   const [children, setChildren] = useState(null);
   const [kpisByChildId, setKpisByChildId] = useState({});
+  const [viewedChildId, setViewedChildId] = useState(null);
   const [error, setError] = useState(null);
 
   const authHeaders = { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` };
@@ -64,7 +69,7 @@ export default function Dashboard({ accessToken, activeChild }) {
     return <p className="text-sm text-ink-muted">{t("dashboard.loading")}</p>;
   }
 
-  const heroChild = activeChild && kpisByChildId[activeChild.id] ? activeChild : children[0];
+  const heroChild = children.find((c) => c.id === viewedChildId) ?? children[0];
   const heroKpis = heroChild ? kpisByChildId[heroChild.id] : null;
 
   if (!heroChild || !heroKpis) {
@@ -136,8 +141,16 @@ export default function Dashboard({ accessToken, activeChild }) {
                 {children.map((child) => {
                   const kpis = kpisByChildId[child.id];
                   const worstSpot = kpis.weak_spots_by_topic[0];
+                  const isViewed = child.id === heroChild.id;
                   return (
-                    <tr key={child.id} className="border-t border-border">
+                    <tr
+                      key={child.id}
+                      onClick={() => setViewedChildId(child.id)}
+                      aria-current={isViewed ? "true" : "false"}
+                      className={`cursor-pointer border-t border-border hover:bg-surface ${
+                        isViewed ? "bg-surface" : ""
+                      }`}
+                    >
                       <td className="py-2 font-bold text-ink">{child.nickname}</td>
                       <td className="py-2">{formatPercent(overallAccuracy(kpis.accuracy_trend))}</td>
                       <td className="py-2">{kpis.practice_frequency_days}</td>

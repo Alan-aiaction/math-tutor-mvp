@@ -231,7 +231,12 @@ class ChildLogin(BaseModel):
     password: str
 
 
-@app.post("/children/{child_id}/login", response_model=Child)
+class ChildLoginSession(BaseModel):
+    child: Child
+    token: str
+
+
+@app.post("/children/{child_id}/login", response_model=ChildLoginSession)
 def child_login_endpoint(child_id: int, payload: ChildLogin, parent_id: str = Depends(require_parent_id)):
     # Deliberately the same 401 for "not this parent's child" and "wrong password" -
     # neither should let a caller distinguish which one it was (see children.py's
@@ -239,18 +244,18 @@ def child_login_endpoint(child_id: int, payload: ChildLogin, parent_id: str = De
     if not verify_child_login(parent_id, child_id, payload.password):
         raise HTTPException(status_code=401, detail="Incorrect child password")
     child = get_child(parent_id, child_id)
-    return child
+    # Retire-active-child: this endpoint now issues a real child session token too, the
+    # same shape independent login returns - a parent picking a child from Mijn kinderen
+    # and a child logging in on their own device both converge on the same downstream
+    # session, instead of this path setting the old (now-removed) activeChild instead.
+    token = issue_child_token(child_id=child.id, parent_id=parent_id)
+    return ChildLoginSession(child=child, token=token)
 
 
 class ChildIndependentLogin(BaseModel):
     family_code: str
     nickname: str
     password: str
-
-
-class ChildLoginSession(BaseModel):
-    child: Child
-    token: str
 
 
 @app.post("/children/login", response_model=ChildLoginSession)
