@@ -1,2 +1,30 @@
 @import "tailwindcss";
 @import "katex/dist/katex.min.css";
+
+/* Design tokens for the 3rd MVP visual rebrand - same values chosen for the
+   ouder-dashboard mockup, referenced from Squla/Junior Einstein's real palettes
+   (see docs/tracking/decision-log.md) rather than the placeholder emerald/gray this
+   app shipped with. Tailwind v4 is CSS-first (no tailwind.config.js), so tokens are
+   declared here and consumed as e.g. bg-primary, text-ink, font-display. */
+@theme {
+  --color-bg: #ffffff;
+  --color-surface: #f4f9fc;
+  --color-surface-2: #e9f3fa;
+  --color-sidebar: #0e3a5c;
+  --color-sidebar-active: #1c6fa8;
+  --color-ink: #142c3f;
+  --color-ink-muted: #5b7690;
+  --color-border: #dce8f0;
+  --color-primary: #1c9fd8;
+  --color-primary-strong: #14789f;
+  --color-primary-soft: #dff3fb;
+  --color-warm: #ff8a4c;
+  --color-warm-soft: #ffe8da;
+  --color-good: #2fae6b;
+  --color-good-soft: #dcf3e6;
+  --color-warn: #dc3d4b;
+  --color-warn-soft: #fbdfe1;
+
+  --font-display: var(--font-baloo2), sans-serif;
+  --font-body: var(--font-nunito), sans-serif;
+}
