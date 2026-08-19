@@ -3,7 +3,15 @@ from unittest.mock import MagicMock, patch
 
 import bcrypt
 
-from children import ChildError, create_child, delete_child, get_child, list_children, verify_child_login
+from children import (
+    ChildError,
+    create_child,
+    delete_child,
+    get_child,
+    get_child_by_nickname,
+    list_children,
+    verify_child_login,
+)
 
 PARENT_ID = "11111111-1111-1111-1111-111111111111"
 OTHER_PARENT_ID = "22222222-2222-2222-2222-222222222222"
@@ -214,3 +222,20 @@ def test_verify_child_login_not_this_parents_child():
     )
     with patch("children.get_client", return_value=mock_client):
         assert verify_child_login(OTHER_PARENT_ID, 1, "sesame") is False
+
+
+# --- Independent child login: nickname lookup (PR 2 of 3) ---
+
+
+def test_get_child_by_nickname_returns_the_matching_child():
+    rows = [{"id": 1, "parent_id": PARENT_ID, "nickname": "Sam", "created_at": "2026-08-16T00:00:00Z"}]
+    with patch("children.get_client", return_value=_mock_client_with_rows(rows)):
+        result = get_child_by_nickname(PARENT_ID, "Sam")
+    assert result is not None
+    assert result.id == 1
+
+
+def test_get_child_by_nickname_returns_none_when_not_found():
+    with patch("children.get_client", return_value=_mock_client_with_rows([])):
+        result = get_child_by_nickname(PARENT_ID, "NotReal")
+    assert result is None
