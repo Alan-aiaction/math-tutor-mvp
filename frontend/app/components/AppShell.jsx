@@ -96,7 +96,10 @@ export default function AppShell({ activeChild, view, onNavigate, onSignOut, chi
           <span className="h-8 w-8 flex-shrink-0 rounded-full border border-dashed border-ink-muted" />
         </div>
 
-        <main className="flex-1 p-8">{children}</main>
+        {/* relative (fix PR #118 regression): ScratchPad positions itself absolute
+            within this element instead of fixed-to-viewport, so it tracks the content
+            pane's real bounds instead of colliding with the sidebar at any width. */}
+        <main className="relative flex-1 p-8">{children}</main>
       </div>
     </div>
   );
