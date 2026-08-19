@@ -1,0 +1,55 @@
+name: CI
+
+# Runs the fast, deterministic tier only (unit tests, no mocking of external systems
+# skipped - every real Supabase/backend call is mocked) - matches the split worked out
+# in .claude/plans/test-pyramid-design.md (gitignored, local-only): safe to gate every
+# PR on, vs. the slower real-Supabase/MyScript integration tier, which stays manual/
+# scheduled, not wired up here. See docs/tracking/decision-log.md for the full context.
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: backend/requirements.txt
+      - run: pip install -r requirements.txt
+      # -k "not integration": excludes test_*_integration.py, which need real
+      # SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY secrets this workflow deliberately
+      # doesn't have - those stay a manual/local check, not a CI gate.
+      - run: python -m pytest -q -k "not integration"
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm test -- --run
+      - name: next build
+        # Dummy, non-secret placeholders - lib/supabaseClient.js constructs a Supabase
+        # client at module-eval time (not inside a function), so `next build` fails
+        # outright without *some* non-empty URL/key, even though nothing at build time
+        # actually calls Supabase (confirmed locally). Not real credentials - safe to
+        # inline directly in the workflow file, no GitHub secret needed.
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: "https://ci-placeholder.supabase.co"
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: "ci-placeholder-anon-key"
+        run: npm run build
