@@ -51,6 +51,21 @@ describe("ParentAuth", () => {
     expect(supabase.auth.signInWithPassword).not.toHaveBeenCalled();
   });
 
+  it("sign-up passes emailRedirectTo so the confirmation email doesn't link to localhost in production", async () => {
+    // Bug #76: signUp() with no options falls back to Supabase's dashboard-configured
+    // Site URL, which was left pointing at localhost. window.location.origin adapts to
+    // whichever environment sign-up actually happened in (prod, preview, or local dev).
+    supabase.auth.signUp.mockResolvedValue({ data: { session: { access_token: "t" } }, error: null });
+    render(<ParentAuth />);
+    fireEvent.click(screen.getByText("New here? Sign up"));
+    await fillAndSubmit();
+    expect(supabase.auth.signUp).toHaveBeenCalledWith({
+      email: "parent@example.com",
+      password: "sesame123",
+      options: { emailRedirectTo: window.location.origin },
+    });
+  });
+
   it("shows an error message when auth fails, doesn't call onAuthenticated", async () => {
     supabase.auth.signInWithPassword.mockResolvedValue({
       data: { session: null },
