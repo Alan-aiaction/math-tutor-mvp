@@ -17,10 +17,15 @@ import InkCanvas from "./InkCanvas";
 // sit below 1280px, so `xl:` meant these panels never actually showed on the target
 // device. iPad portrait (all models <=1024px) still has no room for two panels plus the
 // centered step content, so this stays landscape-only by design.
+//
+// absolute, not fixed (fix PR #118 regression): `fixed` anchors to the viewport, which
+// collided with AppShell's persistent sidebar once that shipped - `absolute` anchors to
+// AppShell's <main> (its nearest `position: relative` ancestor) instead, so this tracks
+// the actual content pane's bounds regardless of sidebar width/collapsed state.
 export default function ScratchPad({ side }) {
   return (
     <div
-      className={`hidden lg:flex fixed top-20 bottom-6 flex-col gap-1 ${
+      className={`hidden lg:flex absolute top-4 bottom-4 flex-col gap-1 ${
         side === "left" ? "left-6" : "right-6"
       }`}
       style={{ width: "clamp(140px, 14vw, 340px)" }}
