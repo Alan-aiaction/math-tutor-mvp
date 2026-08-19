@@ -474,8 +474,10 @@ stateDiagram-v2
         step_confirmed --> step_evaluated: Check my working
         step_evaluated --> step_correct: valid
         step_evaluated --> step_incorrect: invalid
-        step_incorrect --> step_confirmed: student edits and rechecks
-        step_correct --> [*]
+        step_incorrect --> step_confirmed: student edits and rechecks, still the current step
+        step_incorrect --> step_locked: student adds the next step instead
+        step_correct --> step_locked: locked immediately - no more editing
+        step_locked --> [*]
     }
 
     in_progress --> completed: trigger not yet defined
@@ -484,9 +486,12 @@ stateDiagram-v2
     </div>
     <div class="caption">
       <span class="dot"></span>
-      <span>The inner cycle matches what's already implemented: <code>StepBox.js</code>'s
-      draw/edit/recognize states, and the fact that an incorrect step loops back to
-      confirmed rather than dead-ending — a student can keep revising one step.</span>
+      <span>The inner cycle matches what's already implemented: <code>StepBox.jsx</code>'s
+      draw/edit/recognize states. A correct step locks immediately (PR #121); an incorrect
+      step only loops back to confirmed while it's still the current (last) step — once
+      the student adds the next step it locks too (PR #123), so the step list stays a
+      fixed record of what was actually tried rather than something to quietly rewrite
+      later.</span>
     </div>
     <div class="caption open">
       <span class="dot"></span>
