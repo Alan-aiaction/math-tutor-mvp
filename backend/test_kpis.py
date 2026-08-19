@@ -2,7 +2,13 @@
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 
-from kpis import get_accuracy_trend, get_average_retries, get_practice_frequency, get_weak_spots_by_topic
+from kpis import (
+    get_accuracy_trend,
+    get_average_retries,
+    get_practice_frequency,
+    get_total_attempts,
+    get_weak_spots_by_topic,
+)
 
 
 def _mock_client(attempts=None, steps=None, problems=None):
@@ -118,4 +124,18 @@ def test_get_practice_frequency_counts_distinct_recent_days_only():
 def test_get_practice_frequency_zero_when_no_attempts():
     with patch("kpis.get_client", return_value=_mock_client()):
         result = get_practice_frequency(child_id=1)
+    assert result == 0
+
+
+def test_get_total_attempts_counts_every_attempt_ever():
+    attempts = [{"id": 1}, {"id": 2}, {"id": 3}]
+    mock_client = _mock_client(attempts=attempts)
+    with patch("kpis.get_client", return_value=mock_client):
+        result = get_total_attempts(child_id=1)
+    assert result == 3
+
+
+def test_get_total_attempts_zero_when_no_attempts():
+    with patch("kpis.get_client", return_value=_mock_client()):
+        result = get_total_attempts(child_id=1)
     assert result == 0

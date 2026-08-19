@@ -1,11 +1,12 @@
 """KPI data layer for the 3rd MVP parent dashboard (not the dashboard UI itself).
 
-Four signals, each answering a real question a parent might have - deliberately not
-more than these four, per the explicit "stop there" scoping decision:
+Five signals, each answering a real question a parent might have:
 - accuracy trend over time: is my child getting better?
 - practice frequency: are they actually practicing?
 - average retries: how much do they struggle before getting something right?
 - weak spots by topic: what should they focus on?
+- total attempts: how much have they actually done overall? (added alongside the real
+  dashboard UI - trivial once the other four existed, same underlying attempts data)
 
 child_id is trusted here, not re-verified - same convention attempts.py's
 create_attempt() already uses: the caller (main.py's endpoint) is responsible for
@@ -96,6 +97,15 @@ def get_average_retries(child_id: int) -> float:
     if not steps:
         return 0.0
     return sum(step["previous_wrong_count"] for step in steps) / len(steps)
+
+
+def get_total_attempts(child_id: int) -> int:
+    """Total number of attempts this child has ever made - an effort-based "problems
+    solved" figure for the dashboard, not a correctness judgment. Trivial by design:
+    every attempt row counts, regardless of whether every step in it was correct."""
+    client = get_client()
+    rows = client.table("attempts").select("id").eq("child_id", child_id).execute().data
+    return len(rows)
 
 
 def get_weak_spots_by_topic(child_id: int) -> list[dict]:

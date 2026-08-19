@@ -290,6 +290,7 @@ def test_get_child_kpis_success():
         patch("main.get_practice_frequency", return_value=3),
         patch("main.get_average_retries", return_value=1.5),
         patch("main.get_weak_spots_by_topic", return_value=[{"topic": "fractions", "accuracy": 0.5}]),
+        patch("main.get_total_attempts", return_value=47),
     ):
         response = client.get("/children/1/kpis", headers=AUTH_HEADER)
     assert response.status_code == 200
@@ -298,6 +299,7 @@ def test_get_child_kpis_success():
     assert body["practice_frequency_days"] == 3
     assert body["average_retries"] == 1.5
     assert body["weak_spots_by_topic"] == [{"topic": "fractions", "accuracy": 0.5}]
+    assert body["total_attempts"] == 47
 
 
 # --- question_text / misconception matching passthrough (ticket #33) ---

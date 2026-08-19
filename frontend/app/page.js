@@ -6,6 +6,8 @@ import ProblemDisplay from "./components/ProblemDisplay";
 import ParentAuth from "./components/ParentAuth";
 import ChildPicker from "./components/ChildPicker";
 import AppShell from "./components/AppShell";
+import Dashboard from "./components/Dashboard";
+import Account from "./components/Account";
 import ScratchPad from "./components/ScratchPad";
 import { apiFetch } from "./lib/apiFetch";
 import { supabase } from "./lib/supabaseClient";
@@ -285,10 +287,8 @@ export default function Home() {
         <ChildPicker accessToken={session.access_token} onChildSelected={selectChild} />
       )}
 
-      {/* Dashboard/Account real screens land in PR 3 - placeholders keep every nav
-          destination reachable and testable now rather than dead-ending. */}
-      {view === "dashboard" && <p className="text-sm text-ink-muted">{t("nav.dashboard")} …</p>}
-      {view === "account" && <p className="text-sm text-ink-muted">{t("nav.account")} …</p>}
+      {view === "dashboard" && <Dashboard accessToken={session.access_token} activeChild={activeChild} />}
+      {view === "account" && <Account />}
     </AppShell>
   );
 }

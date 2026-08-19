@@ -14,7 +14,13 @@ from dotenv import load_dotenv
 
 from attempts import create_attempt
 from db import get_client
-from kpis import get_accuracy_trend, get_average_retries, get_practice_frequency, get_weak_spots_by_topic
+from kpis import (
+    get_accuracy_trend,
+    get_average_retries,
+    get_practice_frequency,
+    get_total_attempts,
+    get_weak_spots_by_topic,
+)
 
 load_dotenv()
 
@@ -94,6 +100,8 @@ def test_kpis_computed_from_real_persisted_attempts(throwaway_problem, throwaway
 
         weak_spots = get_weak_spots_by_topic(child_id)
         assert weak_spots == [{"topic": "fractions", "accuracy": 0.5}]
+
+        assert get_total_attempts(child_id) == 2
     finally:
         for attempt_id in attempt_ids:
             client.table("attempt_steps").delete().eq("attempt_id", attempt_id).execute()
@@ -106,3 +114,4 @@ def test_kpis_empty_state_for_a_child_with_no_attempts(throwaway_child):
     assert get_practice_frequency(child_id) == 0
     assert get_average_retries(child_id) == 0.0
     assert get_weak_spots_by_topic(child_id) == []
+    assert get_total_attempts(child_id) == 0
