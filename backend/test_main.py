@@ -1,10 +1,12 @@
+import os
 from unittest.mock import MagicMock, patch
 
 from fastapi.testclient import TestClient
 
+from auth import issue_child_token
 from children import ChildError
 from main import app
-from models import Child, Parent
+from models import Attempt, Child, Parent
 from recognition import RecognitionError
 
 # raise_server_exceptions=False: without this, TestClient re-raises the original
@@ -21,6 +23,20 @@ def _mock_parent_auth():
     imports the name directly, so that's where the call is actually looked up) to
     return a fixed parent id without a real Supabase round-trip."""
     return patch("main.get_current_parent_id", return_value=FAKE_PARENT_ID)
+
+
+def _with_child_session_secret():
+    return patch.dict(os.environ, {"CHILD_SESSION_SECRET": "test-secret-at-least-32-bytes-long"})
+
+
+def _child_auth_header(child_id, parent_id=FAKE_PARENT_ID):
+    """A real, verifiable child session token (independent child login, PR 2/3) - not
+    mocked, since get_current_child is pure local signature verification with no
+    network round-trip to fake out. Must be called from inside a
+    _with_child_session_secret() block - and the resulting header used inside that same
+    block - since CHILD_SESSION_SECRET has to be set for both issuing and verifying."""
+    token = issue_child_token(child_id=child_id, parent_id=parent_id)
+    return {"Authorization": f"Bearer {token}"}
 
 
 # --- CORS (fix #76: Authorization was missing from allow_headers, which silently
@@ -268,6 +284,112 @@ def test_child_login_success():
         response = client.post("/children/1/login", json={"password": "sesame"}, headers=AUTH_HEADER)
     assert response.status_code == 200
     assert response.json()["nickname"] == "Sam"
+
+
+# --- Independent child login: POST /children/login, no parent session (PR 2 of 3) ---
+
+
+def test_independent_child_login_requires_no_auth_header_at_all():
+    with (
+        patch("main.get_parent_by_family_code", return_value=None),
+    ):
+        response = client.post(
+            "/children/login", json={"family_code": "NOTREAL", "nickname": "Sam", "password": "sesame"}
+        )
+    # No Authorization header sent above - proves this route never gates on one.
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Incorrect login"
+
+
+def test_independent_child_login_success_issues_a_token():
+    with (
+        _with_child_session_secret(),
+        patch("main.get_parent_by_family_code", return_value=Parent(id=FAKE_PARENT_ID, family_code="AB12CD", max_children=3, created_at="2026-08-19T00:00:00Z")),
+        patch(
+            "main.get_child_by_nickname",
+            return_value=Child(id=1, parent_id=FAKE_PARENT_ID, nickname="Sam", created_at="2026-08-16T00:00:00Z"),
+        ),
+        patch("main.verify_child_login", return_value=True),
+    ):
+        response = client.post(
+            "/children/login", json={"family_code": "AB12CD", "nickname": "Sam", "password": "sesame"}
+        )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["child"]["nickname"] == "Sam"
+    assert isinstance(body["token"], str) and len(body["token"]) > 0
+
+
+def test_independent_child_login_wrong_family_code_returns_generic_401():
+    with patch("main.get_parent_by_family_code", return_value=None):
+        response = client.post(
+            "/children/login", json={"family_code": "WRONGCODE", "nickname": "Sam", "password": "sesame"}
+        )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Incorrect login"
+
+
+def test_independent_child_login_wrong_nickname_returns_the_same_generic_401():
+    with (
+        patch("main.get_parent_by_family_code", return_value=Parent(id=FAKE_PARENT_ID, family_code="AB12CD", max_children=3, created_at="2026-08-19T00:00:00Z")),
+        patch("main.get_child_by_nickname", return_value=None),
+    ):
+        response = client.post(
+            "/children/login", json={"family_code": "AB12CD", "nickname": "NotReal", "password": "sesame"}
+        )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Incorrect login"
+
+
+def test_independent_child_login_wrong_password_returns_the_same_generic_401():
+    with (
+        patch("main.get_parent_by_family_code", return_value=Parent(id=FAKE_PARENT_ID, family_code="AB12CD", max_children=3, created_at="2026-08-19T00:00:00Z")),
+        patch(
+            "main.get_child_by_nickname",
+            return_value=Child(id=1, parent_id=FAKE_PARENT_ID, nickname="Sam", created_at="2026-08-16T00:00:00Z"),
+        ),
+        patch("main.verify_child_login", return_value=False),
+    ):
+        response = client.post(
+            "/children/login", json={"family_code": "AB12CD", "nickname": "Sam", "password": "wrong"}
+        )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Incorrect login"
+
+
+# --- require_requester: an independent child's own token on the practice endpoints ---
+
+
+def test_check_attempt_accepts_a_child_session_token_not_just_a_parent_token():
+    with _with_child_session_secret():
+        response = client.post(
+            "/attempts/check",
+            json={"steps": [{"recognized_latex": "7/12"}], "correct_answer": "7/12"},
+            headers=_child_auth_header(child_id=1),
+        )
+    assert response.status_code == 200
+
+
+def test_create_attempt_accepts_a_child_session_token_for_that_childs_own_id():
+    fake_attempt = Attempt(id=1, problem_id=1, child_id=1, steps=[], status="completed", created_at="2026-08-19T00:00:00Z")
+    with _with_child_session_secret(), patch("main.create_attempt", return_value=fake_attempt) as mock_create:
+        response = client.post(
+            "/attempts",
+            json={"problem_id": 1, "child_id": 1, "status": "completed", "steps": []},
+            headers=_child_auth_header(child_id=1),
+        )
+    assert response.status_code == 200
+    mock_create.assert_called_once()
+
+
+def test_create_attempt_rejects_a_child_token_used_for_a_different_childs_id():
+    with _with_child_session_secret():
+        response = client.post(
+            "/attempts",
+            json={"problem_id": 1, "child_id": 999, "status": "completed", "steps": []},
+            headers=_child_auth_header(child_id=1),  # token proves child 1, payload claims child 999
+        )
+    assert response.status_code == 403
 
 
 # --- Attempts endpoint ownership check (3rd MVP auth) ---
