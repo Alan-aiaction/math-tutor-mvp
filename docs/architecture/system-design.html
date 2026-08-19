@@ -330,6 +330,8 @@ erDiagram
     MISCONCEPTION_RULES ||--o{ HINTS : "explained by"
     PROBLEMS ||--o{ SHADOW_LOG_WRONG_ANSWERS : "surfaces wrong answers to"
     PROBLEMS ||--o{ SHADOW_LOG_REVIEW_NOTES : "reviewed pattern for"
+    PARENTS ||--o{ CHILDREN : "owns"
+    CHILDREN ||--o{ ATTEMPTS : "attempted by"
 
     PROBLEMS {
         bigint id PK
@@ -339,10 +341,21 @@ erDiagram
         text correct_answer
         text solving_tip "nullable, new field"
     }
+    PARENTS {
+        uuid id PK "FK to auth.users - not a new identity"
+        text family_code UK "unambiguous 6-char code, for independent child login"
+        integer max_children "fixed default (3) until 4th MVP billing exists"
+    }
+    CHILDREN {
+        bigint id PK
+        uuid parent_id FK
+        text nickname "unique per parent, not globally"
+        text password_hash "bcrypt - never leaves children.py"
+    }
     ATTEMPTS {
         bigint id PK
         bigint problem_id FK
-        text student_id
+        bigint child_id FK "3rd MVP: replaces the old free-text student_id"
         text status "value list open"
     }
     ATTEMPT_STEPS {
@@ -379,6 +392,17 @@ erDiagram
         text note "feeds ticket #69 directly"
     }
 </pre>
+    </div>
+    <div class="caption open">
+      <span class="dot"></span>
+      <span><code>PARENTS</code> and <code>CHILDREN</code> added (independent child login +
+      child cap, PR 1 of 3) - this diagram had drifted since ticket #76 first introduced
+      <code>children</code> and retired <code>attempts.student_id</code> for
+      <code>attempts.child_id</code>, neither of which had ever been reflected here before
+      now. Fixed only what this change touches directly; <code>attempts.created_at</code>
+      and <code>attempt_steps.previous_wrong_count</code> (both added by the KPI data layer
+      ticket) are still missing from this diagram - a separate, pre-existing gap, not
+      addressed in this pass.</span>
     </div>
     <div class="caption">
       <span class="dot"></span>

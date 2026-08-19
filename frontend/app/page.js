@@ -303,7 +303,7 @@ export default function Home() {
       )}
 
       {view === "dashboard" && <Dashboard accessToken={session.access_token} activeChild={activeChild} />}
-      {view === "account" && <Account />}
+      {view === "account" && <Account accessToken={session.access_token} />}
     </AppShell>
   );
 }

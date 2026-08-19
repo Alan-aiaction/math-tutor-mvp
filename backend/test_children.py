@@ -8,6 +8,8 @@ from children import ChildError, create_child, delete_child, get_child, list_chi
 PARENT_ID = "11111111-1111-1111-1111-111111111111"
 OTHER_PARENT_ID = "22222222-2222-2222-2222-222222222222"
 
+DEFAULT_PARENT_ROW = {"id": PARENT_ID, "family_code": "AB12CD", "max_children": 3, "created_at": "2026-08-16T00:00:00Z"}
+
 
 def _mock_client_with_rows(rows):
     mock_client = MagicMock()
@@ -18,8 +20,29 @@ def _mock_client_with_rows(rows):
     return mock_client
 
 
-def test_create_child_hashes_the_password_not_stored_plaintext():
+def _mock_client_for_create(parent_row, existing_children_rows, insert_side_effect):
+    """create_child now checks the child cap first (parents table lookup + a count of
+    existing children), then inserts - so this mock has to dispatch by table name
+    rather than reuse a single `.table.return_value` like the simpler helper above."""
     mock_client = MagicMock()
+
+    parents_table = MagicMock()
+    parents_table.select.return_value.eq.return_value.execute.return_value.data = (
+        [parent_row] if parent_row else []
+    )
+
+    children_table = MagicMock()
+    children_table.select.return_value.eq.return_value.execute.return_value.data = existing_children_rows
+    children_table.insert.side_effect = insert_side_effect
+
+    def table(name):
+        return {"parents": parents_table, "children": children_table}[name]
+
+    mock_client.table.side_effect = table
+    return mock_client
+
+
+def test_create_child_hashes_the_password_not_stored_plaintext():
     inserted = {}
 
     def insert(payload):
@@ -30,9 +53,9 @@ def test_create_child_hashes_the_password_not_stored_plaintext():
         ]
         return mock_result
 
-    mock_client.table.return_value.insert.side_effect = insert
+    mock_client = _mock_client_for_create(DEFAULT_PARENT_ROW, existing_children_rows=[], insert_side_effect=insert)
 
-    with patch("children.get_client", return_value=mock_client):
+    with patch("children.get_client", return_value=mock_client), patch("parents.get_client", return_value=mock_client):
         result = create_child(PARENT_ID, "Sam", "sesame")
 
     assert result.id == 1
@@ -42,13 +65,33 @@ def test_create_child_hashes_the_password_not_stored_plaintext():
 
 
 def test_create_child_raises_child_error_on_db_failure():
-    mock_client = MagicMock()
-    mock_client.table.return_value.insert.return_value.execute.side_effect = Exception(
-        "duplicate key value violates unique constraint"
-    )
-    with patch("children.get_client", return_value=mock_client):
+    def insert(payload):
+        mock_result = MagicMock()
+        mock_result.execute.side_effect = Exception("duplicate key value violates unique constraint")
+        return mock_result
+
+    mock_client = _mock_client_for_create(DEFAULT_PARENT_ROW, existing_children_rows=[], insert_side_effect=insert)
+
+    with patch("children.get_client", return_value=mock_client), patch("parents.get_client", return_value=mock_client):
         try:
             create_child(PARENT_ID, "Sam", "sesame")
+            assert False, "expected ChildError"
+        except ChildError:
+            pass
+
+
+def test_create_child_raises_child_error_when_parent_is_at_the_cap():
+    at_cap_parent = {"id": PARENT_ID, "family_code": "AB12CD", "max_children": 1, "created_at": "2026-08-16T00:00:00Z"}
+    existing = [{"id": 1, "parent_id": PARENT_ID, "nickname": "Sam", "created_at": "2026-08-16T00:00:00Z"}]
+
+    def insert(payload):
+        raise AssertionError("insert should never be called once the cap is already reached")
+
+    mock_client = _mock_client_for_create(at_cap_parent, existing_children_rows=existing, insert_side_effect=insert)
+
+    with patch("children.get_client", return_value=mock_client), patch("parents.get_client", return_value=mock_client):
+        try:
+            create_child(PARENT_ID, "Odin", "sesame")
             assert False, "expected ChildError"
         except ChildError:
             pass
