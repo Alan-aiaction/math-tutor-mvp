@@ -331,8 +331,14 @@ class ChildKpis(BaseModel):
 
 
 @app.get("/children/{child_id}/kpis", response_model=ChildKpis)
-def get_child_kpis_endpoint(child_id: int, parent_id: str = Depends(require_parent_id)):
-    if get_child(parent_id, child_id) is None:
+def get_child_kpis_endpoint(child_id: int, requester: Requester = Depends(require_requester)):
+    # require_requester (not require_parent_id): a child's own dashboard (own-data-only,
+    # never a sibling's) needs to fetch this with just their own session token - same
+    # ownership pattern POST /attempts already uses.
+    if requester.child_id is not None:
+        if requester.child_id != child_id:
+            raise HTTPException(status_code=403, detail="This child does not belong to the authenticated parent")
+    elif get_child(requester.parent_id, child_id) is None:
         raise HTTPException(status_code=403, detail="This child does not belong to the authenticated parent")
     return ChildKpis(
         accuracy_trend=get_accuracy_trend(child_id),
