@@ -345,6 +345,7 @@ erDiagram
         uuid id PK "FK to auth.users - not a new identity"
         text family_code UK "unambiguous 6-char code, for independent child login"
         integer max_children "fixed default (3) until 4th MVP billing exists"
+        integer llm_tokens_used "lifetime count, capped by LLM_TOKEN_LIMIT_PER_ACCOUNT"
     }
     CHILDREN {
         bigint id PK
@@ -403,6 +404,15 @@ erDiagram
       and <code>attempt_steps.previous_wrong_count</code> (both added by the KPI data layer
       ticket) are still missing from this diagram - a separate, pre-existing gap, not
       addressed in this pass.</span>
+    </div>
+    <div class="caption">
+      <span class="dot"></span>
+      <span><code>PARENTS.llm_tokens_used</code> added - a lifetime counter for the
+      per-account LLM token limit that gates <code>hint_escalation_llm.py</code>'s live
+      hint calls, built before any real <code>LLM_API_KEY</code> exists so the safety
+      net is already live once one is connected. See
+      <code>docs/tracking/decision-log.md</code>'s "per-account lifetime token limit"
+      entry.</span>
     </div>
     <div class="caption">
       <span class="dot"></span>

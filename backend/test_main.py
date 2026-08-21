@@ -496,6 +496,21 @@ def test_check_attempt_without_question_text_still_works():
     assert response.json()[0]["misconception_id"] is None
 
 
+def test_check_attempt_passes_the_requesters_parent_id_to_run_pipeline():
+    """The per-account LLM token limit needs to know which account is asking -
+    requester.parent_id is already resolved by require_requester for both a parent
+    and an independently-logged-in child (see Requester's own docstring); this just
+    confirms it reaches run_pipeline rather than being silently dropped."""
+    with _mock_parent_auth(), patch("main.run_pipeline", return_value=[]) as mock_run_pipeline:
+        response = client.post(
+            "/attempts/check",
+            json={"steps": [{"recognized_latex": "5/7"}], "correct_answer": "7/12"},
+            headers=AUTH_HEADER,
+        )
+    assert response.status_code == 200
+    assert mock_run_pipeline.call_args.kwargs["parent_id"] == FAKE_PARENT_ID
+
+
 def test_check_attempt_with_question_text_is_accepted():
     """Confirms the field is accepted and passed through to run_pipeline without
     error - the specific matching logic itself is covered by

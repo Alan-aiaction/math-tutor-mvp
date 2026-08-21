@@ -9,6 +9,8 @@ from parents import (
     _generate_family_code,
     get_or_create_parent,
     get_parent_by_family_code,
+    has_reached_llm_token_limit,
+    record_llm_tokens_used,
 )
 
 PARENT_ID = "11111111-1111-1111-1111-111111111111"
@@ -116,3 +118,49 @@ def test_get_parent_by_family_code_returns_none_when_not_found():
     with patch("parents.get_client", return_value=mock_client):
         result = get_parent_by_family_code("NOTREAL")
     assert result is None
+
+
+# --- LLM token limit (per-account, lifetime cap) ---
+
+
+def _mock_client_with_parent(llm_tokens_used):
+    mock_client = MagicMock()
+    mock_client.table.return_value.select.return_value.eq.return_value.execute.return_value.data = [
+        {
+            "id": PARENT_ID,
+            "family_code": "AB12CD",
+            "max_children": 3,
+            "llm_tokens_used": llm_tokens_used,
+            "created_at": "2026-08-19T00:00:00Z",
+        }
+    ]
+    return mock_client
+
+
+def test_has_reached_llm_token_limit_is_false_below_the_limit(monkeypatch):
+    monkeypatch.setenv("LLM_TOKEN_LIMIT_PER_ACCOUNT", "1000")
+    mock_client = _mock_client_with_parent(500)
+    with patch("parents.get_client", return_value=mock_client):
+        assert has_reached_llm_token_limit(PARENT_ID) is False
+
+
+def test_has_reached_llm_token_limit_is_true_at_the_limit(monkeypatch):
+    monkeypatch.setenv("LLM_TOKEN_LIMIT_PER_ACCOUNT", "1000")
+    mock_client = _mock_client_with_parent(1000)
+    with patch("parents.get_client", return_value=mock_client):
+        assert has_reached_llm_token_limit(PARENT_ID) is True
+
+
+def test_has_reached_llm_token_limit_is_true_above_the_limit(monkeypatch):
+    monkeypatch.setenv("LLM_TOKEN_LIMIT_PER_ACCOUNT", "1000")
+    mock_client = _mock_client_with_parent(1500)
+    with patch("parents.get_client", return_value=mock_client):
+        assert has_reached_llm_token_limit(PARENT_ID) is True
+
+
+def test_record_llm_tokens_used_adds_to_the_existing_count():
+    mock_client = _mock_client_with_parent(500)
+    with patch("parents.get_client", return_value=mock_client):
+        record_llm_tokens_used(PARENT_ID, 150)
+
+    mock_client.table.return_value.update.assert_called_once_with({"llm_tokens_used": 650})

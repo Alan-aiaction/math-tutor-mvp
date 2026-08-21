@@ -50,6 +50,9 @@ class Parent(BaseModel):
     # with the child's own nickname + password
     max_children: int  # per-parent cap; fixed default until a real billing system
     # exists to vary it per plan (deferred to 4th MVP)
+    llm_tokens_used: int = 0  # lifetime count of tokens spent on this account's live
+    # LLM hint calls, capped by LLM_TOKEN_LIMIT_PER_ACCOUNT (see parents.py) - defaults
+    # to 0 so existing Parent(...) call sites that predate this field don't break
     created_at: str
 
 

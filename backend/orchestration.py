@@ -30,6 +30,11 @@ any) for context - that function is itself fail-safe (falls back to the generic
 hint on any LLM/validation failure), so this pipeline never needs its own
 try/except around it.
 
+parent_id (optional, default None) passes straight through to
+generate_escalated_hint() for its per-account lifetime LLM token limit - this
+pipeline has no opinion on it, just threads it from its caller (POST
+/attempts/check's requester.parent_id, see main.py) to the one place that needs it.
+
 Does not call transition_validity.is_legal_transition() (#27): EvaluationResult
 has nowhere to put that signal (see #28's own flagged gap), and calling it would
 mean computing a value nothing consumes. Deferred, not solved here.
@@ -76,6 +81,7 @@ def run_pipeline(
     correct_answer: str,
     question_text: str | None = None,
     previous_wrong_counts: list[int] | None = None,
+    parent_id: str | None = None,
 ) -> list[EvaluationResult]:
     """Evaluate each step against correct_answer, returning one EvaluationResult
     per step, matching the already-built frontend's per-step ✓/⚠ display."""
@@ -124,7 +130,11 @@ def run_pipeline(
                             misconception = get_misconception(misconception_id)
                             misconception_description = misconception["description"] if misconception else None
                         hint = generate_escalated_hint(
-                            misconception_description, question_text, correct_answer, step.recognized_latex
+                            misconception_description,
+                            question_text,
+                            correct_answer,
+                            step.recognized_latex,
+                            parent_id=parent_id,
                         )
                     else:
                         # select_hint(None) already falls back to the generic hint, so
