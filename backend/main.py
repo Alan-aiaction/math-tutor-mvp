@@ -61,7 +61,7 @@ sentry_sdk.init(
     integrations=[LoggingIntegration(level=logging.INFO, event_level=None)],
 )
 
-app = FastAPI(title="Math Tutor MVP Backend")
+app = FastAPI(title="Math Tutor Backend")
 
 app.add_middleware(
     CORSMiddleware,
@@ -143,7 +143,7 @@ def require_requester(authorization: str | None = Header(None)) -> Requester:
 
 @app.get("/")
 def root():
-    return {"status": "ok", "message": "Math Tutor MVP backend — placeholder, real API coming in Phase 2"}
+    return {"status": "ok", "message": "Math Tutor backend — placeholder, real API coming in Phase 2"}
 
 
 @app.get("/health")

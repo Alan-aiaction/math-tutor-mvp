@@ -1,4 +1,4 @@
-# Math Tutor MVP — Architecture
+# Math Tutor — Architecture
 
 The maintained architecture diagram is
 [`math_tutor_mvp_architecture.drawio`](math_tutor_mvp_architecture.drawio) (open in
