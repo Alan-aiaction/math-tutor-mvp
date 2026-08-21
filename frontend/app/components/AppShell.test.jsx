@@ -96,4 +96,35 @@ describe("AppShell", () => {
     // when there's no identityLabel, not just empty.
     expect(container.querySelector(".rounded-full.border.border-border.bg-surface")).not.toBeInTheDocument();
   });
+
+  // --- Collapse toggle (bug: a static "☰" gave no clue how to un-collapse) ---
+
+  it("shows a collapse icon and label while expanded (the default)", () => {
+    renderShell();
+    const toggle = screen.getByLabelText("Menu inklappen");
+    expect(toggle).toHaveTextContent("«");
+  });
+
+  it("shows an expand icon and label once collapsed, so it's clear how to bring the sidebar back", () => {
+    renderShell();
+    fireEvent.click(screen.getByLabelText("Menu inklappen"));
+    const toggle = screen.getByLabelText("Menu uitklappen");
+    expect(toggle).toHaveTextContent("»");
+  });
+
+  it("clicking the expand icon brings the sidebar back to its collapse-labeled state", () => {
+    renderShell();
+    fireEvent.click(screen.getByLabelText("Menu inklappen")); // collapse
+    fireEvent.click(screen.getByLabelText("Menu uitklappen")); // expand again
+    expect(screen.getByLabelText("Menu inklappen")).toHaveTextContent("«");
+  });
+
+  it("hides the logo box while collapsed so it doesn't crowd out the toggle button", () => {
+    renderShell();
+    expect(screen.getByText("Logo")).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText("Menu inklappen"));
+    expect(screen.queryByText("Logo")).not.toBeInTheDocument();
+    // The toggle itself must still be there, unobstructed.
+    expect(screen.getByLabelText("Menu uitklappen")).toBeInTheDocument();
+  });
 });

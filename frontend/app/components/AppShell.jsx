@@ -37,19 +37,27 @@ export default function AppShell({
       <aside
         className={`flex flex-col gap-6 bg-sidebar p-4 text-white ${collapsed ? "w-20" : "w-60"}`}
       >
-        <div className="flex items-center gap-2">
-          <div className="flex flex-1 items-center gap-2 rounded-xl border border-dashed border-white/40 p-2 text-white/60">
-            <div className="h-7 w-7 flex-shrink-0 rounded-lg border border-dashed border-white/40" />
-            {!collapsed && <span className="text-xs font-bold uppercase tracking-wide">Logo</span>}
-          </div>
+        {/* Bug fix: the logo box used to stay mounted (flex-1, its own padding/border)
+            even while collapsed, only hiding its text label - at w-20 that left it
+            competing with the toggle button for space neither could really spare,
+            which is why the toggle wasn't reliably visible/clickable once collapsed.
+            Dropping the logo box entirely while collapsed guarantees the toggle gets
+            a clear, centered, undisputed spot instead. */}
+        <div className={`flex items-center gap-2 ${collapsed ? "justify-center" : ""}`}>
+          {!collapsed && (
+            <div className="flex flex-1 items-center gap-2 rounded-xl border border-dashed border-white/40 p-2 text-white/60">
+              <div className="h-7 w-7 flex-shrink-0 rounded-lg border border-dashed border-white/40" />
+              <span className="text-xs font-bold uppercase tracking-wide">Logo</span>
+            </div>
+          )}
           <button
             type="button"
             onClick={() => setCollapsed((prev) => !prev)}
             aria-expanded={!collapsed}
-            aria-label={t("nav.menu")}
-            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-white/20 hover:bg-white/10"
+            aria-label={collapsed ? t("nav.expandMenu") : t("nav.collapseMenu")}
+            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-white/20 text-lg font-bold leading-none hover:bg-white/10"
           >
-            ☰
+            {collapsed ? "»" : "«"}
           </button>
         </div>
 

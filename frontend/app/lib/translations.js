@@ -5,6 +5,8 @@
 export const translations = {
   nl: {
     "nav.menu": "Menu",
+    "nav.collapseMenu": "Menu inklappen",
+    "nav.expandMenu": "Menu uitklappen",
     "nav.oefenen": "Oefenen",
     "nav.dashboard": "Dashboard",
     "nav.mijnkinderen": "Mijn kinderen",
@@ -107,6 +109,8 @@ export const translations = {
   },
   en: {
     "nav.menu": "Menu",
+    "nav.collapseMenu": "Collapse menu",
+    "nav.expandMenu": "Expand menu",
     "nav.oefenen": "Practice",
     "nav.dashboard": "Dashboard",
     "nav.mijnkinderen": "My children",
