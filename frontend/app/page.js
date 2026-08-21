@@ -297,48 +297,29 @@ export default function Home() {
   }
 
   // An independently-logged-in child always takes over the whole screen, regardless of
-  // whether a parent session also happens to exist in the same browser - no AppShell,
-  // no Dashboard/Mijn kinderen/Account nav, just the practice session itself plus a way
-  // to sign out. Checked before `!session` below so a child session works even when no
-  // parent has ever signed in on this device at all.
+  // whether a parent session also happens to exist in the same browser. Checked before
+  // `!session` below so a child session works even when no parent has ever signed in
+  // on this device at all.
+  //
+  // Reuses the same AppShell the parent path uses below - same chrome, a narrower set
+  // of sections (Practice/Dashboard only - no Mijn kinderen, no Account, neither makes
+  // sense for a child to reach) - see AppShell.jsx for the props that make this work.
   if (childSession) {
     return (
-      <main className="flex min-h-screen flex-col items-center gap-6 p-8">
-        <div className="flex w-full max-w-md items-center justify-between">
-          <span className="font-display text-lg font-bold text-ink">{childSession.child.nickname}</span>
-          <button
-            type="button"
-            onClick={handleChildSignOut}
-            className="text-sm font-bold text-ink-muted hover:text-ink"
-          >
-            {t("nav.uitloggen")}
-          </button>
-        </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setChildView("oefenen")}
-            aria-current={childView === "oefenen" ? "page" : "false"}
-            className={`rounded-xl px-4 py-2 text-sm font-bold ${
-              childView === "oefenen" ? "bg-primary text-white" : "border border-border text-ink hover:bg-surface"
-            }`}
-          >
-            {t("nav.oefenen")}
-          </button>
-          <button
-            type="button"
-            onClick={() => setChildView("dashboard")}
-            aria-current={childView === "dashboard" ? "page" : "false"}
-            className={`rounded-xl px-4 py-2 text-sm font-bold ${
-              childView === "dashboard" ? "bg-primary text-white" : "border border-border text-ink hover:bg-surface"
-            }`}
-          >
-            {t("nav.dashboard")}
-          </button>
-        </div>
+      <AppShell
+        view={childView}
+        onNavigate={setChildView}
+        onSignOut={handleChildSignOut}
+        navItems={[
+          { key: "oefenen", label: t("nav.oefenen") },
+          { key: "dashboard", label: t("nav.dashboard") },
+        ]}
+        showAccountLink={false}
+        identityLabel={childSession.child.nickname}
+      >
         {childView === "oefenen" && renderPractice()}
         {childView === "dashboard" && <MyProgress child={childSession.child} token={childSession.token} />}
-      </main>
+      </AppShell>
     );
   }
 
@@ -392,7 +373,15 @@ export default function Home() {
   }
 
   return (
-    <AppShell view={view} onNavigate={setView} onSignOut={handleSignOut}>
+    <AppShell
+      view={view}
+      onNavigate={setView}
+      onSignOut={handleSignOut}
+      navItems={[
+        { key: "dashboard", label: t("nav.dashboard") },
+        { key: "kinderen", label: t("nav.mijnkinderen") },
+      ]}
+    >
       {view === "kinderen" && (
         <ChildPicker accessToken={session.access_token} onChildLoggedIn={handleChildLogin} />
       )}

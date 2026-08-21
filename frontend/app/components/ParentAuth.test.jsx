@@ -99,8 +99,7 @@ describe("ParentAuth", () => {
   it("sign-up mode shows a privacy policy notice with a link", () => {
     renderAuth();
     fireEvent.click(screen.getByText("Nieuw hier? Meld je aan"));
-    const link = screen.getByRole("link", { name: "Privacybeleid" });
-    expect(link).toHaveAttribute("href", "/privacy");
+    expect(screen.getByRole("link", { name: "Privacybeleid" })).toHaveAttribute("href", "/privacy");
   });
 
   it("sign-in mode does not show the privacy policy notice - it's a sign-up-time notice only", () => {

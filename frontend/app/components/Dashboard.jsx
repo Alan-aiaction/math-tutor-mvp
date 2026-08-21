@@ -72,6 +72,26 @@ export default function Dashboard({ accessToken }) {
 
   return (
     <div className="flex w-full max-w-4xl flex-col gap-5">
+      {children.length > 1 && (
+        <div className="flex gap-2">
+          {children.map((child) => (
+            <button
+              key={child.id}
+              type="button"
+              onClick={() => setViewedChildId(child.id)}
+              aria-current={child.id === heroChild.id ? "page" : "false"}
+              className={`rounded-xl px-4 py-2 text-sm font-bold ${
+                child.id === heroChild.id
+                  ? "bg-primary text-white"
+                  : "border border-border text-ink hover:bg-surface"
+              }`}
+            >
+              {child.nickname}
+            </button>
+          ))}
+        </div>
+      )}
+
       <ProgressSummary child={heroChild} kpis={heroKpis} />
 
       {children.length > 1 && (

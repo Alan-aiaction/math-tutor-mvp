@@ -4,23 +4,33 @@ import { useState } from "react";
 import { useLanguage } from "../lib/LanguageContext";
 
 // 3rd MVP: real navigation shell, replacing page.js's old three-way full-screen branch.
-// Dashboard and Mijn kinderen are reachable regardless, so a parent can check progress
-// without first launching a practice session. Logo/nav icons are dashed placeholder
-// slots, same as the mockup - real assets land once design work is done.
+// Logo/nav icons are dashed placeholder slots, same as the mockup - real assets land
+// once design work is done.
 //
-// Retire-active-child: Oefenen is never reached from inside this shell at all anymore -
-// every practice session (parent picks a child from Mijn kinderen, or a child logs in
-// independently) now hands off into its own separate child-mode screen (see page.js),
-// so there's no "which child is active" concept for this shell to represent, and the
-// nav item that used to depend on one is gone.
-export default function AppShell({ view, onNavigate, onSignOut, children }) {
+// Reused for both parent and child mode (previously parent-only, child mode had its
+// own bare bespoke layout) - same chrome, a narrower set of sections for a child:
+// - navItems: caller-supplied ({key, label}[]) instead of a hardcoded internal list -
+//   the parent passes Dashboard/Mijn kinderen, a child passes Practice/Dashboard only.
+// - showAccountLink: hides the sidebar's bottom "Account" button - a child has no
+//   account management to reach (Account shows the family code, the credential that
+//   logs in as *any* child in the family; Mijn kinderen isn't offered to a child at
+//   all, simply by never being in their navItems).
+// - identityLabel: shown in the topbar (previously just an empty spacer + decorative
+//   avatar) - the same role the old activeChild-driven pill used to play before it was
+//   removed in the "retire active child" PR. Only meaningful for child mode, where a
+//   shared family device can have more than one possible identity; the parent's
+//   single-session case leaves this unset and the topbar looks exactly as before.
+export default function AppShell({
+  view,
+  onNavigate,
+  onSignOut,
+  navItems,
+  showAccountLink = true,
+  identityLabel,
+  children,
+}) {
   const { t } = useLanguage();
   const [collapsed, setCollapsed] = useState(false);
-
-  const navItems = [
-    { key: "dashboard", label: t("nav.dashboard") },
-    { key: "kinderen", label: t("nav.mijnkinderen") },
-  ];
 
   return (
     <div className="flex min-h-screen">
@@ -66,17 +76,19 @@ export default function AppShell({ view, onNavigate, onSignOut, children }) {
         </nav>
 
         <div className="flex flex-col gap-1 border-t border-white/10 pt-3">
-          <button
-            type="button"
-            onClick={() => onNavigate?.("account")}
-            aria-current={view === "account" ? "page" : "false"}
-            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-bold ${
-              view === "account" ? "bg-sidebar-active text-white" : "text-white/90 hover:bg-white/10"
-            } ${collapsed ? "justify-center" : ""}`}
-          >
-            <span className="h-5 w-5 flex-shrink-0 rounded border border-dashed border-white/40" />
-            {!collapsed && t("nav.account")}
-          </button>
+          {showAccountLink && (
+            <button
+              type="button"
+              onClick={() => onNavigate?.("account")}
+              aria-current={view === "account" ? "page" : "false"}
+              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-bold ${
+                view === "account" ? "bg-sidebar-active text-white" : "text-white/90 hover:bg-white/10"
+              } ${collapsed ? "justify-center" : ""}`}
+            >
+              <span className="h-5 w-5 flex-shrink-0 rounded border border-dashed border-white/40" />
+              {!collapsed && t("nav.account")}
+            </button>
+          )}
           <button
             type="button"
             onClick={onSignOut}
@@ -92,6 +104,12 @@ export default function AppShell({ view, onNavigate, onSignOut, children }) {
 
       <div className="flex flex-1 flex-col bg-surface">
         <div className="flex items-center gap-3 border-b border-border bg-bg px-8 py-3">
+          {identityLabel && (
+            <div className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-sm font-bold text-ink">
+              <span className="h-6 w-6 flex-shrink-0 rounded-full border border-dashed border-ink-muted" />
+              {identityLabel}
+            </div>
+          )}
           <div className="flex-1" />
           <span className="h-8 w-8 flex-shrink-0 rounded-full border border-dashed border-ink-muted" />
         </div>
