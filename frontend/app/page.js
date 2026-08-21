@@ -8,6 +8,7 @@ import ChildPicker from "./components/ChildPicker";
 import ChildLogin from "./components/ChildLogin";
 import AppShell from "./components/AppShell";
 import Dashboard from "./components/Dashboard";
+import MyProgress from "./components/MyProgress";
 import Account from "./components/Account";
 import ScratchPad from "./components/ScratchPad";
 import { apiFetch } from "./lib/apiFetch";
@@ -54,6 +55,10 @@ export default function Home() {
   // authMode only matters pre-session, choosing which of ParentAuth/ChildLogin to show
   // on the landing screen - "choose" | "parent" | "child".
   const [authMode, setAuthMode] = useState("choose");
+  // Child mode gets a small nav of its own - "same view as a parent" as far as
+  // Oefenen/Dashboard go, but deliberately not the full parent shell (no Mijn
+  // kinderen, no Account - those stay parent-only management screens).
+  const [childView, setChildView] = useState("oefenen"); // "oefenen" | "dashboard"
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
@@ -88,6 +93,7 @@ export default function Home() {
     setChildSession(null);
     window.localStorage.removeItem(CHILD_SESSION_STORAGE_KEY);
     setAuthMode("choose");
+    setChildView("oefenen");
   };
 
   const fetchRandomProblem = () => apiFetch(`${BACKEND_URL}/problems/random`);
@@ -308,7 +314,30 @@ export default function Home() {
             {t("nav.uitloggen")}
           </button>
         </div>
-        {renderPractice()}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setChildView("oefenen")}
+            aria-current={childView === "oefenen" ? "page" : "false"}
+            className={`rounded-xl px-4 py-2 text-sm font-bold ${
+              childView === "oefenen" ? "bg-primary text-white" : "border border-border text-ink hover:bg-surface"
+            }`}
+          >
+            {t("nav.oefenen")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setChildView("dashboard")}
+            aria-current={childView === "dashboard" ? "page" : "false"}
+            className={`rounded-xl px-4 py-2 text-sm font-bold ${
+              childView === "dashboard" ? "bg-primary text-white" : "border border-border text-ink hover:bg-surface"
+            }`}
+          >
+            {t("nav.dashboard")}
+          </button>
+        </div>
+        {childView === "oefenen" && renderPractice()}
+        {childView === "dashboard" && <MyProgress child={childSession.child} token={childSession.token} />}
       </main>
     );
   }

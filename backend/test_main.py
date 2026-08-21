@@ -455,6 +455,28 @@ def test_get_child_kpis_success():
     assert body["total_attempts"] == 47
 
 
+def test_get_child_kpis_accepts_a_child_session_token_for_their_own_id():
+    # A child's own dashboard (own-data-only) needs to fetch their own kpis without
+    # any parent session at all - same require_requester pattern /attempts already uses.
+    with (
+        _with_child_session_secret(),
+        patch("main.get_accuracy_trend", return_value=[]),
+        patch("main.get_practice_frequency", return_value=0),
+        patch("main.get_average_retries", return_value=0.0),
+        patch("main.get_weak_spots_by_topic", return_value=[]),
+        patch("main.get_total_attempts", return_value=5),
+    ):
+        response = client.get("/children/1/kpis", headers=_child_auth_header(child_id=1))
+    assert response.status_code == 200
+    assert response.json()["total_attempts"] == 5
+
+
+def test_get_child_kpis_rejects_a_child_token_for_a_different_childs_id():
+    with _with_child_session_secret():
+        response = client.get("/children/999/kpis", headers=_child_auth_header(child_id=1))
+    assert response.status_code == 403
+
+
 # --- question_text / misconception matching passthrough (ticket #33) ---
 # Merged with #76's auth requirement: /attempts/check now needs a parent token too,
 # so both cases below carry _mock_parent_auth()/AUTH_HEADER same as the check_attempt
