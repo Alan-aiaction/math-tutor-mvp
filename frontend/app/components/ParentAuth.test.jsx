@@ -24,6 +24,11 @@ function renderAuth(props = {}) {
 const fillAndSubmit = async (email = "parent@example.com", password = "sesame123") => {
   fireEvent.change(screen.getByPlaceholderText("E-mail"), { target: { value: email } });
   fireEvent.change(screen.getByPlaceholderText("Wachtwoord"), { target: { value: password } });
+  // Ensures the privacy checkbox is checked regardless of mode's default, matching a
+  // realistic form fill - checking an already-checked box (sign-in's default) is a
+  // harmless no-op.
+  const checkbox = screen.getByRole("checkbox");
+  if (!checkbox.checked) fireEvent.click(checkbox);
   // Anchored: "Inloggen"/"Aanmelden" is also a substring of the toggle link's text
   // ("Nieuw hier? Meld je aan" / "Heb je al een account? Log in") - an unanchored match
   // would find both and fail with "multiple elements found."
@@ -96,15 +101,42 @@ describe("ParentAuth", () => {
     expect(onAuthenticated).toHaveBeenCalledWith(session);
   });
 
-  it("sign-up mode shows a privacy policy notice with a link", () => {
+  it("shows a privacy policy checkbox with a link in both sign-in and sign-up mode", () => {
     renderAuth();
+    expect(screen.getByRole("link", { name: "Privacybeleid" })).toHaveAttribute("href", "/privacy");
     fireEvent.click(screen.getByText("Nieuw hier? Meld je aan"));
-    const link = screen.getByRole("link", { name: "Privacybeleid" });
-    expect(link).toHaveAttribute("href", "/privacy");
+    expect(screen.getByRole("link", { name: "Privacybeleid" })).toHaveAttribute("href", "/privacy");
   });
 
-  it("sign-in mode does not show the privacy policy notice - it's a sign-up-time notice only", () => {
+  it("privacy checkbox is checked by default in sign-in mode - returning users already agreed", () => {
     renderAuth();
-    expect(screen.queryByRole("link", { name: "Privacybeleid" })).not.toBeInTheDocument();
+    expect(screen.getByRole("checkbox")).toBeChecked();
+  });
+
+  it("privacy checkbox is unchecked by default in sign-up mode - a fresh consent moment", () => {
+    renderAuth();
+    fireEvent.click(screen.getByText("Nieuw hier? Meld je aan"));
+    expect(screen.getByRole("checkbox")).not.toBeChecked();
+  });
+
+  it("toggling back to sign-in resets the checkbox to checked, even if it was left unchecked in sign-up", () => {
+    renderAuth();
+    fireEvent.click(screen.getByText("Nieuw hier? Meld je aan"));
+    expect(screen.getByRole("checkbox")).not.toBeChecked();
+    fireEvent.click(screen.getByText("Heb je al een account? Log in"));
+    expect(screen.getByRole("checkbox")).toBeChecked();
+  });
+
+  it("submit button is disabled while the privacy checkbox is unchecked", () => {
+    renderAuth();
+    fireEvent.click(screen.getByText("Nieuw hier? Meld je aan"));
+    expect(screen.getByRole("button", { name: "Aanmelden" })).toBeDisabled();
+  });
+
+  it("submit button re-enables once the privacy checkbox is checked", () => {
+    renderAuth();
+    fireEvent.click(screen.getByText("Nieuw hier? Meld je aan"));
+    fireEvent.click(screen.getByRole("checkbox"));
+    expect(screen.getByRole("button", { name: "Aanmelden" })).not.toBeDisabled();
   });
 });

@@ -16,6 +16,9 @@ export default function ParentAuth({ onAuthenticated }) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  // Sign-in defaults to already-agreed (a returning user agreed at sign-up time);
+  // sign-up starts unchecked so agreeing is a real, deliberate action each time.
+  const [privacyAgreed, setPrivacyAgreed] = useState(true);
 
   const isSignUp = mode === "signup";
 
@@ -67,28 +70,37 @@ export default function ParentAuth({ onAuthenticated }) {
           className="rounded-xl border border-border px-3 py-2 text-sm"
         />
         {error && <p className="text-sm text-warn">{error}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-strong disabled:opacity-40"
-        >
-          {loading ? t("parentAuth.pleaseWait") : isSignUp ? t("parentAuth.signUp") : t("parentAuth.signIn")}
-        </button>
-        {isSignUp && (
-          <p className="text-xs text-ink-muted">
-            {t("parentAuth.privacyNoticePrefix")}{" "}
+        <label className="flex items-start gap-2 text-xs text-ink-muted">
+          <input
+            type="checkbox"
+            checked={privacyAgreed}
+            onChange={(e) => setPrivacyAgreed(e.target.checked)}
+            className="mt-0.5"
+          />
+          <span>
+            {t("parentAuth.privacyAgreePrefix")}{" "}
             <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink">
               {t("privacy.linkLabel")}
             </a>
             .
-          </p>
-        )}
+          </span>
+        </label>
+        <button
+          type="submit"
+          disabled={loading || !privacyAgreed}
+          className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-strong disabled:opacity-40"
+        >
+          {loading ? t("parentAuth.pleaseWait") : isSignUp ? t("parentAuth.signUp") : t("parentAuth.signIn")}
+        </button>
       </form>
       <button
         type="button"
         onClick={() => {
           setMode(isSignUp ? "signin" : "signup");
           setError(null);
+          // Reset to the new mode's own default rather than carrying the old mode's
+          // checked state across - see privacyAgreed's initial-value comment above.
+          setPrivacyAgreed(isSignUp);
         }}
         className="text-xs font-bold text-primary hover:underline"
       >

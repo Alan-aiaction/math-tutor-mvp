@@ -47,8 +47,8 @@ function DutchContent() {
       <Section title="Wie zijn wij">
         <p>
           Math Tutor MVP is een klein, in ontwikkeling zijnd oefenprogramma voor
-          rekenen (groep 7-8), gemaakt door Alan. Voor vragen over dit privacybeleid of
-          over je gegevens: [privacy contactadres nog te bevestigen].
+          rekenen (groep 7-8). Voor vragen over dit privacybeleid of over je gegevens:
+          [privacy contactadres nog te bevestigen].
         </p>
       </Section>
 
@@ -120,8 +120,8 @@ function EnglishContent() {
       <Section title="Who we are">
         <p>
           Math Tutor MVP is a small, in-development math practice tool for Dutch groep
-          7-8 (roughly ages 10-12), built by Alan. For questions about this policy or
-          your data: [privacy contact email - to be confirmed].
+          7-8 (roughly ages 10-12). For questions about this policy or your data:
+          [privacy contact email - to be confirmed].
         </p>
       </Section>
 
