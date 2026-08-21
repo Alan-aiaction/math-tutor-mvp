@@ -1,4 +1,4 @@
-# Math Tutor MVP
+# Math Tutor
 
 AI-powered Socratic math tutor for groep 7-8 (HAVO-track) students — part of AIAction's
 after-school education products. Pilot goal: help students practice math independently,
