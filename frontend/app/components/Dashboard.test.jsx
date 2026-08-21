@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import Dashboard from "./Dashboard";
 import { apiFetch, ApiError } from "../lib/apiFetch";
@@ -44,6 +44,15 @@ function renderDashboard(props = {}) {
   );
 }
 
+function mockTwoChildren() {
+  apiFetch.mockImplementation((url) => {
+    if (url.endsWith("/children")) return Promise.resolve([sam, noor]);
+    if (url.endsWith("/children/1/kpis")) return Promise.resolve(samKpis);
+    if (url.endsWith("/children/2/kpis")) return Promise.resolve(noorKpis);
+    throw new Error(`unexpected fetch: ${url}`);
+  });
+}
+
 describe("Dashboard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -71,7 +80,7 @@ describe("Dashboard", () => {
     expect(topics.map((el) => el.textContent)).toEqual(["fractions", "percentages"]);
   });
 
-  it("does not show a comparison table with only one child", async () => {
+  it("does not show a comparison table or a switcher with only one child", async () => {
     apiFetch.mockImplementation((url) => {
       if (url.endsWith("/children")) return Promise.resolve([sam]);
       if (url.endsWith("/children/1/kpis")) return Promise.resolve(samKpis);
@@ -80,37 +89,48 @@ describe("Dashboard", () => {
     renderDashboard();
     await screen.findByText("12");
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Sam" })).not.toBeInTheDocument();
   });
 
   it("shows a comparison table row per child when there is more than one", async () => {
-    apiFetch.mockImplementation((url) => {
-      if (url.endsWith("/children")) return Promise.resolve([sam, noor]);
-      if (url.endsWith("/children/1/kpis")) return Promise.resolve(samKpis);
-      if (url.endsWith("/children/2/kpis")) return Promise.resolve(noorKpis);
-      throw new Error(`unexpected fetch: ${url}`);
-    });
+    mockTwoChildren();
     renderDashboard();
     const table = await screen.findByRole("table");
     expect(table).toBeInTheDocument();
-    expect(screen.getAllByText("Sam").length).toBeGreaterThan(0);
-    expect(screen.getByText("Noor")).toBeInTheDocument();
+    expect(within(table).getAllByText("Sam").length).toBeGreaterThan(0);
+    expect(within(table).getByText("Noor")).toBeInTheDocument();
   });
 
   it("clicking a different child's row in the comparison table switches the hero section to that child", async () => {
-    apiFetch.mockImplementation((url) => {
-      if (url.endsWith("/children")) return Promise.resolve([sam, noor]);
-      if (url.endsWith("/children/1/kpis")) return Promise.resolve(samKpis);
-      if (url.endsWith("/children/2/kpis")) return Promise.resolve(noorKpis);
-      throw new Error(`unexpected fetch: ${url}`);
-    });
+    mockTwoChildren();
     renderDashboard();
     // Hero defaults to Sam (first child) - Sam's total_attempts figure (12) is visible.
+    const table = await screen.findByRole("table");
     expect(await screen.findByText("12")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText("Noor"));
+    fireEvent.click(within(table).getByText("Noor"));
 
     // Hero now shows Noor's data (18) instead of Sam's (12) - no page reload, no
     // effect on any practice session, this is purely a viewing switch.
+    expect(await screen.findByText("18")).toBeInTheDocument();
+    expect(screen.queryByText("12")).not.toBeInTheDocument();
+  });
+
+  it("shows a click-to-switch row above the hero, right where a parent is already looking", async () => {
+    mockTwoChildren();
+    renderDashboard();
+    expect(await screen.findByText("12")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sam" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Noor" })).toBeInTheDocument();
+  });
+
+  it("clicking a child's name in the top switcher changes the hero section to that child", async () => {
+    mockTwoChildren();
+    renderDashboard();
+    expect(await screen.findByText("12")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Noor" }));
+
     expect(await screen.findByText("18")).toBeInTheDocument();
     expect(screen.queryByText("12")).not.toBeInTheDocument();
   });
