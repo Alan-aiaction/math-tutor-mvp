@@ -327,7 +327,7 @@ export default function Home() {
     return (
       <main className="flex min-h-screen flex-col items-center gap-8 p-16 text-center">
         <div>
-          <h1 className="font-display text-3xl font-bold text-ink">Math Tutor MVP</h1>
+          <h1 className="font-display text-3xl font-bold text-ink">Math Tutor</h1>
         </div>
         {authMode === "parent" && (
           <>

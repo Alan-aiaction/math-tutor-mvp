@@ -11,7 +11,7 @@ const baloo2 = Baloo_2({ subsets: ["latin"], weight: ["700"], variable: "--font-
 const nunito = Nunito({ subsets: ["latin"], weight: ["400", "600", "700", "800"], variable: "--font-nunito" });
 
 export const metadata = {
-  title: "Math Tutor MVP",
+  title: "Math Tutor",
   description: "AI adaptive math tutor — placeholder deployment",
 };
 
