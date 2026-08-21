@@ -379,6 +379,14 @@ export default function Home() {
             </button>
           </div>
         )}
+        <a
+          href="/privacy"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs font-bold text-ink-muted hover:underline"
+        >
+          {t("privacy.linkLabel")}
+        </a>
       </main>
     );
   }

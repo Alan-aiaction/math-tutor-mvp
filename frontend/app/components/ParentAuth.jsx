@@ -74,6 +74,15 @@ export default function ParentAuth({ onAuthenticated }) {
         >
           {loading ? t("parentAuth.pleaseWait") : isSignUp ? t("parentAuth.signUp") : t("parentAuth.signIn")}
         </button>
+        {isSignUp && (
+          <p className="text-xs text-ink-muted">
+            {t("parentAuth.privacyNoticePrefix")}{" "}
+            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink">
+              {t("privacy.linkLabel")}
+            </a>
+            .
+          </p>
+        )}
       </form>
       <button
         type="button"

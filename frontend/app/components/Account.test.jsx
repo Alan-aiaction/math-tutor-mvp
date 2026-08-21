@@ -76,4 +76,10 @@ describe("Account", () => {
     expect(writeText).toHaveBeenCalledWith("AB12CD");
     expect(await screen.findByRole("button", { name: "Gekopieerd!" })).toBeInTheDocument();
   });
+
+  it("links to the privacy policy", () => {
+    apiFetch.mockImplementation(() => new Promise(() => {}));
+    renderAccount();
+    expect(screen.getByRole("link", { name: "Privacybeleid" })).toHaveAttribute("href", "/privacy");
+  });
 });

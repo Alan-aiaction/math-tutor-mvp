@@ -101,6 +101,15 @@ export default function Account({ accessToken }) {
           </>
         )}
       </div>
+
+      <a
+        href="/privacy"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-xs font-bold text-primary hover:underline"
+      >
+        {t("privacy.linkLabel")}
+      </a>
     </div>
   );
 }
