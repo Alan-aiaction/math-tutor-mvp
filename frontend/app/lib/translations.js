@@ -20,7 +20,7 @@ export const translations = {
     "parentAuth.alreadyHaveAccount": "Heb je al een account? Log in",
     "parentAuth.newHere": "Nieuw hier? Meld je aan",
     "parentAuth.genericError": "Er ging iets mis. Probeer het opnieuw.",
-    "parentAuth.privacyAgreePrefix": "Ik ga akkoord met ons",
+    "parentAuth.privacyNoticePrefix": "Door een account aan te maken ga je akkoord met ons",
 
     "childpicker.whosWorking": "Wie gaat er werken?",
     "childpicker.signOut": "Uitloggen",
@@ -122,7 +122,7 @@ export const translations = {
     "parentAuth.alreadyHaveAccount": "Already have an account? Sign in",
     "parentAuth.newHere": "New here? Sign up",
     "parentAuth.genericError": "Something went wrong. Please try again.",
-    "parentAuth.privacyAgreePrefix": "I agree to our",
+    "parentAuth.privacyNoticePrefix": "By creating an account you agree to our",
 
     "childpicker.whosWorking": "Who's working today?",
     "childpicker.signOut": "Sign out",
