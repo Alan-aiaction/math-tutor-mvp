@@ -14,6 +14,7 @@ Follows this codebase's existing pattern for wrapping an external paid API
 exception, env-driven credentials.
 """
 import os
+from dataclasses import dataclass
 
 import requests
 
@@ -28,7 +29,18 @@ class LLMError(Exception):
     or a non-200 response), instead of letting the failure crash the caller."""
 
 
-def _call_anthropic(prompt: str, *, api_key: str, model: str, max_tokens: int, temperature: float) -> str:
+@dataclass
+class LLMResponse:
+    """generate_text_with_usage()'s return shape - the generated text plus how many
+    tokens the call actually cost, for callers (hint_escalation_llm.py's per-account
+    token limit) that need to meter usage. generate_text() itself stays text-only for
+    callers (rule_drafting.py) that don't."""
+
+    text: str
+    tokens_used: int
+
+
+def _call_anthropic(prompt: str, *, api_key: str, model: str, max_tokens: int, temperature: float) -> tuple[str, int]:
     body = {
         "model": model,
         "max_tokens": max_tokens,
@@ -45,10 +57,15 @@ def _call_anthropic(prompt: str, *, api_key: str, model: str, max_tokens: int, t
     )
     if response.status_code != 200:
         raise LLMError(f"anthropic API returned {response.status_code}: {response.text[:300]}")
-    return response.json()["content"][0]["text"]
+    payload = response.json()
+    usage = payload.get("usage", {})
+    tokens_used = usage.get("input_tokens", 0) + usage.get("output_tokens", 0)
+    return payload["content"][0]["text"], tokens_used
 
 
-def _call_openai_compatible(prompt: str, *, api_key: str, model: str, max_tokens: int, temperature: float) -> str:
+def _call_openai_compatible(
+    prompt: str, *, api_key: str, model: str, max_tokens: int, temperature: float
+) -> tuple[str, int]:
     base_url = os.environ.get("LLM_BASE_URL", DEFAULT_OPENAI_COMPATIBLE_BASE_URL).rstrip("/")
     body = {
         "model": model,
@@ -65,7 +82,9 @@ def _call_openai_compatible(prompt: str, *, api_key: str, model: str, max_tokens
     )
     if response.status_code != 200:
         raise LLMError(f"openai_compatible API returned {response.status_code}: {response.text[:300]}")
-    return response.json()["choices"][0]["message"]["content"]
+    payload = response.json()
+    tokens_used = payload.get("usage", {}).get("total_tokens", 0)
+    return payload["choices"][0]["message"]["content"], tokens_used
 
 
 _PROVIDERS = {
@@ -74,8 +93,9 @@ _PROVIDERS = {
 }
 
 
-def generate_text(prompt: str, *, max_tokens: int = 512, temperature: float = 0.7) -> str:
-    """Generate text from the configured LLM provider.
+def generate_text_with_usage(prompt: str, *, max_tokens: int = 512, temperature: float = 0.7) -> LLMResponse:
+    """Generate text from the configured LLM provider, along with how many tokens the
+    call cost.
 
     Raises LLMError on missing config, an unknown provider, or any request failure.
     """
@@ -91,10 +111,20 @@ def generate_text(prompt: str, *, max_tokens: int = 512, temperature: float = 0.
         raise LLMError("LLM_MODEL is not configured")
 
     try:
-        return _PROVIDERS[provider](
+        text, tokens_used = _PROVIDERS[provider](
             prompt, api_key=api_key, model=model, max_tokens=max_tokens, temperature=temperature
         )
+        return LLMResponse(text=text, tokens_used=tokens_used)
     except LLMError:
         raise
     except requests.exceptions.RequestException as exc:
         raise LLMError(f"{provider} request failed: {exc}") from exc
+
+
+def generate_text(prompt: str, *, max_tokens: int = 512, temperature: float = 0.7) -> str:
+    """Generate text from the configured LLM provider - the plain-text-only form used
+    by callers (rule_drafting.py) that don't need token usage.
+
+    Raises LLMError on missing config, an unknown provider, or any request failure.
+    """
+    return generate_text_with_usage(prompt, max_tokens=max_tokens, temperature=temperature).text

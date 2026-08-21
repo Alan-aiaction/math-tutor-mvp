@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
-from llm import LLMError, generate_text
+from llm import LLMError, generate_text, generate_text_with_usage
 
 
 def _set_common_env(monkeypatch, provider, model="test-model", api_key="test-key"):
@@ -106,3 +106,62 @@ def test_openai_compatible_non_200_raises(monkeypatch):
     with patch("llm.requests.post", return_value=mock_response):
         with pytest.raises(LLMError):
             generate_text("hello")
+
+
+def test_generate_text_with_usage_returns_anthropic_token_count(monkeypatch):
+    _set_common_env(monkeypatch, "anthropic")
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "content": [{"text": "hint text"}],
+        "usage": {"input_tokens": 120, "output_tokens": 30},
+    }
+    with patch("llm.requests.post", return_value=mock_response):
+        result = generate_text_with_usage("hello")
+
+    assert result.text == "hint text"
+    assert result.tokens_used == 150
+
+
+def test_generate_text_with_usage_returns_openai_compatible_token_count(monkeypatch):
+    _set_common_env(monkeypatch, "openai_compatible")
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "choices": [{"message": {"content": "hint text"}}],
+        "usage": {"prompt_tokens": 80, "completion_tokens": 20, "total_tokens": 100},
+    }
+    with patch("llm.requests.post", return_value=mock_response):
+        result = generate_text_with_usage("hello")
+
+    assert result.text == "hint text"
+    assert result.tokens_used == 100
+
+
+def test_generate_text_with_usage_defaults_to_zero_tokens_when_usage_missing(monkeypatch):
+    # A provider response missing "usage" entirely shouldn't crash the call - it just
+    # means nothing gets counted toward the account's limit this time.
+    _set_common_env(monkeypatch, "anthropic")
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"content": [{"text": "hint text"}]}
+    with patch("llm.requests.post", return_value=mock_response):
+        result = generate_text_with_usage("hello")
+
+    assert result.text == "hint text"
+    assert result.tokens_used == 0
+
+
+def test_generate_text_ignores_usage_and_returns_plain_text(monkeypatch):
+    # generate_text() is unchanged for rule_drafting.py's sake - still a plain string.
+    _set_common_env(monkeypatch, "anthropic")
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "content": [{"text": "hint text"}],
+        "usage": {"input_tokens": 10, "output_tokens": 5},
+    }
+    with patch("llm.requests.post", return_value=mock_response):
+        result = generate_text("hello")
+
+    assert result == "hint text"

@@ -237,6 +237,35 @@ def test_escalation_with_no_misconception_match_still_calls_live_service_without
     assert mock_generate.call_args.args[0] is None  # no misconception_description
 
 
+def test_run_pipeline_threads_parent_id_through_to_the_live_hint_service():
+    """The per-account LLM token limit (hint_escalation_llm.py) needs to know which
+    account is asking - run_pipeline is the one place that has parent_id available
+    (from POST /attempts/check's requester) and the live escalation call it makes."""
+    with (
+        patch("misconception_matching.get_client", return_value=_mock_rules_client([_FORGOT_ADJUSTMENT_RULE])),
+        patch("orchestration.generate_escalated_hint", return_value="Bijna goed! Live hint.") as mock_generate,
+    ):
+        steps = [make_step(1, "1200")]
+        run_pipeline(
+            steps,
+            correct_answer="1194",
+            question_text="6 × 199",
+            previous_wrong_counts=[1],
+            parent_id="parent-abc",
+        )
+    assert mock_generate.call_args.kwargs["parent_id"] == "parent-abc"
+
+
+def test_run_pipeline_without_parent_id_passes_none_through():
+    with (
+        patch("misconception_matching.get_client", return_value=_mock_rules_client([_FORGOT_ADJUSTMENT_RULE])),
+        patch("orchestration.generate_escalated_hint", return_value="Bijna goed! Live hint.") as mock_generate,
+    ):
+        steps = [make_step(1, "1200")]
+        run_pipeline(steps, correct_answer="1194", question_text="6 × 199", previous_wrong_counts=[1])
+    assert mock_generate.call_args.kwargs["parent_id"] is None
+
+
 def test_logs_a_duration_for_each_pipeline_stage(caplog):
     steps = [make_step(1, "7/12")]
     with caplog.at_level("INFO", logger="orchestration"):

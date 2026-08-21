@@ -368,12 +368,14 @@ class CheckRequest(BaseModel):
 
 @app.post("/attempts/check", response_model=list[EvaluationResult])
 def check_attempt(payload: CheckRequest, requester: Requester = Depends(require_requester)):
-    # requester isn't used directly here (this endpoint is stateless, computational -
-    # it never touches the children/attempts tables) - the dependency is still applied
-    # so the endpoint can't be hit anonymously, consistent with the rest of the app.
-    # require_requester (not require_parent_id) so an independent child's own token
-    # works here too - a child's practice session needs to check their work without
-    # ever having a parent session at all.
+    # requester.parent_id IS used here (for the per-account LLM token limit, on any
+    # live escalated-hint call) even though nothing else on this stateless endpoint
+    # touches the children/attempts tables - the dependency itself is still also what
+    # keeps this endpoint from being hit anonymously, consistent with the rest of the
+    # app. require_requester (not require_parent_id) so an independent child's own
+    # token works here too - a child's practice session needs to check their work
+    # without ever having a parent session at all; Requester.parent_id is populated
+    # either way (see its own docstring).
     #
     # Placeholder id/attempt_id: run_pipeline only ever reads recognized_latex - this
     # endpoint checks work before a real Attempt/Step exists to attach real ids to,
@@ -388,6 +390,7 @@ def check_attempt(payload: CheckRequest, requester: Requester = Depends(require_
             correct_answer=payload.correct_answer,
             question_text=payload.question_text,
             previous_wrong_counts=[s.previous_wrong_count for s in payload.steps],
+            parent_id=requester.parent_id,
         )
     except LatexParseError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
