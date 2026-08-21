@@ -104,8 +104,8 @@ function DutchContent() {
 
       <Section title="Waar gegevens worden opgeslagen">
         <p>
-          We gebruiken Supabase als database-provider. Regio: [nog te bevestigen door
-          Alan].
+          We slaan geen onnodige of gevoelige gegevens op - alleen wat nodig is om de
+          app te laten werken. Alles wordt veilig bewaard in [regio nog te bevestigen].
         </p>
       </Section>
     </>
@@ -172,7 +172,10 @@ function EnglishContent() {
       </Section>
 
       <Section title="Where data is stored">
-        <p>We use Supabase as our database provider. Region: [to be confirmed by Alan].</p>
+        <p>
+          We don't store any unnecessary or sensitive data - only what's needed to run
+          the app. Everything is stored securely in [region to be confirmed].
+        </p>
       </Section>
     </>
   );
