@@ -43,6 +43,18 @@ class Child(BaseModel):
     created_at: str  # never includes password_hash - that never leaves children.py
 
 
+class Feedback(BaseModel):
+    id: int
+    parent_id: str  # a Supabase Auth user id (uuid) - set whether the submitter was
+    # the parent themselves or one of their children
+    child_id: int | None  # set only when a child (not the parent) submitted this
+    rating: int  # 1-5, required for both roles
+    category: str | None  # parent-only (Bug/Idea/Something else) - always None for a
+    # child's submission, kept light for that age group
+    message: str | None  # required for a parent, optional for a child
+    created_at: str
+
+
 class Parent(BaseModel):
     id: str  # a Supabase Auth user id (uuid) - same id as auth.users, not a new one
     family_code: str  # short, unambiguous code a parent hands to their child for

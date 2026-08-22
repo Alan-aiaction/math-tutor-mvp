@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 from auth import issue_child_token
 from children import ChildError
 from main import app
-from models import Attempt, Child, Parent
+from models import Attempt, Child, Feedback, Parent
 from recognition import RecognitionError
 
 # raise_server_exceptions=False: without this, TestClient re-raises the original
@@ -536,3 +536,63 @@ def test_check_attempt_with_question_text_is_accepted():
             headers=AUTH_HEADER,
         )
     assert response.status_code == 200
+
+
+# --- Feedback page ---
+
+_FAKE_FEEDBACK = Feedback(
+    id=1,
+    parent_id=FAKE_PARENT_ID,
+    child_id=None,
+    rating=4,
+    category="Bug",
+    message="The check button was slow.",
+    created_at="2026-08-22T00:00:00Z",
+)
+
+
+def test_create_feedback_requires_auth():
+    response = client.post("/feedback", json={"rating": 4})
+    assert response.status_code == 401
+
+
+def test_create_feedback_accepts_a_parent_submission():
+    with _mock_parent_auth(), patch("main.create_feedback", return_value=_FAKE_FEEDBACK) as mock_create:
+        response = client.post(
+            "/feedback",
+            json={"rating": 4, "category": "Bug", "message": "The check button was slow."},
+            headers=AUTH_HEADER,
+        )
+    assert response.status_code == 200
+    mock_create.assert_called_once_with(
+        parent_id=FAKE_PARENT_ID, child_id=None, rating=4, category="Bug", message="The check button was slow."
+    )
+
+
+def test_create_feedback_accepts_a_child_session_token_and_attributes_the_child_id():
+    fake = Feedback(
+        id=2, parent_id=FAKE_PARENT_ID, child_id=1, rating=5, category=None, message=None,
+        created_at="2026-08-22T00:00:00Z",
+    )
+    with _with_child_session_secret(), patch("main.create_feedback", return_value=fake) as mock_create:
+        response = client.post(
+            "/feedback",
+            json={"rating": 5},
+            headers=_child_auth_header(child_id=1),
+        )
+    assert response.status_code == 200
+    mock_create.assert_called_once_with(
+        parent_id=FAKE_PARENT_ID, child_id=1, rating=5, category=None, message=None
+    )
+
+
+def test_create_feedback_rejects_a_rating_below_1():
+    with _mock_parent_auth():
+        response = client.post("/feedback", json={"rating": 0}, headers=AUTH_HEADER)
+    assert response.status_code == 400
+
+
+def test_create_feedback_rejects_a_rating_above_5():
+    with _mock_parent_auth():
+        response = client.post("/feedback", json={"rating": 6}, headers=AUTH_HEADER)
+    assert response.status_code == 400

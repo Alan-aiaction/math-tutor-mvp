@@ -10,6 +10,7 @@ import AppShell from "./components/AppShell";
 import Dashboard from "./components/Dashboard";
 import MyProgress from "./components/MyProgress";
 import Account from "./components/Account";
+import Feedback from "./components/Feedback";
 import ScratchPad from "./components/ScratchPad";
 import { apiFetch } from "./lib/apiFetch";
 import { supabase } from "./lib/supabaseClient";
@@ -27,7 +28,7 @@ const INITIAL_WRONG_TRY_COUNTS = [0];
 
 export default function Home() {
   const { t } = useLanguage();
-  const [view, setView] = useState("kinderen"); // "dashboard" | "kinderen" | "account"
+  const [view, setView] = useState("kinderen"); // "dashboard" | "kinderen" | "account" | "feedback"
   const [steps, setSteps] = useState(INITIAL_STEPS);
   // wrongTryCounts (ticket #71): how many times each step has already come back
   // wrong in this problem-solving session - parallel to `steps`, sent to the
@@ -58,7 +59,7 @@ export default function Home() {
   // Child mode gets a small nav of its own - "same view as a parent" as far as
   // Oefenen/Dashboard go, but deliberately not the full parent shell (no Mijn
   // kinderen, no Account - those stay parent-only management screens).
-  const [childView, setChildView] = useState("oefenen"); // "oefenen" | "dashboard"
+  const [childView, setChildView] = useState("oefenen"); // "oefenen" | "dashboard" | "feedback"
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
@@ -313,12 +314,14 @@ export default function Home() {
         navItems={[
           { key: "oefenen", label: t("nav.oefenen") },
           { key: "dashboard", label: t("nav.dashboard") },
+          { key: "feedback", label: t("nav.feedback") },
         ]}
         showAccountLink={false}
         identityLabel={childSession.child.nickname}
       >
         {childView === "oefenen" && renderPractice()}
         {childView === "dashboard" && <MyProgress child={childSession.child} token={childSession.token} />}
+        {childView === "feedback" && <Feedback role="child" authToken={childSession.token} />}
       </AppShell>
     );
   }
@@ -380,6 +383,7 @@ export default function Home() {
       navItems={[
         { key: "dashboard", label: t("nav.dashboard") },
         { key: "kinderen", label: t("nav.mijnkinderen") },
+        { key: "feedback", label: t("nav.feedback") },
       ]}
     >
       {view === "kinderen" && (
@@ -388,6 +392,7 @@ export default function Home() {
 
       {view === "dashboard" && <Dashboard accessToken={session.access_token} />}
       {view === "account" && <Account accessToken={session.access_token} />}
+      {view === "feedback" && <Feedback role="parent" authToken={session.access_token} />}
     </AppShell>
   );
 }
