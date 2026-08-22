@@ -23,6 +23,7 @@ from children import (
     verify_child_login,
 )
 from db import DatabaseError
+from feedback import create_feedback
 from kpis import (
     get_accuracy_trend,
     get_average_retries,
@@ -31,7 +32,7 @@ from kpis import (
     get_weak_spots_by_topic,
 )
 from latex_parser import LatexParseError
-from models import Attempt, Child, EvaluationResult, Problem, Step
+from models import Attempt, Child, EvaluationResult, Feedback, Problem, Step
 from orchestration import run_pipeline
 from parents import get_or_create_parent, get_parent_by_family_code
 from problems import ProblemNotFoundError, get_problem, get_random_problem
@@ -397,6 +398,29 @@ def check_attempt(payload: CheckRequest, requester: Requester = Depends(require_
     # PipelineError is deliberately not caught here - it signals a genuine unexpected bug
     # (per orchestration.py's own docstring), not bad input, so it falls through to the
     # global unhandled_exception_handler (#16) for logging, Sentry capture, and a clean 500.
+
+
+class FeedbackCreate(BaseModel):
+    rating: int
+    category: str | None = None
+    message: str | None = None
+
+
+@app.post("/feedback", response_model=Feedback)
+def create_feedback_endpoint(payload: FeedbackCreate, requester: Requester = Depends(require_requester)):
+    # require_requester (not require_parent_id): a child submits feedback with their
+    # own session token, same as /attempts and /attempts/check - requester.child_id
+    # is set only then, requester.parent_id either way, so the row is attributed
+    # correctly without the frontend needing to say which role it is.
+    if not 1 <= payload.rating <= 5:
+        raise HTTPException(status_code=400, detail="rating must be between 1 and 5")
+    return create_feedback(
+        parent_id=requester.parent_id,
+        child_id=requester.child_id,
+        rating=payload.rating,
+        category=payload.category,
+        message=payload.message,
+    )
 
 
 # Must be registered before /problems/{problem_id} - otherwise Starlette matches

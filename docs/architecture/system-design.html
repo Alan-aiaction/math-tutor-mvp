@@ -332,6 +332,8 @@ erDiagram
     PROBLEMS ||--o{ SHADOW_LOG_REVIEW_NOTES : "reviewed pattern for"
     PARENTS ||--o{ CHILDREN : "owns"
     CHILDREN ||--o{ ATTEMPTS : "attempted by"
+    PARENTS ||--o{ FEEDBACK : "submits"
+    CHILDREN ||--o{ FEEDBACK : "submits"
 
     PROBLEMS {
         bigint id PK
@@ -352,6 +354,14 @@ erDiagram
         uuid parent_id FK
         text nickname "unique per parent, not globally"
         text password_hash "bcrypt - never leaves children.py"
+    }
+    FEEDBACK {
+        bigint id PK
+        uuid parent_id FK
+        bigint child_id FK "nullable - set only for a child's own submission"
+        integer rating "1-5, required for both roles"
+        text category "parent-only (Bug/Idea/Something else)"
+        text message "required for a parent, optional for a child"
     }
     ATTEMPTS {
         bigint id PK
@@ -413,6 +423,15 @@ erDiagram
       net is already live once one is connected. See
       <code>docs/tracking/decision-log.md</code>'s "per-account lifetime token limit"
       entry.</span>
+    </div>
+    <div class="caption">
+      <span class="dot"></span>
+      <span><code>FEEDBACK</code> added - one shared table for both a parent's and a
+      child's submissions to the new Feedback page, distinguished by whether
+      <code>child_id</code> is set. Insert-only from the client (no admin UI reads
+      this) - Alan reviews submissions directly via the Supabase table editor, no live
+      notification wired up. See <code>docs/tracking/decision-log.md</code>'s
+      "Feedback page" entry.</span>
     </div>
     <div class="caption">
       <span class="dot"></span>
